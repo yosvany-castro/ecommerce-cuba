@@ -13,7 +13,10 @@ export async function withPg<T>(
   fn: (pg: Client) => Promise<T>,
   opts: { scope?: Scope } = {},
 ): Promise<T> {
-  const pg = await getPgClient({ scope: opts.scope ?? "public" });
+  // In test environments (Vitest), route handlers called directly should also
+  // resolve against test_schema so seeds from withTestDb are visible.
+  const defaultScope: Scope = process.env.VITEST ? "test" : "public";
+  const pg = await getPgClient({ scope: opts.scope ?? defaultScope });
   try {
     return await fn(pg);
   } finally {

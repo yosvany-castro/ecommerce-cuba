@@ -28,7 +28,7 @@ export function SearchTracker({ query, resultsCount }: { query: string; resultsC
     void trackEvent({
       event_type: "search",
       occurred_at: new Date().toISOString(),
-      payload: { raw_query: query, results_count: resultsCount, method: "like" },
+      payload: { raw_query: query, results_count: resultsCount, method: "hybrid_rrf" },
     });
   }, [query, resultsCount]);
   return null;
