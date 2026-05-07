@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Load .env.local so E2E tests see the same env vars as integration tests.
+// Playwright doesn't auto-load it (Vitest does via tests/helpers/setup.ts).
+config({ path: ".env.local" });
 
 export default defineConfig({
   testDir: "./tests/e2e",

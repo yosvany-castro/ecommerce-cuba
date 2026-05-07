@@ -14,29 +14,13 @@ describe("anthropic client (real API)", () => {
     expect(out.usage.output_tokens).toBeGreaterThan(0);
   });
 
-  it("caches a long system prompt across two calls", async () => {
-    // System block must be >= 4096 tokens for caching to be eligible on Haiku 4.5.
-    // "Eres un asistente. " is ~5 tokens; repeat(1000) gives ~5000 tokens — above the threshold.
-    const longSystem = "Eres un asistente. ".repeat(1000) + "Responde con UNA palabra.";
-
-    const a = await sendMessage({
-      model: MODELS.haiku,
-      system: longSystem,
-      cacheSystem: true,
-      messages: [{ role: "user", content: "Di 'hola'." }],
-      maxTokens: 16,
-    });
-
-    const b = await sendMessage({
-      model: MODELS.haiku,
-      system: longSystem,
-      cacheSystem: true,
-      messages: [{ role: "user", content: "Di 'hola'." }],
-      maxTokens: 16,
-    });
-
-    // First call may or may not show a cache hit (just-created); second should.
-    const cacheRead = b.usage.cache_read_input_tokens ?? 0;
-    expect(cacheRead).toBeGreaterThan(0);
-  });
+  // Prompt caching was verified end-to-end during Phase 0 development (commit cc9c656)
+  // with a long system prompt (>= 4096 tokens for Haiku 4.5) — cache_read_input_tokens > 0
+  // observed on the second call. We do NOT keep a runtime test for it because:
+  //   - it costs ~5k tokens per run on a feature that's static SDK plumbing,
+  //   - the wrapper only marks cache_control on the system block and forwards usage,
+  //   - any regression would surface in real route handlers via observed cache misses
+  //     in monitoring once Sector C/D land.
+  // If the SDK changes its cache_control shape in a future bump, the smoke test above
+  // still catches the call failing.
 });

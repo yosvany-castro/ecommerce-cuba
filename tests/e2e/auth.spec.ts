@@ -12,12 +12,20 @@ test.describe("Auth0 v4 login flow (real)", () => {
     // middleware redirects to /auth/login then to Auth0 universal login
     await page.waitForURL(/auth0\.com\/u\/login/);
 
-    await page.getByLabel(/email/i).fill(email!);
-    await page.getByLabel(/password/i).fill(password!);
-    await page.getByRole("button", { name: /continue|log in|iniciar sesión/i }).click();
+    // Auth0 universal login renders multiple elements matching "password" (input +
+    // "show password" toggle button), so use precise role selectors.
+    await page.getByRole("textbox", { name: /email/i }).fill(email!);
+    await page.getByRole("textbox", { name: /^password$/i }).fill(password!);
+    // Auth0 also shows social login buttons (e.g. "Continue with Google") — pick the
+    // primary submit button by exact name match.
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // After consent (if any), back to our app at /profile
-    await page.waitForURL("**/profile", { timeout: 30_000 });
+    // Auth0 v4 redirects to APP_BASE_URL (i.e. "/") by default after login because
+    // our /profile page redirects to /auth/login WITHOUT a returnTo param.
+    // Wait until we're back on the app, then navigate to /profile (session cookie
+    // is now set, so the redirect guard passes and the page renders).
+    await page.waitForURL((url) => !url.toString().includes("auth0.com"), { timeout: 30_000 });
+    await page.goto("/profile");
     await expect(page.getByRole("heading", { name: /perfil/i })).toBeVisible();
     await expect(page.getByText(email!)).toBeVisible();
   });
