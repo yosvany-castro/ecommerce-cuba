@@ -166,4 +166,14 @@ describe("migration runner", () => {
     const defs = constraints.rows.map((r) => r.def).join("\n");
     expect(defs).toMatch(/CHECK .*product_a_id\s*<\s*product_b_id/);
   });
+
+  it("search, orders, eval tables present", async () => {
+    for (const t of [
+      "searches", "product_query_cache", "mock_calls",
+      "orders", "order_items", "eval_holdout",
+    ]) {
+      const res = await client.query(`SELECT to_regclass($1) AS exists`, [`public.${t}`]);
+      expect(res.rows[0].exists).toBe(t);
+    }
+  });
 });
