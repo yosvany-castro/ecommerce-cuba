@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import { randomUUID } from "node:crypto";
+import { embed } from "@/lib/embeddings/voyage";
 
 export async function createUser(
   pg: Client,
@@ -48,6 +49,38 @@ export async function seedProduct(
       overrides.price_cents ?? 1000,
       overrides.raw_category ?? "ropa",
       JSON.stringify(overrides.metadata ?? {}),
+    ],
+  );
+  return r.rows[0];
+}
+
+export async function seedProductWithEmbedding(
+  pg: Client,
+  overrides: Partial<{
+    title: string;
+    description: string;
+    price_cents: number;
+    raw_category: string;
+    metadata: Record<string, unknown>;
+  }> = {},
+): Promise<{ id: string }> {
+  const sid = randomUUID();
+  const title = overrides.title ?? `Seeded with embedding ${sid.slice(0, 8)}`;
+  const description = overrides.description ?? "";
+  const canonical = `${title}\n${description}`;
+  const [embedding] = await embed([canonical], { inputType: "document" });
+  const r = await pg.query(
+    `INSERT INTO products (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, metadata, embedding)
+     VALUES ('seed', $1, $2, $3, $4, 'USD', null, $5, $6::jsonb, $7::vector)
+     RETURNING id`,
+    [
+      sid,
+      title,
+      description,
+      overrides.price_cents ?? 1000,
+      overrides.raw_category ?? "ropa",
+      JSON.stringify(overrides.metadata ?? { category: overrides.raw_category ?? "ropa" }),
+      "[" + embedding.join(",") + "]",
     ],
   );
   return r.rows[0];
