@@ -31,10 +31,15 @@ async function main() {
   for (const filePath of files) {
     const sf = project.addSourceFileAtPath(filePath);
     sf.forEachDescendant((node) => {
-      // Rule 7: .skip / .only / xit
+      // Rule 7: .skip / .only / xit (only on test globals)
       if (Node.isPropertyAccessExpression(node)) {
         const name = node.getName();
-        if (["skip", "only"].includes(name) || node.getText().match(/\b(xit|xtest|xdescribe)\b/)) {
+        const obj = node.getExpression().getText();
+        const TEST_GLOBALS = ["it", "test", "describe", "fit", "fdescribe", "suite", "context"];
+        if (
+          (["skip", "only"].includes(name) && TEST_GLOBALS.includes(obj)) ||
+          /^(xit|xtest|xdescribe)\b/.test(obj)
+        ) {
           record("R7-skipped-or-only", node, filePath);
         }
       }
@@ -44,8 +49,11 @@ async function main() {
         if (callText === "expect") {
           const args = node.getArguments();
           if (args.length === 1) {
-            const parent = node.getParentIfKind(SyntaxKind.PropertyAccessExpression);
-            const chain = parent?.getParent()?.getText() ?? "";
+            let cursor: Node | undefined = node.getParentIfKind(SyntaxKind.PropertyAccessExpression);
+            while (cursor && Node.isPropertyAccessExpression(cursor)) {
+              cursor = cursor.getParent();
+            }
+            const chain = cursor?.getText() ?? "";
             if (
               /\.toBeDefined\(\)\s*$/.test(chain) ||
               /\.not\.toBeNull\(\)\s*$/.test(chain) ||
