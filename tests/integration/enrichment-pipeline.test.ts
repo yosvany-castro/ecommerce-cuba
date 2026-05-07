@@ -87,10 +87,10 @@ describe("processProduct (REAL Anthropic + REAL Voyage + REAL Postgres)", () => 
       const sample = r.products[0];
       const result = await processProduct(sample, pg);
       const row = await pg.query(
-        `SELECT length(tsvector_es::text) AS ts_len FROM products WHERE id = $1`,
+        `SELECT array_length(tsvector_to_array(tsvector_es), 1) AS lexeme_count FROM products WHERE id = $1`,
         [result.productId],
       );
-      expect(row.rows[0].ts_len).toBeGreaterThan(0);
+      expect(row.rows[0].lexeme_count).toBeGreaterThan(2);
     });
   }, 30_000);
 });

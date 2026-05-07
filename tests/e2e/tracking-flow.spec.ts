@@ -60,8 +60,11 @@ test.describe("tracking-flow", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL((url) => !url.pathname.startsWith("/auth/"), { timeout: 30_000 });
 
-    // Wait for client-side merge fetch to complete
-    await page.waitForTimeout(4000);
+    // Wait for the merge call (POST /api/identity/merge) to complete
+    await page.waitForResponse(
+      (resp) => resp.url().includes("/api/identity/merge") && resp.status() === 200,
+      { timeout: 15_000 },
+    );
 
     const c2 = await pg();
     try {

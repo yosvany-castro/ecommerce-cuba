@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { withTestDb, truncateTestTables } from "@/../tests/helpers/db";
-import { resetCallCount, getCallCount } from "@/sectors/b-catalog/mock/aggregator";
+import { resetCallCount, getCallCount, fetchFromAggregator } from "@/sectors/b-catalog/mock/aggregator";
 import { runCatalogFill } from "@/sectors/b-catalog/cron/catalog-fill";
+import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 
 beforeEach(async () => {
   await truncateTestTables(["products", "mock_calls"]);
@@ -9,29 +10,48 @@ beforeEach(async () => {
 });
 
 describe("runCatalogFill (REAL APIs)", () => {
-  test("--pages 1 --categories ropa: 1 mock_calls row + up to 25 products + cost_cents=4", async () => {
+  test("--pages 1 --categories ropa: 1 mock_calls row + cost_cents=4", async () => {
     await withTestDb(async (pg) => {
       const r = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg });
-
       expect(r.totalCalls).toBe(1);
-      // Mock can throw with 2% probability; if it errored, totalProducts=0 and was_error=true.
-      // Mock samples with replacement from the pool, so up to 25 unique products per call.
-      if (r.errors.length === 0) {
-        expect(r.totalProducts).toBeGreaterThan(0);
-        expect(r.totalProducts).toBeLessThanOrEqual(25);
-      } else {
-        expect(r.totalProducts).toBe(0);
-      }
-
       const calls = await pg.query(
         `SELECT simulated_cost_cents, response_size, was_error FROM mock_calls ORDER BY called_at`,
       );
       expect(calls.rows).toHaveLength(1);
       expect(calls.rows[0].simulated_cost_cents).toBe(4);
+      // Always verify products count == r.totalProducts (not conditional)
       const productCount = await pg.query(`SELECT count(*)::int FROM products`);
       expect(productCount.rows[0].count).toBe(r.totalProducts);
+      // If mock errored, totalProducts is 0 and was_error=true; otherwise products > 0
+      if (calls.rows[0].was_error) {
+        expect(r.totalProducts).toBe(0);
+      } else {
+        expect(r.totalProducts).toBeGreaterThan(0);
+        expect(r.totalProducts).toBeLessThanOrEqual(25);
+      }
     });
   }, 120_000);
+
+  test("UPSERT updates fields on re-run with same source_product_id", async () => {
+    await withTestDb(async (pg) => {
+      // Manually seed a product with stale data
+      const sample = (await fetchFromAggregator({ category: "ropa" })).products[0];
+      await pg.query(
+        `INSERT INTO products (source, source_product_id, title, description, price_cents, currency, raw_category, metadata)
+         VALUES ($1, $2, 'OLD TITLE', 'OLD DESC', 0, 'USD', 'ropa', '{}'::jsonb)`,
+        [sample.source, sample.source_product_id],
+      );
+      const before = await pg.query(`SELECT title, last_refreshed_at FROM products WHERE source=$1 AND source_product_id=$2`, [sample.source, sample.source_product_id]);
+      expect(before.rows[0].title).toBe("OLD TITLE");
+
+      // Process via pipeline → must update title to the mock's title
+      await processProduct(sample, pg);
+      const after = await pg.query(`SELECT title, last_refreshed_at FROM products WHERE source=$1 AND source_product_id=$2`, [sample.source, sample.source_product_id]);
+      expect(after.rows[0].title).toBe(sample.title);
+      expect(after.rows[0].title).not.toBe("OLD TITLE");
+      expect(new Date(after.rows[0].last_refreshed_at).getTime()).toBeGreaterThan(new Date(before.rows[0].last_refreshed_at).getTime());
+    });
+  }, 60_000);
 
   test("re-running same category does not duplicate (UPSERT) — products count is bounded", async () => {
     await withTestDb(async (pg) => {

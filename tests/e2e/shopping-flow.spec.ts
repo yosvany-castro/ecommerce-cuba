@@ -8,12 +8,18 @@ test.describe("shopping-flow", () => {
     await page.context().clearCookies();
     await page.goto("/");
     await expect(page.locator('[data-testid="product-card"]').first()).toBeVisible();
+
+    // Set up the response listener BEFORE clicking (so we don't miss the request)
+    const trackResponsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/track") && resp.request().method() === "POST",
+      { timeout: 10_000 },
+    );
     await page.locator('[data-testid="product-card"]').first().click();
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
 
     const anonId = (await page.context().cookies()).find((c) => c.name === "anonymous_id")!.value;
-    // Wait briefly for the async fetch to /api/track to settle
-    await page.waitForTimeout(1500);
+    // Wait for the product_view track call to complete
+    await trackResponsePromise;
 
     const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
     await c.connect();
@@ -40,8 +46,13 @@ test.describe("shopping-flow", () => {
 
     await page.goto("/");
     await page.locator('[data-testid="product-card"]').first().click();
+    // Set up the response listener BEFORE clicking add-to-cart
+    const cartResponsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/cart") && resp.request().method() === "PUT" && resp.status() === 200,
+      { timeout: 10_000 },
+    );
     await page.getByRole("button", { name: /agregar al carrito/i }).click();
-    await page.waitForTimeout(800);
+    await cartResponsePromise;
 
     await page.goto("/checkout");
     await page.getByRole("button", { name: /confirmar/i }).click();

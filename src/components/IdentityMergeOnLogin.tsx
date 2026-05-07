@@ -13,7 +13,9 @@ export function IdentityMergeOnLogin() {
 
   useEffect(() => {
     if (isLoading || !user) return;
-    const flag = `merge_done:${user.sub}`;
+    const anonId = getAnonymousId();
+    if (!anonId) return;
+    const flag = `merge_done:${user.sub}:${anonId}`;
     if (localStorage.getItem(flag) === "1") return;
 
     void (async () => {
@@ -21,7 +23,6 @@ export function IdentityMergeOnLogin() {
       if (!r1?.ok) return;
       localStorage.setItem(flag, "1");
 
-      const anonId = getAnonymousId();
       if (!anonId) return;
       const cartRaw = localStorage.getItem(`cart:${anonId}`);
       if (!cartRaw) return;

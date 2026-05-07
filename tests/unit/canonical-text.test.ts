@@ -34,6 +34,9 @@ describe("buildCanonicalText", () => {
     expect(text).toContain("electronica audifonos");
     expect(text).toContain("bluetooth");
     expect(text).toContain("ruido");
+    // Fix join structure — title, description, category, keywords joined by newlines
+    expect(text).toMatch(/Auriculares inalámbricos\nCancelación de ruido activa, batería 30h\n/);
+    expect(text.split("\n").filter(Boolean).length).toBe(4);  // 4 non-empty lines
   });
 
   test("two products with same title but different descriptions produce different canonical texts", () => {

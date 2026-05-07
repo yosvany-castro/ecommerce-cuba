@@ -29,13 +29,28 @@ describe("mergeLocalCartIntoUser", () => {
     });
   });
 
-  test("ignores invalid items (missing product, qty <=0)", async () => {
+  test("ignores items with invalid quantity (qty <= 0)", async () => {
     await withTestDb(async (pg) => {
       const user = await createUser(pg);
-      await mergeLocalCartIntoUser(pg, user.id, [
-        { product_id: "00000000-0000-0000-0000-000000000000", quantity: 1 }, // FK fail → silently skipped
-        { product_id: "any", quantity: 0 } as never, // qty<=0 skipped
+      const product = await seedProduct(pg);
+      const result = await mergeLocalCartIntoUser(pg, user.id, [
+        { product_id: product.id, quantity: 0 },
+        { product_id: product.id, quantity: -1 },
       ]);
+      expect(result.skipped).toBe(2);
+      expect(result.inserted).toBe(0);
+      const r = await pg.query(`SELECT count(*)::int FROM cart_items`);
+      expect(r.rows[0].count).toBe(0);
+    });
+  });
+
+  test("silently skips items whose product_id does not exist (FK violation)", async () => {
+    await withTestDb(async (pg) => {
+      const user = await createUser(pg);
+      const result = await mergeLocalCartIntoUser(pg, user.id, [
+        { product_id: "00000000-0000-0000-0000-000000000000", quantity: 1 },
+      ]);
+      expect(result.skipped).toBe(1);
       const r = await pg.query(`SELECT count(*)::int FROM cart_items`);
       expect(r.rows[0].count).toBe(0);
     });

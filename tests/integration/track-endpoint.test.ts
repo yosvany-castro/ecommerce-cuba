@@ -66,6 +66,7 @@ describe("POST /api/track", () => {
     );
     const res = await POST(req);
     expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: "no_identity" });
   });
 
   test("malformed envelope (unknown event_type) → 400 invalid_input", async () => {

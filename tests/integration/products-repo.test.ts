@@ -58,4 +58,21 @@ describe("products repository", () => {
       expect(empty).toEqual([]);
     });
   });
+
+  test("listByDate, getById, searchLike all exclude is_active=false products", async () => {
+    await withTestDb(async (pg) => {
+      const a = await seedProduct(pg, { title: "Active" });
+      const b = await seedProduct(pg, { title: "Inactive" });
+      await pg.query(`UPDATE products SET is_active=false WHERE id=$1`, [b.id]);
+
+      const list = await listByDate({ limit: 10, pg });
+      expect(list.map((p) => p.id)).toEqual([a.id]);
+
+      expect(await getById(b.id, pg)).toBeNull();
+      expect((await getById(a.id, pg))?.id).toBe(a.id);
+
+      const search = await searchLike({ query: "active", pg });
+      expect(search.map((p) => p.id)).toEqual([a.id]);
+    });
+  });
 });
