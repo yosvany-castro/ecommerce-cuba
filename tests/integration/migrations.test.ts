@@ -108,4 +108,28 @@ describe("migration runner", () => {
       ]),
     );
   });
+
+  it("events table has correct schema and indexes", async () => {
+    const cols = await client.query(`
+      SELECT column_name, data_type FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'events'
+    `);
+    const names = cols.rows.map((r) => r.column_name);
+    expect(names).toEqual(expect.arrayContaining([
+      "id", "client_event_id", "anonymous_id", "user_id", "session_id",
+      "event_type", "occurred_at", "payload", "source",
+    ]));
+
+    const idxs = await client.query(`
+      SELECT indexname FROM pg_indexes
+      WHERE schemaname = 'public' AND tablename = 'events'
+    `);
+    const idxNames = idxs.rows.map((r) => r.indexname);
+    expect(idxNames).toEqual(expect.arrayContaining([
+      "events_pkey",
+      "events_anon_time_idx",
+      "events_type_time_idx",
+      "events_session_idx",
+    ]));
+  });
 });
