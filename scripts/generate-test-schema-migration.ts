@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
-const OUT = join(MIGRATIONS_DIR, "0014_test_schema_replicate_v2.sql");
+const OUT = join(MIGRATIONS_DIR, "0016_test_schema_replicate_v3.sql");
 
 function isTableMigration(filename: string): boolean {
   const m = filename.match(/^(\d{4})_(.+)\.sql$/);
