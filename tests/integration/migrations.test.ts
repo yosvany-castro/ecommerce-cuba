@@ -155,4 +155,15 @@ describe("migration runner", () => {
     expect(byName.vector_unnormalized.udt_name).toBe("vector");
     expect(byName.weight_sum.udt_name).toMatch(/float8|double_precision/);
   });
+
+  it("co_occurrence enforces a < b and indexes are present", async () => {
+    // Constraint check must exist
+    const constraints = await client.query(`
+      SELECT conname, pg_get_constraintdef(oid) AS def
+      FROM pg_constraint
+      WHERE conrelid = 'public.co_occurrence'::regclass
+    `);
+    const defs = constraints.rows.map((r) => r.def).join("\n");
+    expect(defs).toMatch(/CHECK .*product_a_id\s*<\s*product_b_id/);
+  });
 });
