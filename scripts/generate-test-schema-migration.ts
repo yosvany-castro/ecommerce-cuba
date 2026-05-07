@@ -2,13 +2,13 @@
 /**
  * Reads all NNNN_*.sql migrations where NNNN >= 3 and the filename does NOT
  * include "test_schema_replicate", rewrites table/index references from
- * `public.` to `test_schema.`, and emits 0012_test_schema_replicate.sql.
+ * `public.` to `test_schema.`, and emits 0014_test_schema_replicate_v2.sql.
  */
 import { readFileSync, readdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
-const OUT = join(MIGRATIONS_DIR, "0012_test_schema_replicate.sql");
+const OUT = join(MIGRATIONS_DIR, "0014_test_schema_replicate_v2.sql");
 
 function isTableMigration(filename: string): boolean {
   const m = filename.match(/^(\d{4})_(.+)\.sql$/);
