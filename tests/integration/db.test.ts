@@ -25,11 +25,12 @@ describe("db clients", () => {
     }
   });
 
-  it("pg client search_path is just 'public' when scope is unspecified (default)", async () => {
+  it("pg client search_path is 'public, extensions' when scope is unspecified (default)", async () => {
     const pg = await getPgClient();
     try {
       const res = await pg.query(`SHOW search_path`);
-      expect(res.rows[0].search_path).toBe("public");
+      // Extensions schema needed for pgvector type access in queries
+      expect(res.rows[0].search_path).toMatch(/public,\s*extensions/);
       expect(res.rows[0].search_path).not.toContain("test_schema");
     } finally {
       await pg.end();
