@@ -64,6 +64,24 @@ describe("migration runner", () => {
     expect(colNames).toEqual(
       expect.arrayContaining(["id", "email", "name", "balance_cents", "created_at"]),
     );
+
+    const anonCols = await client.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'anonymous_sessions'`,
+    );
+    const anonNames = anonCols.rows.map((r) => r.column_name);
+    expect(anonNames).toEqual(
+      expect.arrayContaining(["anonymous_id", "user_id", "first_seen_at", "last_seen_at"]),
+    );
+
+    const recipientsCols = await client.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'recipients'`,
+    );
+    const recipientsNames = recipientsCols.rows.map((r) => r.column_name);
+    expect(recipientsNames).toEqual(
+      expect.arrayContaining(["id", "user_id", "name", "gender", "age", "address_cuba", "created_at"]),
+    );
   });
 
   it("products table exists with required columns including vector and tsvector", async () => {

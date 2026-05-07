@@ -14,11 +14,23 @@ describe("db clients", () => {
     expect(() => getSupabaseClient({ scope: "test" })).toThrow(/REST API/);
   });
 
-  it("pg client respects search_path for the chosen scope", async () => {
+  it("pg client search_path is 'test_schema, public' when scope='test'", async () => {
     const pg = await getPgClient({ scope: "test" });
     try {
       const res = await pg.query(`SHOW search_path`);
-      expect(res.rows[0].search_path).toContain("test_schema");
+      // Postgres normalizes the search_path output; accept both forms
+      expect(res.rows[0].search_path).toMatch(/test_schema,\s*public/);
+    } finally {
+      await pg.end();
+    }
+  });
+
+  it("pg client search_path is just 'public' when scope is unspecified (default)", async () => {
+    const pg = await getPgClient();
+    try {
+      const res = await pg.query(`SHOW search_path`);
+      expect(res.rows[0].search_path).toBe("public");
+      expect(res.rows[0].search_path).not.toContain("test_schema");
     } finally {
       await pg.end();
     }

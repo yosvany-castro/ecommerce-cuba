@@ -80,8 +80,9 @@ describe("mock aggregator", () => {
       catch { errors++; }
     }
     const rate = errors / N;
-    // 2% target with binomial variance allowance: tolerate 0% to 5%
-    expect(rate).toBeGreaterThanOrEqual(0);
+    // Lower bound: catch ERROR_RATE=0 mutation. Statistical: P(0 errors | 200 calls, 2%) ≈ 0.018,
+    // so we expect at least 1 error 98%+ of the time. Use 0.005 (1 error in 200) as floor.
+    expect(rate).toBeGreaterThanOrEqual(0.005);
     expect(rate).toBeLessThanOrEqual(0.05);
   }, 200 * 4500); // worst case 200 calls × 4.5s timeout
 });

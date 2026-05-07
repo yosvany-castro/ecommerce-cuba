@@ -32,5 +32,7 @@ describe("health endpoints (real)", () => {
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.model).toContain("claude-haiku");
+    expect(body.input_tokens).toBeGreaterThan(0);
+    expect(body.output_tokens).toBeGreaterThan(0);
   });
 });
