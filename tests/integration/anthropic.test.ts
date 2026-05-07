@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { sendMessage, MODELS } from "@/lib/llm/anthropic";
 
-describe("anthropic client (real API)", () => {
+const RUN = process.env.RUN_ANTHROPIC_HEALTH === "1";
+
+describe.skipIf(!RUN)("Anthropic SDK healthcheck", () => {
   it("sends a message and receives non-empty text response", async () => {
     const out = await sendMessage({
       model: MODELS.haiku,

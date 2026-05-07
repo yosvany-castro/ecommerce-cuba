@@ -1,4 +1,4 @@
-import { sendMessage, MODELS } from "@/lib/llm/anthropic";
+import { sendMessageDeepSeek, DEEPSEEK_MODELS } from "@/lib/llm/deepseek";
 import type { MockProduct } from "@/sectors/b-catalog/mock/types";
 import { PROMPT_VERSION, SYSTEM_PROMPT, normalizedSchema, type NormalizedFromLLM } from "./prompt";
 
@@ -27,13 +27,13 @@ export async function normalizeWithLLM(raw: MockProduct): Promise<NormalizedMeta
 
   let llmText = "";
   try {
-    const res = await sendMessage({
-      model: MODELS.haiku,
+    const res = await sendMessageDeepSeek({
+      model: DEEPSEEK_MODELS.flash,
       system: SYSTEM_PROMPT,
-      cacheSystem: true,
       messages: [{ role: "user", content: JSON.stringify(userPayload) }],
       maxTokens: 400,
       temperature: 0,
+      jsonMode: true,
     });
     llmText = stripMarkdownWrapper(res.text.trim());
     const parsed = JSON.parse(llmText);

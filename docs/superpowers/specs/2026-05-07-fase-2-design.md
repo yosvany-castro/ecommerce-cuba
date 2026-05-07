@@ -44,6 +44,7 @@ Per master doc Sección 9 + prompt Sección F:
 - **Skeleton:** server-side bloquea (Suspense), UI muestra animate-pulse + mensaje "podemos consultar nuestro proveedor externo".
 - **Phase 1 follow-ups:** ninguno bloqueante a priori; solo si surgen durante implementación.
 - **Branch:** `feat/fase-2-hybrid-search` nuevo desde `main` (después de mergear Fase 1). Si Fase 1 todavía no se merge, ramificar desde `feat/fase-1-tracking-catalog`.
+- **LLM provider:** DeepSeek `deepseek-v4-flash` por default para ambos normalizadores (producto Fase 1 + query Fase 2). ~13× más barato que Haiku 4.5. Anthropic Haiku se preserva en `src/lib/llm/anthropic.ts` para uso futuro en Fase 3c (reranker contextual) si la calidad de DeepSeek no es suficiente.
 
 ### 1.4 Out of scope (diferido)
 
@@ -191,21 +192,21 @@ export type NormalizedQuery = z.infer<typeof normalizedQuerySchema>;
 ### 3.2 normalize.ts
 
 ```ts
-import { sendMessage, MODELS } from "@/lib/llm/anthropic";
+import { sendMessageDeepSeek, DEEPSEEK_MODELS } from "@/lib/llm/deepseek";
 import { stripMarkdownWrapper } from "@/sectors/b-catalog/enrichment/normalizer"; // reutilizar helper de Fase 1
 
-export async function normalizeQueryWithLLM(
-  rawQuery: string,
-): Promise<NormalizedQuery & { prompt_version: string }> {
-  const res = await sendMessage({
-    model: MODELS.haiku,
+export async function normalizeQueryWithLLM(rawQuery: string): Promise<NormalizedQuery & { prompt_version: string }> {
+  const res = await sendMessageDeepSeek({
+    model: DEEPSEEK_MODELS.flash,
     system: SYSTEM_PROMPT,
-    cacheSystem: true,
+    cacheSystem: true,    // no-op for DeepSeek (server-side caching is automatic) — kept for interface compat
+    jsonMode: true,        // enforce response_format: { type: "json_object" }
     messages: [{ role: "user", content: rawQuery }],
     maxTokens: 300,
     temperature: 0,
   });
-  const parsed = JSON.parse(stripMarkdownWrapper(res.text));
+  const text = stripMarkdownWrapper(res.text);
+  const parsed = JSON.parse(text);
   return { ...normalizedQuerySchema.parse(parsed), prompt_version: PROMPT_VERSION };
 }
 ```

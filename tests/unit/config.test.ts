@@ -10,11 +10,13 @@ describe("config", () => {
     // Every required key should appear in the error message
     for (const k of [
       "SUPABASE_DB_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-      "ANTHROPIC_API_KEY", "VOYAGE_API_KEY", "AUTH0_DOMAIN", "AUTH0_CLIENT_ID",
+      "DEEPSEEK_API_KEY", "VOYAGE_API_KEY", "AUTH0_DOMAIN", "AUTH0_CLIENT_ID",
       "AUTH0_CLIENT_SECRET", "AUTH0_SECRET", "APP_BASE_URL",
     ]) {
       expect(caught!.message).toContain(k);
     }
+    // ANTHROPIC_API_KEY is now optional — must NOT appear in the error message
+    expect(caught!.message).not.toContain("ANTHROPIC_API_KEY");
   });
 
   test("accepts complete env and returns typed shape", () => {
@@ -22,7 +24,7 @@ describe("config", () => {
       SUPABASE_DB_URL: "postgres://x",
       NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
-      ANTHROPIC_API_KEY: "sk-ant-test",
+      DEEPSEEK_API_KEY: "ds-test-key",
       VOYAGE_API_KEY: "pa-test",
       AUTH0_DOMAIN: "x.auth0.com",
       AUTH0_CLIENT_ID: "cid",
@@ -31,12 +33,12 @@ describe("config", () => {
       APP_BASE_URL: "http://localhost:3000",
     };
     const cfg = loadConfig(env);
-    // Verify all 10 required fields are present and equal what we passed
+    // Verify all required fields are present and equal what we passed (ANTHROPIC_API_KEY is optional)
     expect(cfg).toMatchObject({
       SUPABASE_DB_URL: "postgres://x",
       NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
-      ANTHROPIC_API_KEY: "sk-ant-test",
+      DEEPSEEK_API_KEY: "ds-test-key",
       VOYAGE_API_KEY: "pa-test",
       AUTH0_DOMAIN: "x.auth0.com",
       AUTH0_CLIENT_ID: "cid",
@@ -46,12 +48,12 @@ describe("config", () => {
     });
   });
 
-  test("optional SUPABASE_SERVICE_ROLE_KEY is allowed missing", () => {
+  test("optional keys are allowed missing (SUPABASE_SERVICE_ROLE_KEY and ANTHROPIC_API_KEY)", () => {
     const env = {
       SUPABASE_DB_URL: "postgres://x",
       NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
-      ANTHROPIC_API_KEY: "sk-ant-test",
+      DEEPSEEK_API_KEY: "ds-test-key",
       VOYAGE_API_KEY: "pa-test",
       AUTH0_DOMAIN: "x.auth0.com",
       AUTH0_CLIENT_ID: "cid",
@@ -59,6 +61,8 @@ describe("config", () => {
       AUTH0_SECRET: "thirty-two-bytes-of-random-chars",
       APP_BASE_URL: "http://localhost:3000",
     };
-    expect(loadConfig(env).SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
+    const cfg = loadConfig(env);
+    expect(cfg.SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
+    expect(cfg.ANTHROPIC_API_KEY).toBeUndefined();
   });
 });

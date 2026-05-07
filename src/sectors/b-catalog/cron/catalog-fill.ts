@@ -14,6 +14,8 @@ export interface RunOptions {
   pagesPerCategory: number;
   concurrency?: number;
   pg: Client;
+  /** Override number of products per aggregator call. Default: 25. Use 2 in tests to minimize LLM cost. */
+  productsPerCallOverride?: number;
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -33,7 +35,7 @@ export async function runCatalogFill(opts: RunOptions): Promise<RunResult> {
       const t0 = Date.now();
       let result;
       try {
-        result = await fetchFromAggregator({ category });
+        result = await fetchFromAggregator({ category, limit: opts.productsPerCallOverride });
       } catch (e) {
         await opts.pg.query(
           `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)

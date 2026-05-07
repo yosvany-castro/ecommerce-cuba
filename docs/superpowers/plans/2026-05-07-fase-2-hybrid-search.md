@@ -143,10 +143,10 @@ Expected: `On branch feat/fase-2-hybrid-search`, clean working tree (or only `no
 
 Run:
 ```bash
-node -e "['SUPABASE_DB_URL','VOYAGE_API_KEY','ANTHROPIC_API_KEY','AUTH0_DOMAIN','AUTH0_CLIENT_ID','AUTH0_CLIENT_SECRET','AUTH0_SECRET','APP_BASE_URL','NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY'].forEach(k=>console.log(k+': '+(!!process.env[k])))" --env-file=.env.local
+node -e "['SUPABASE_DB_URL','VOYAGE_API_KEY','DEEPSEEK_API_KEY','AUTH0_DOMAIN','AUTH0_CLIENT_ID','AUTH0_CLIENT_SECRET','AUTH0_SECRET','APP_BASE_URL','NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY'].forEach(k=>console.log(k+': '+(!!process.env[k])))" --env-file=.env.local
 ```
 
-Expected: every line ends in `true`.
+Expected: every line ends in `true`. (ANTHROPIC_API_KEY is optional; DEEPSEEK_API_KEY is now required.)
 
 - [ ] **Step 3: Run Phase 1 baseline tests**
 
@@ -647,7 +647,7 @@ git push origin feat/fase-2-hybrid-search
 - Create: `src/sectors/c-search/normalizer/normalize.ts`
 - Create: `tests/integration/normalize-query.test.ts`
 
-**Goal:** LLM normalizer that wraps Anthropic Haiku with versioned prompt + zod schema. Real API tests verify schema validation, low-confidence garbage detection, and JSON robustness.
+**Goal:** LLM normalizer that wraps DeepSeek `deepseek-v4-flash` with versioned prompt + zod schema. Real API tests verify schema validation, low-confidence garbage detection, and JSON robustness.
 
 - [ ] **Step 1: Implement prompt + schema**
 
@@ -698,7 +698,7 @@ export type NormalizedQuery = z.infer<typeof normalizedQuerySchema>;
 Create `src/sectors/c-search/normalizer/normalize.ts`:
 
 ```ts
-import { sendMessage, MODELS } from "@/lib/llm/anthropic";
+import { sendMessageDeepSeek, DEEPSEEK_MODELS } from "@/lib/llm/deepseek";
 import { stripMarkdownWrapper } from "@/sectors/b-catalog/enrichment/normalizer";
 import {
   PROMPT_VERSION,
@@ -707,13 +707,12 @@ import {
   type NormalizedQuery,
 } from "./prompt";
 
-export async function normalizeQueryWithLLM(
-  rawQuery: string,
-): Promise<NormalizedQuery & { prompt_version: string }> {
-  const res = await sendMessage({
-    model: MODELS.haiku,
+export async function normalizeQueryWithLLM(rawQuery: string): Promise<NormalizedQuery & { prompt_version: string }> {
+  const res = await sendMessageDeepSeek({
+    model: DEEPSEEK_MODELS.flash,
     system: SYSTEM_PROMPT,
-    cacheSystem: true,
+    cacheSystem: true,    // no-op for DeepSeek (server-side caching is automatic) — kept for interface compat
+    jsonMode: true,        // enforce response_format: { type: "json_object" }
     messages: [{ role: "user", content: rawQuery }],
     maxTokens: 300,
     temperature: 0,
@@ -732,7 +731,7 @@ Create `tests/integration/normalize-query.test.ts`:
 import { describe, test, expect } from "vitest";
 import { normalizeQueryWithLLM } from "@/sectors/c-search/normalizer/normalize";
 
-describe("normalizeQueryWithLLM (REAL Anthropic Haiku)", () => {
+describe("normalizeQueryWithLLM (REAL DeepSeek flash)", () => {
   test("clear gift query: 'regalo para mi sobrina de 8 años'", async () => {
     const r = await normalizeQueryWithLLM("regalo para mi sobrina de 8 años");
     expect(r.intent).toBe("regalo");

@@ -13,7 +13,7 @@ export interface FetchResult {
   latency_ms: number;
 }
 
-const PRODUCTS_PER_CALL = 25;
+const DEFAULT_PRODUCTS_PER_CALL = 25; // matches real-API spec; overridable for tests via opts.limit
 const COST_PER_CALL_CENTS = 4;
 const ERROR_RATE = 0.02;
 const LATENCY_MIN_MS = 2000;
@@ -35,6 +35,7 @@ function delay(ms: number): Promise<void> {
 }
 
 export async function fetchFromAggregator(opts: FetchOptions = {}): Promise<FetchResult> {
+  const N = opts.limit ?? DEFAULT_PRODUCTS_PER_CALL;
   callCount++;
   const t0 = performance.now();
   const wait = jitterMs();
@@ -63,9 +64,9 @@ export async function fetchFromAggregator(opts: FetchOptions = {}): Promise<Fetc
     };
   }
 
-  // Random sample of size PRODUCTS_PER_CALL with replacement-from-pool
+  // Random sample of size N with replacement-from-pool
   const out: MockProduct[] = [];
-  for (let i = 0; i < PRODUCTS_PER_CALL; i++) {
+  for (let i = 0; i < N; i++) {
     out.push(pool[Math.floor(Math.random() * pool.length)]);
   }
 

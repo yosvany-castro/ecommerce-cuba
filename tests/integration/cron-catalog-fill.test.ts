@@ -12,7 +12,7 @@ beforeEach(async () => {
 describe("runCatalogFill (REAL APIs)", () => {
   test("--pages 1 --categories ropa: 1 mock_calls row + cost_cents=4", async () => {
     await withTestDb(async (pg) => {
-      const r = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg });
+      const r = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg, productsPerCallOverride: 2 });
       expect(r.totalCalls).toBe(1);
       const calls = await pg.query(
         `SELECT simulated_cost_cents, response_size, was_error FROM mock_calls ORDER BY called_at`,
@@ -27,7 +27,7 @@ describe("runCatalogFill (REAL APIs)", () => {
         expect(r.totalProducts).toBe(0);
       } else {
         expect(r.totalProducts).toBeGreaterThan(0);
-        expect(r.totalProducts).toBeLessThanOrEqual(25);
+        expect(r.totalProducts).toBeLessThanOrEqual(2);
       }
     });
   }, 120_000);
@@ -55,15 +55,15 @@ describe("runCatalogFill (REAL APIs)", () => {
 
   test("re-running same category does not duplicate (UPSERT) — products count is bounded", async () => {
     await withTestDb(async (pg) => {
-      const a = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg });
+      const a = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg, productsPerCallOverride: 2 });
       const c1 = (await pg.query(`SELECT count(*)::int FROM products`)).rows[0].count;
-      const b = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg });
+      const b = await runCatalogFill({ categories: ["ropa"], pagesPerCategory: 1, concurrency: 3, pg, productsPerCallOverride: 2 });
       const c2 = (await pg.query(`SELECT count(*)::int FROM products`)).rows[0].count;
 
       // Both calls write to mock_calls (so 2 calls), but the mock samples WITH replacement from the same pool —
-      // products may overlap and dedupe. c2 should be >= c1 but never grow by 25 if there are repeats.
+      // products may overlap and dedupe. c2 should be >= c1 but never grow by 2 if there are repeats.
       expect(c2).toBeGreaterThanOrEqual(c1);
-      expect(c2).toBeLessThanOrEqual(50);
+      expect(c2).toBeLessThanOrEqual(4);
 
       const calls = await pg.query(`SELECT count(*)::int FROM mock_calls`);
       expect(calls.rows[0].count).toBe(2);
