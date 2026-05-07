@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { eventInputSchema } from "@/sectors/a-tracking/events/schema";
 import { insertEvent } from "@/sectors/a-tracking/events/insert";
 import { withPg } from "@/lib/db/helpers";
+import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -30,8 +31,15 @@ export async function POST(req: NextRequest) {
     throw e;
   }
 
-  // user_id resolution from Auth0 deferred to Task 14 — Phase 1 starting state: always null.
-  const user_id: string | null = null;
+  // Resolve user_id from Auth0 session if logged in.
+  let user_id: string | null = null;
+  const auth0Session = await auth0.getSession(req).catch(() => null);
+  if (auth0Session?.user?.sub) {
+    const sub = auth0Session.user.sub as string;
+    const email = (auth0Session.user.email as string) ?? `${sub}@noemail.local`;
+    const name = (auth0Session.user.name as string | null) ?? null;
+    user_id = await withPg(async (pg) => (await getOrCreateUserByAuth0Sub(pg, sub, email, name)).id);
+  }
 
   try {
     const result = await withPg((pg) =>
