@@ -62,3 +62,32 @@ export async function removeCartItem(
 export async function clearCart(pg: Client, userId: string): Promise<void> {
   await pg.query(`DELETE FROM cart_items WHERE user_id = $1`, [userId]);
 }
+
+export async function mergeLocalCartIntoUser(
+  pg: Client,
+  userId: string,
+  items: { product_id: string; quantity: number }[],
+): Promise<{ inserted: number; skipped: number }> {
+  let inserted = 0;
+  let skipped = 0;
+  for (const item of items) {
+    if (typeof item.product_id !== "string" || typeof item.quantity !== "number" || item.quantity < 1) {
+      skipped++;
+      continue;
+    }
+    try {
+      await pg.query(
+        `INSERT INTO cart_items (user_id, product_id, quantity)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, product_id) DO UPDATE SET
+           quantity = cart_items.quantity + EXCLUDED.quantity,
+           updated_at = now()`,
+        [userId, item.product_id, item.quantity],
+      );
+      inserted++;
+    } catch (e) {
+      skipped++;
+    }
+  }
+  return { inserted, skipped };
+}
