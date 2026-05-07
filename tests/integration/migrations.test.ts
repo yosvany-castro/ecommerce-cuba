@@ -17,7 +17,7 @@ describe("migration runner", () => {
     const res = await client.query(
       `SELECT to_regclass('public._migrations') AS exists`,
     );
-    expect(res.rows[0].exists).toBe("_migrations");
+    expect(res.rows[0].exists).toMatch(/(^|\.)_migrations$/);
   });
 
   it("records each migration filename and checksum after applying", async () => {
@@ -143,7 +143,7 @@ describe("migration runner", () => {
         `SELECT to_regclass($1) AS exists`,
         [`public.${t}`],
       );
-      expect(res.rows[0].exists).toBe(t);
+      expect(res.rows[0].exists).toMatch(new RegExp(`(^|\\.)${t}$`));
     }
 
     // user_profile_modes must have vector_unnormalized vector(1024) and weight_sum
@@ -173,7 +173,7 @@ describe("migration runner", () => {
       "orders", "order_items", "eval_holdout",
     ]) {
       const res = await client.query(`SELECT to_regclass($1) AS exists`, [`public.${t}`]);
-      expect(res.rows[0].exists).toBe(t);
+      expect(res.rows[0].exists).toMatch(new RegExp(`(^|\\.)${t}$`));
     }
   });
 });

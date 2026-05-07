@@ -1,3 +1,9 @@
+/**
+ * Supabase JS client for app code (server components, route handlers).
+ * For test_schema access in integration tests, prefer getPgClient() — the REST
+ * API only exposes schemas configured in the Supabase dashboard, while pg client
+ * goes direct to Postgres and respects any schema in search_path.
+ */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export type Scope = "public" | "test";
@@ -10,22 +16,19 @@ if (!url || !anonKey) {
   throw new Error("Supabase env vars missing (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)");
 }
 
-// The Supabase dashboard exposes test_schema as "test" in the API.
-// Direct pg connections use the full schema name "test_schema".
-// The "test" schema tables are only accessible with the service role key (no anon grants).
-const SUPABASE_SCHEMA_ALIAS: Record<Scope, string> = {
-  public: "public",
-  test: "test",
-};
-
 export function getSupabaseClient(opts: { scope?: Scope; admin?: boolean } = {}): SupabaseClient {
   const { scope = "public", admin = false } = opts;
-  // "test" scope requires service role because the test schema has no anon grants
-  const needsAdmin = admin || scope === "test";
-  const key = needsAdmin ? serviceKey : anonKey;
-  if (needsAdmin && !serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY required for admin or test-scope client");
+  if (scope === "test") {
+    throw new Error(
+      "getSupabaseClient({ scope: 'test' }) is not supported: the Supabase REST API " +
+      "only exposes schemas configured in the dashboard (public by default). " +
+      "For integration tests against test_schema, use getPgClient({ scope: 'test' }) instead."
+    );
+  }
+  const key = admin ? serviceKey : anonKey;
+  if (admin && !serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY required for admin client");
   return createClient(url, key, {
-    db: { schema: SUPABASE_SCHEMA_ALIAS[scope] as never },
+    db: { schema: "public" },
     auth: { persistSession: false },
   });
 }
