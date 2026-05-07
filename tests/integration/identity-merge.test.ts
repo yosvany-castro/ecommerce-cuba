@@ -60,7 +60,6 @@ describe("mergeIdentities", () => {
 
   test("does NOT overwrite events of a DIFFERENT user (caches the WHERE user_id IS NULL guard)", async () => {
     await withTestDb(async (pg) => {
-      const product = await seedProduct(pg);
       const userA = await createUser(pg, { email: "a@x.com" });
       const userB = await createUser(pg, { email: "b@x.com" });
 
