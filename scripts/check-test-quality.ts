@@ -79,10 +79,20 @@ async function main() {
         if (callText === "vi.mock" || callText === "jest.mock") {
           const arg = node.getArguments()[0]?.getText() ?? "";
           const allowed = arg.includes("sectors/b-catalog/mock");
-          // Allow "fake timers" via vi.useFakeTimers (different call shape)
           if (!allowed) {
-            const banned = ["@/lib/db", "@/lib/llm", "@/lib/embeddings", "@/lib/auth"];
-            if (banned.some((b) => arg.includes(b))) {
+            // Banned: any module that wraps a real external dep we want exercised in tests.
+            const bannedPrefixes = [
+              "@/lib/db", "@/lib/llm", "@/lib/embeddings", "@/lib/auth",
+              "@/sectors/a-tracking",       // identity, events, merge
+              "@/sectors/b-catalog/enrichment",
+              "@/sectors/b-catalog/cron",
+              "@/sectors/b-catalog/repository",
+            ];
+            const bannedBareModules = ["pg", "@supabase/supabase-js", "@anthropic-ai/sdk", "@auth0/nextjs-auth0"];
+            if (
+              bannedPrefixes.some((b) => arg.includes(b)) ||
+              bannedBareModules.some((b) => arg === `"${b}"` || arg === `'${b}'`)
+            ) {
               record("R3-prohibited-mock", node, filePath);
             }
           }
