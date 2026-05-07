@@ -11,6 +11,9 @@ import { rrfFuse, RRF_K0, type FusedProduct, type RankedProduct } from "./retrie
 import { shouldCallMock } from "./decide/shouldCallMock";
 import { persistSearch, type SearchMethod } from "./persist/searches";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
+import { fetchFromAggregator } from "@/sectors/b-catalog/mock/aggregator";
+import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
+import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 
 const RETRIEVE_K = 50;
 
@@ -117,12 +120,67 @@ export async function hybridSearch(rawQuery: string, ctx: HybridSearchCtx): Prom
   ]);
 
   // 6. Fuse
-  const fused: FusedProduct[] = rrfFuse([bm25, cos], RRF_K0);
+  let fused: FusedProduct[] = rrfFuse([bm25, cos], RRF_K0);
   let calledMock = false;
 
-  // 7. Mock fallback (Task 14b will enable this; currently no-op)
+  // 7. Mock fallback: fetch external products, enrich via pipeline, re-run retrieval
   if (normalized && shouldCallMock(fused.length, normalized.confidence)) {
-    // Implementation deferred to Task 14b
+    try {
+      const limitOverride = process.env.HYBRID_SEARCH_MOCK_LIMIT
+        ? parseInt(process.env.HYBRID_SEARCH_MOCK_LIMIT, 10)
+        : undefined;
+      const t0 = Date.now();
+      const mockResult = await fetchFromAggregator({
+        category: normalized.categories?.[0] as MockCategory | undefined,
+        // Do not pass query: the mock fixture has static templates that won't
+        // substring-match arbitrary normalized search_terms, so we rely on
+        // category-level sampling to fill the catalogue.
+        limit: limitOverride,
+      });
+      // Log mock call in mock_calls table
+      await pg.query(
+        `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
+         VALUES ($1::jsonb, $2, $3, $4, false)`,
+        [
+          JSON.stringify({ source: "hybrid_search_fallback", query: normalized.search_terms }),
+          mockResult.products.length,
+          mockResult.cost_cents,
+          Math.round(Date.now() - t0),
+        ],
+      );
+      // Dedup raw products by source_product_id (mock samples with replacement)
+      const seen = new Set<string>();
+      for (const raw of mockResult.products) {
+        const key = `${raw.source}:${raw.source_product_id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        try {
+          await processProduct(raw, pg);
+        } catch {
+          // single product failure does not abort the fallback
+        }
+      }
+      calledMock = true;
+      // Re-run BM25 + cosine with the new products in DB
+      const [bm25Re, cosRe] = await Promise.all([
+        bm25Search(searchTerms, filters, RETRIEVE_K, pg),
+        cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg),
+      ]);
+      fused = rrfFuse([bm25Re, cosRe], RRF_K0);
+    } catch {
+      // Log the failed call to mock_calls too
+      try {
+        await pg.query(
+          `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
+           VALUES ($1::jsonb, 0, 4, 0, true)`,
+          [JSON.stringify({ source: "hybrid_search_fallback", query: normalized.search_terms })],
+        );
+      } catch {
+        // don't crash if logging also fails
+      }
+      // mock 2% error rate is documented; don't crash the request
+      calledMock = true;
+    }
   }
 
   const method = deriveMethod(bm25, cos);
