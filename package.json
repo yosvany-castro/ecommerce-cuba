@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
+    "cron:catalog-fill": "tsx scripts/cron-catalog-fill.ts",
     "start": "next start",
     "lint": "eslint --no-error-on-unmatched-pattern src tests scripts",
     "typecheck": "tsc --noEmit",
