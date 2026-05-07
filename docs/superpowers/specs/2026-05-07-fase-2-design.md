@@ -19,7 +19,8 @@
 - `processProduct` pipeline (LLM normalize + Voyage embed + UPSERT) — reutilizado en mock fallback.
 - `events` table: el SearchTracker (cliente) emite evento `search` con `method='hybrid_rrf'` (en lugar de `'like'`).
 - Voyage `embed()` — para embedding de queries en cache semántico + cosine search.
-- Anthropic `sendMessage()` con `cacheSystem: true` — para LLM normalizer con prompt cached.
+- LLM provider abstraction: `src/lib/llm/providers/` con `LLMProvider` interface, `deepseekFlashProvider` (default, runtime), `anthropicHaikuProvider` (dormante para uso futuro). Wrappers de bajo nivel `src/lib/llm/{anthropic,deepseek}.ts` preservados.
+- Normalizer Fase 1 (`src/sectors/b-catalog/enrichment/normalizer.ts`): acepta `provider: LLMProvider = defaultProvider` opcional, llama `provider.chat()`.
 
 ### 1.2 Lo que Fase 2 debe añadir
 
@@ -45,6 +46,7 @@ Per master doc Sección 9 + prompt Sección F:
 - **Phase 1 follow-ups:** ninguno bloqueante a priori; solo si surgen durante implementación.
 - **Branch:** `feat/fase-2-hybrid-search` nuevo desde `main` (después de mergear Fase 1). Si Fase 1 todavía no se merge, ramificar desde `feat/fase-1-tracking-catalog`.
 - **LLM provider:** DeepSeek `deepseek-v4-flash` por default para ambos normalizadores (producto Fase 1 + query Fase 2). ~13× más barato que Haiku 4.5. Anthropic Haiku se preserva en `src/lib/llm/anthropic.ts` para uso futuro en Fase 3c (reranker contextual) si la calidad de DeepSeek no es suficiente.
+- **Adapter pattern para LLM providers:** consumidores (normalizers) dependen de la interface `LLMProvider`, no del provider concreto. Switch global = cambiar el binding en `src/lib/llm/providers/index.ts`. Switch por-call = pasar un provider distinto como argumento. Permite que Fase 3c (reranker) use `anthropicHaikuProvider` localmente sin tocar la Fase 2.
 
 ### 1.4 Out of scope (diferido)
 
@@ -192,15 +194,23 @@ export type NormalizedQuery = z.infer<typeof normalizedQuerySchema>;
 ### 3.2 normalize.ts
 
 ```ts
-import { sendMessageDeepSeek, DEEPSEEK_MODELS } from "@/lib/llm/deepseek";
-import { stripMarkdownWrapper } from "@/sectors/b-catalog/enrichment/normalizer"; // reutilizar helper de Fase 1
+import { defaultProvider, type LLMProvider } from "@/lib/llm/providers";
+import { stripMarkdownWrapper } from "@/sectors/b-catalog/enrichment/normalizer";
+import {
+  PROMPT_VERSION,
+  SYSTEM_PROMPT,
+  normalizedQuerySchema,
+  type NormalizedQuery,
+} from "./prompt";
 
-export async function normalizeQueryWithLLM(rawQuery: string): Promise<NormalizedQuery & { prompt_version: string }> {
-  const res = await sendMessageDeepSeek({
-    model: DEEPSEEK_MODELS.flash,
+export async function normalizeQueryWithLLM(
+  rawQuery: string,
+  provider: LLMProvider = defaultProvider,
+): Promise<NormalizedQuery & { prompt_version: string }> {
+  const res = await provider.chat({
     system: SYSTEM_PROMPT,
-    cacheSystem: true,    // no-op for DeepSeek (server-side caching is automatic) — kept for interface compat
-    jsonMode: true,        // enforce response_format: { type: "json_object" }
+    cacheSystem: true,    // honored by Anthropic; ignored by DeepSeek (server-side automatic)
+    jsonMode: true,        // enforced via response_format on DeepSeek
     messages: [{ role: "user", content: rawQuery }],
     maxTokens: 300,
     temperature: 0,

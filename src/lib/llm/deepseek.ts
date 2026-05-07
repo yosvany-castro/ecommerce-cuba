@@ -17,8 +17,16 @@ import OpenAI from "openai";
 import type { SendMessageInput, SendMessageOutput } from "./anthropic";
 
 export const DEEPSEEK_MODELS = {
-  flash: "deepseek-v4-flash", // non-thinking, cheap, JSON-good
-  pro: "deepseek-v4-pro", // reasoning, more expensive, defer to future tasks
+  /**
+   * Non-thinking mode for cheap JSON extraction. Uses the legacy alias
+   * `deepseek-chat` (DeepSeek-V3 non-thinking) which deprecates 2026-07-24.
+   * Before that date: migrate to `deepseek-v4-flash` with the appropriate
+   * non-thinking parameter — consult api-docs.deepseek.com at migration time.
+   * Tested non-thinking returns content directly (no reasoning_content burn).
+   */
+  flash: "deepseek-chat",
+  /** Reasoning model — reserved for future use, not currently called. */
+  pro: "deepseek-v4-pro",
 } as const;
 
 let _client: OpenAI | null = null;

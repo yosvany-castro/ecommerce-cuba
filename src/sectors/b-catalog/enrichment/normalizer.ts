@@ -1,4 +1,4 @@
-import { sendMessageDeepSeek, DEEPSEEK_MODELS } from "@/lib/llm/deepseek";
+import { defaultProvider, type LLMProvider } from "@/lib/llm/providers";
 import type { MockProduct } from "@/sectors/b-catalog/mock/types";
 import { PROMPT_VERSION, SYSTEM_PROMPT, normalizedSchema, type NormalizedFromLLM } from "./prompt";
 
@@ -10,33 +10,37 @@ export interface NormalizedMetadata extends Omit<NormalizedFromLLM, "enrichment_
   prompt_version: string;
 }
 
-function stripMarkdownWrapper(text: string): string {
+export function stripMarkdownWrapper(text: string): string {
   // Strip ```json ... ``` or ``` ... ``` wrappers that some models emit
   const match = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   return match ? match[1] : text;
 }
 
-export async function normalizeWithLLM(raw: MockProduct): Promise<NormalizedMetadata> {
-  const userPayload = {
+export async function normalizeWithLLM(
+  raw: MockProduct,
+  provider: LLMProvider = defaultProvider,
+): Promise<NormalizedMetadata> {
+  const userMsg = JSON.stringify({
     title: raw.title,
     description: raw.description,
     raw_category: raw.raw_category,
     brand: raw.brand,
     attributes: raw.attributes,
-  };
+  });
 
   let llmText = "";
   try {
-    const res = await sendMessageDeepSeek({
-      model: DEEPSEEK_MODELS.flash,
+    const res = await provider.chat({
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: JSON.stringify(userPayload) }],
+      cacheSystem: true,
+      jsonMode: true,
+      messages: [{ role: "user", content: userMsg }],
       maxTokens: 400,
       temperature: 0,
-      jsonMode: true,
     });
-    llmText = stripMarkdownWrapper(res.text.trim());
-    const parsed = JSON.parse(llmText);
+    llmText = res.text;
+    const cleaned = stripMarkdownWrapper(llmText);
+    const parsed = JSON.parse(cleaned);
     const valid = normalizedSchema.parse(parsed);
     return { ...valid, prompt_version: PROMPT_VERSION };
   } catch (e) {

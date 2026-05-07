@@ -698,7 +698,7 @@ export type NormalizedQuery = z.infer<typeof normalizedQuerySchema>;
 Create `src/sectors/c-search/normalizer/normalize.ts`:
 
 ```ts
-import { sendMessageDeepSeek, DEEPSEEK_MODELS } from "@/lib/llm/deepseek";
+import { defaultProvider, type LLMProvider } from "@/lib/llm/providers";
 import { stripMarkdownWrapper } from "@/sectors/b-catalog/enrichment/normalizer";
 import {
   PROMPT_VERSION,
@@ -707,12 +707,14 @@ import {
   type NormalizedQuery,
 } from "./prompt";
 
-export async function normalizeQueryWithLLM(rawQuery: string): Promise<NormalizedQuery & { prompt_version: string }> {
-  const res = await sendMessageDeepSeek({
-    model: DEEPSEEK_MODELS.flash,
+export async function normalizeQueryWithLLM(
+  rawQuery: string,
+  provider: LLMProvider = defaultProvider,
+): Promise<NormalizedQuery & { prompt_version: string }> {
+  const res = await provider.chat({
     system: SYSTEM_PROMPT,
-    cacheSystem: true,    // no-op for DeepSeek (server-side caching is automatic) — kept for interface compat
-    jsonMode: true,        // enforce response_format: { type: "json_object" }
+    cacheSystem: true,    // honored by Anthropic; ignored by DeepSeek (server-side automatic)
+    jsonMode: true,        // enforced via response_format on DeepSeek
     messages: [{ role: "user", content: rawQuery }],
     maxTokens: 300,
     temperature: 0,
