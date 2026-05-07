@@ -21,8 +21,14 @@ export async function proxy(req: NextRequest) {
   const authRes = await auth0.middleware(req);
   // Merge cookies: copy any Set-Cookie from authRes onto our res.
   authRes.cookies.getAll().forEach((c) => res.cookies.set(c.name, c.value, c));
-  // Preserve auth0 redirect (e.g. /auth/callback) if it set a status.
-  if (authRes.status >= 300 && authRes.status < 400) {
+  // Forward auth0-owned responses: redirects (/auth/callback) and terminal
+  // responses like /auth/profile (200 JSON, 401, 204) that must NOT fall
+  // through to the Next.js page router.
+  const pathname = req.nextUrl.pathname;
+  if (
+    authRes.status >= 300 ||
+    pathname.startsWith("/auth/")
+  ) {
     return authRes;
   }
   return res;
