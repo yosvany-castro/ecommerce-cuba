@@ -43,6 +43,12 @@ describe("mock aggregator", () => {
     for (const p of res.products) expect(p.raw_category).toBe("electronica");
   });
 
+  it("returns empty products array when query matches nothing", async () => {
+    const res = await fetchFromAggregator({ query: "xyzzz_nothing_matches_this_xyzzz" });
+    expect(res.products).toHaveLength(0);
+    expect(res.cost_cents).toBe(4); // still counts as a call
+  });
+
   it("latency is between 2 and 4 seconds (5 measurements)", async () => {
     const ts: number[] = [];
     for (let i = 0; i < 5; i++) {

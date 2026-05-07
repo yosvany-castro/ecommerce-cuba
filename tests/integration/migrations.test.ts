@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "pg";
 
 describe("migration runner", () => {
@@ -7,6 +7,10 @@ describe("migration runner", () => {
   beforeAll(async () => {
     client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
     await client.connect();
+  });
+
+  afterAll(async () => {
+    await client.end();
   });
 
   it("creates _migrations table on first run", async () => {

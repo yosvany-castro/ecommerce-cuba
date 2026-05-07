@@ -1,12 +1,15 @@
 /**
  * Requires `pnpm dev` running on http://localhost:3000.
- * Run before phase close: `pnpm dev &; sleep 8; pnpm test:integration tests/integration/health.test.ts`
+ * Run before phase close: `pnpm dev &; sleep 8; TEST_HEALTH_ENDPOINTS=1 pnpm test:integration tests/integration/health.test.ts`
+ *
+ * Skipped by default to avoid CI/connection-refused failures.
  */
 import { describe, it, expect } from "vitest";
 
 const BASE = "http://localhost:3000";
+const RUN = process.env.TEST_HEALTH_ENDPOINTS === "1";
 
-describe("health endpoints (real)", () => {
+describe.skipIf(!RUN)("health endpoints (real)", () => {
   it("/api/health/db returns ok with extension and table count", async () => {
     const res = await fetch(`${BASE}/api/health/db`);
     expect(res.ok).toBe(true);

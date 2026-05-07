@@ -55,6 +55,14 @@ export async function fetchFromAggregator(opts: FetchOptions = {}): Promise<Fetc
     );
   }
 
+  if (pool.length === 0) {
+    return {
+      products: [],
+      cost_cents: COST_PER_CALL_CENTS,
+      latency_ms: performance.now() - t0,
+    };
+  }
+
   // Random sample of size PRODUCTS_PER_CALL with replacement-from-pool
   const out: MockProduct[] = [];
   for (let i = 0; i < PRODUCTS_PER_CALL; i++) {

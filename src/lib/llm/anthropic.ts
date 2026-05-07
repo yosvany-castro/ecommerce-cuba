@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { TextBlock, TextBlockParam } from "@anthropic-ai/sdk/resources/messages/messages";
 
 export const MODELS = {
   sonnet: "claude-sonnet-4-6",
@@ -34,21 +35,22 @@ export interface SendMessageOutput {
 }
 
 export async function sendMessage(input: SendMessageInput): Promise<SendMessageOutput> {
-  const sys = input.cacheSystem
-    ? [{ type: "text" as const, text: input.system, cache_control: { type: "ephemeral" as const } }]
-    : input.system;
+  const sys: string | Array<TextBlockParam> =
+    input.cacheSystem
+      ? [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }]
+      : input.system;
 
   const res = await client().messages.create({
     model: input.model,
     max_tokens: input.maxTokens,
     temperature: input.temperature ?? 0,
-    system: sys as never, // SDK accepts string or array of blocks
+    system: sys,
     messages: input.messages,
   });
 
   const text = res.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as { text: string }).text)
+    .filter((b): b is TextBlock => b.type === "text")
+    .map((b) => b.text)
     .join("");
 
   return {
