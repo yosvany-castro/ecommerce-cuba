@@ -43,4 +43,26 @@ describe("migration runner", () => {
     );
     expect(res.rows).toHaveLength(1);
   });
+
+  it("core tables exist with required columns", async () => {
+    const tables = ["users", "anonymous_sessions", "recipients"];
+    for (const t of tables) {
+      const res = await client.query(
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = $1
+         ORDER BY ordinal_position`,
+        [t],
+      );
+      expect(res.rows.length).toBeGreaterThan(0);
+    }
+
+    const usersCols = await client.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'users'`,
+    );
+    const colNames = usersCols.rows.map((r) => r.column_name);
+    expect(colNames).toEqual(
+      expect.arrayContaining(["id", "email", "name", "balance_cents", "created_at"]),
+    );
+  });
 });
