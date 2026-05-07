@@ -28,4 +28,19 @@ describe("migration runner", () => {
     expect(res.rows[0].filename).toMatch(/^\d{4}_/);
     expect(res.rows[0].checksum).toMatch(/^[a-f0-9]{64}$/); // sha256 hex
   });
+
+  it("vector extension is active", async () => {
+    const res = await client.query(
+      `SELECT extname, extversion FROM pg_extension WHERE extname = 'vector'`,
+    );
+    expect(res.rows).toHaveLength(1);
+    expect(res.rows[0].extname).toBe("vector");
+  });
+
+  it("test_schema exists", async () => {
+    const res = await client.query(
+      `SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'test_schema'`,
+    );
+    expect(res.rows).toHaveLength(1);
+  });
 });
