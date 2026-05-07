@@ -65,4 +65,47 @@ describe("migration runner", () => {
       expect.arrayContaining(["id", "email", "name", "balance_cents", "created_at"]),
     );
   });
+
+  it("products table exists with required columns including vector and tsvector", async () => {
+    const res = await client.query(
+      `SELECT column_name, data_type, udt_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'products'
+       ORDER BY ordinal_position`,
+    );
+    expect(res.rows.length).toBeGreaterThan(0);
+
+    const colNames = res.rows.map((r: { column_name: string }) => r.column_name);
+    expect(colNames).toEqual(
+      expect.arrayContaining([
+        "id",
+        "source",
+        "source_product_id",
+        "title",
+        "description",
+        "price_cents",
+        "currency",
+        "embedding",
+        "tsvector_es",
+        "is_active",
+        "created_at",
+      ]),
+    );
+  });
+
+  it("products indexes exist (tsvector GIN, HNSW, metadata GIN)", async () => {
+    const res = await client.query(
+      `SELECT indexname FROM pg_indexes
+       WHERE schemaname = 'public' AND tablename = 'products'
+       ORDER BY indexname`,
+    );
+    const indexNames = res.rows.map((r: { indexname: string }) => r.indexname);
+    expect(indexNames).toEqual(
+      expect.arrayContaining([
+        "products_tsvector_idx",
+        "products_embedding_hnsw_idx",
+        "products_metadata_gin_idx",
+      ]),
+    );
+  });
 });
