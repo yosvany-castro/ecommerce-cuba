@@ -71,9 +71,8 @@ describe("mock aggregator", () => {
     expect(getCallCount()).toBe(3);
   });
 
-  // Long-running: only when CI_FULL is set
-  const longRunIt = process.env.CI_FULL === "1" ? it : it.skip;
-  longRunIt("error rate is approximately 2% over 200 calls (±3%)", async () => {
+  // Long-running: only when CI_FULL=1 is set; skip otherwise
+  it.skipIf(process.env.CI_FULL !== "1")("error rate is approximately 2% over 200 calls (±3%)", async () => {
     let errors = 0;
     const N = 200;
     for (let i = 0; i < N; i++) {

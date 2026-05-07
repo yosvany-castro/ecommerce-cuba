@@ -31,15 +31,26 @@ async function main() {
   for (const filePath of files) {
     const sf = project.addSourceFileAtPath(filePath);
     sf.forEachDescendant((node) => {
-      // Rule 7: .skip / .only / xit (only on test globals)
+      // Rule 7: .skip / .only / xit (only on test globals, only if UNCONDITIONALLY called)
       if (Node.isPropertyAccessExpression(node)) {
         const name = node.getName();
         const obj = node.getExpression().getText();
         const TEST_GLOBALS = ["it", "test", "describe", "fit", "fdescribe", "suite", "context"];
-        if (
-          (["skip", "only"].includes(name) && TEST_GLOBALS.includes(obj)) ||
-          /^(xit|xtest|xdescribe)\b/.test(obj)
-        ) {
+
+        if (["skip", "only"].includes(name) && TEST_GLOBALS.includes(obj)) {
+          // Check the parent: is this `.skip` being directly called as `it.skip(...)`?
+          const parent = node.getParent();
+          if (parent && Node.isCallExpression(parent) && parent.getExpression() === node) {
+            const args = parent.getArguments();
+            // Unconditional forms: it.skip("name", fn) or it.skip() — first arg is a string literal or absent.
+            // Conditional forms: test.skip(condition, reason) — first arg is a boolean/expression — ALLOWED.
+            if (args.length === 0 || (args[0] && Node.isStringLiteral(args[0]))) {
+              record("R7-skipped-or-only", node, filePath);
+            }
+            // else: conditional skip → allowed
+          }
+          // If parent is not a CallExpression (e.g., `condition ? it : it.skip` used as a value), allow.
+        } else if (/^(xit|xtest|xdescribe)\b/.test(obj)) {
           record("R7-skipped-or-only", node, filePath);
         }
       }

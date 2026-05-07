@@ -8,11 +8,7 @@ export default defineConfig({
     testTimeout: 30_000, // integration tests hit real APIs
     hookTimeout: 30_000,
     pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true, // serial: shared test_schema state
-      },
-    },
+    maxWorkers: 1, // serial: shared test_schema state (vitest 4: top-level, replaces poolOptions.forks.singleFork)
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts", "src/sectors/**/*.ts"],
