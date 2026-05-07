@@ -45,6 +45,9 @@ describe("cosineSearch (real Voyage + pgvector)", () => {
       const [emb] = await embed(["producto"], { inputType: "query" });
       const out = await cosineSearch(emb, {}, 3, pg);
       expect(out.length).toBe(3);
+      expect(out[0].rank).toBe(1);
+      expect(out[1].rank).toBe(2);
+      expect(out[2].rank).toBe(3);
     });
   }, 60_000);
 

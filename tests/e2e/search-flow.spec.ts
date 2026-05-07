@@ -61,8 +61,12 @@ test.describe("search-flow", () => {
     await page.context().clearCookies();
 
     await page.goto("/search?q=asdfgh");
-    // Wait for the page to render — empty state is OK
-    await page.waitForLoadState("networkidle", { timeout: 15_000 });
+    // Wait specifically for the search HTTP response (server-component renders /search?q=...)
+    // instead of networkidle — networkidle is fragile when DeepSeek latency varies.
+    await page.waitForResponse(
+      (resp) => resp.url().includes("/search?q=") && resp.status() === 200,
+      { timeout: 90_000 },
+    );
 
     const anonId = (await page.context().cookies()).find((c) => c.name === "anonymous_id")!.value;
     const c = await pg();

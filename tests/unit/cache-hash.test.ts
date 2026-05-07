@@ -33,4 +33,16 @@ describe("hashQuery", () => {
   test("different canonical inputs produce different hashes", () => {
     expect(hashQuery("hello")).not.toBe(hashQuery("world"));
   });
+
+  test("order-independent: hashQuery('world hello') === hashQuery('hello world')", () => {
+    expect(hashQuery("world hello")).toBe(hashQuery("hello world"));
+  });
+
+  test("3 Spanish permutations all hash identically", () => {
+    const a = hashQuery("regalo niña 8 años");
+    const b = hashQuery("niña 8 años regalo");
+    const c = hashQuery("8 años niña regalo");
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+  });
 });

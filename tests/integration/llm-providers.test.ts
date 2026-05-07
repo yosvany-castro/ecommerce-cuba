@@ -10,6 +10,10 @@ describe("LLM providers (real API)", () => {
       temperature: 0,
     });
     expect(res.text.trim().length).toBeGreaterThan(0);
+    // The system says "Reply with the single word OK". Verify the response is short
+    // and contains "OK" — a generic non-empty string would pass with previous assertion alone.
+    expect(res.text.trim().toUpperCase()).toContain("OK");
+    expect(res.text.trim().length).toBeLessThanOrEqual(20);
     expect(res.usage.input_tokens).toBeGreaterThan(0);
     expect(res.usage.output_tokens).toBeGreaterThan(0);
   }, 15_000);

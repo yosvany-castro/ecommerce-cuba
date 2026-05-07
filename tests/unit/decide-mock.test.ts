@@ -26,4 +26,8 @@ describe("shouldCallMock", () => {
     expect(LOCAL_HITS_THRESHOLD).toBe(12);
     expect(CONFIDENCE_THRESHOLD).toBe(0.5);
   });
+
+  test("count 5 with confidence EXACTLY 0.5 → false (boundary; > not >=)", () => {
+    expect(shouldCallMock(5, 0.5)).toBe(false);
+  });
 });

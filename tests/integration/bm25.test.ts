@@ -34,6 +34,9 @@ describe("bm25Search (real tsvector + ts_rank_cd)", () => {
       }
       const out = await bm25Search("camiseta", {}, 3, pg);
       expect(out.length).toBe(3);
+      expect(out[0].rank).toBe(1);
+      expect(out[1].rank).toBe(2);
+      expect(out[2].rank).toBe(3);
     });
   });
 

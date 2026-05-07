@@ -64,6 +64,9 @@ describe("GET /api/search (hybrid)", () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.called_mock).toBe(false);
+      // "low confidence" path: count should be empty or very small, never large.
+      expect(body.count).toBeLessThanOrEqual(5);
+      expect(typeof body.count).toBe("number");
     } finally {
       delete process.env.HYBRID_SEARCH_MOCK_LIMIT;
     }

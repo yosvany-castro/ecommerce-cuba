@@ -69,6 +69,11 @@ describe("cache/exact", () => {
         },
         pg,
       );
+      // Verify that ttl_seconds: 1 was actually honored — ttl_until should be ~1 second from now,
+      // not the default 24h. This catches mutations where writeExact ignores the ttl_seconds parameter.
+      const written = await pg.query(`SELECT EXTRACT(EPOCH FROM (ttl_until - now())) AS seconds_left FROM product_query_cache WHERE query_hash = $1`, [hash]);
+      expect(Number(written.rows[0].seconds_left)).toBeLessThan(5);
+
       // Force expiration by updating ttl_until directly to past
       await pg.query(`UPDATE product_query_cache SET ttl_until = now() - interval '1 hour' WHERE query_hash = $1`, [hash]);
       const got = await lookupExact(hash, pg);

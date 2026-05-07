@@ -30,6 +30,13 @@ describe("hybridSearch (REAL APIs)", () => {
       const cached = await pg.query(`SELECT count(*)::int FROM product_query_cache`);
       expect(cached.rows[0].count).toBe(1);
 
+      // Verify the cache was populated with the SAME product IDs that hybridSearch returned —
+      // catches mutations where the cache stores wrong/empty/reordered IDs.
+      const cacheContent = await pg.query(
+        `SELECT products_returned FROM product_query_cache LIMIT 1`,
+      );
+      expect(cacheContent.rows[0].products_returned).toEqual(result.products.map((p) => p.id));
+
       // searches row inserted
       const search = await pg.query(`SELECT search_method, hit_cache, called_mock FROM searches`);
       expect(search.rows[0].search_method).toBe("hybrid_rrf");
