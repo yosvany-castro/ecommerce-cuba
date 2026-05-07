@@ -132,4 +132,27 @@ describe("migration runner", () => {
       "events_session_idx",
     ]));
   });
+
+  it("personalization tables exist with vector columns", async () => {
+    const tables = [
+      "user_profiles", "user_profile_modes", "session_vectors",
+      "cohort_centroids", "excluded_products"
+    ];
+    for (const t of tables) {
+      const res = await client.query(
+        `SELECT to_regclass($1) AS exists`,
+        [`public.${t}`],
+      );
+      expect(res.rows[0].exists).toBe(t);
+    }
+
+    // user_profile_modes must have vector_unnormalized vector(1024) and weight_sum
+    const cols = await client.query(`
+      SELECT column_name, udt_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'user_profile_modes'
+    `);
+    const byName = Object.fromEntries(cols.rows.map((r) => [r.column_name, r]));
+    expect(byName.vector_unnormalized.udt_name).toBe("vector");
+    expect(byName.weight_sum.udt_name).toMatch(/float8|double_precision/);
+  });
 });
