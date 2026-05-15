@@ -77,6 +77,15 @@ export async function runEval3aSmoke(opts: {
     const catalog = await seedCatalog(pg, opts.productsPerCohort);
     await computeCohortCentroids(pg);
 
+    // Reserve a holdout slice (last 3 products per cohort) — never shown to users.
+    const holdoutByCohort = new Map<CohortId, string[]>();
+    const trainByCohort = new Map<CohortId, string[]>();
+    for (const [c, ids] of catalog) {
+      const k = Math.min(3, Math.floor(ids.length / 2));
+      holdoutByCohort.set(c, ids.slice(-k));
+      trainByCohort.set(c, ids.slice(0, ids.length - k));
+    }
+
     const N = opts.eventsPerUser;
     const u1: SyntheticUser = {
       label: "U1-femenino_adulta",
@@ -119,9 +128,9 @@ export async function runEval3aSmoke(opts: {
         [u.anonymous_id],
       );
       for (const c of u.events_cohorts) {
-        const ids = catalog.get(c) ?? [];
+        // Only train slice — never expose holdout products to the user
+        const ids = trainByCohort.get(c) ?? [];
         if (ids.length === 0) continue;
-        // Round-robin to ensure coverage
         const usedSet = usedByUser[u.anonymous_id];
         const candidate =
           ids.find((id) => !usedSet.has(id)) ??
@@ -161,23 +170,9 @@ export async function runEval3aSmoke(opts: {
       return heldOut.length === 0 ? 0 : hit / heldOut.length;
     }
 
-    function pickHoldout(catalogIds: string[], used: Set<string>): string[] {
-      // Hold out products NOT seen by the user — those are the "future positives"
-      return catalogIds.filter((id) => !used.has(id)).slice(0, 3);
-    }
-
-    const heldU1 = pickHoldout(
-      catalog.get("femenino_adulta") ?? [],
-      usedByUser[u1.anonymous_id],
-    );
-    const heldU2 = pickHoldout(
-      catalog.get("masculino_adulto") ?? [],
-      usedByUser[u2.anonymous_id],
-    );
-    const heldU3 = pickHoldout(
-      catalog.get("femenino_nina") ?? [],
-      usedByUser[u3.anonymous_id],
-    );
+    const heldU1 = holdoutByCohort.get("femenino_adulta") ?? [];
+    const heldU2 = holdoutByCohort.get("masculino_adulto") ?? [];
+    const heldU3 = holdoutByCohort.get("femenino_nina") ?? [];
 
     const f1 = await feedFor(u1);
     const f2 = await feedFor(u2);
