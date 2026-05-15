@@ -2,10 +2,14 @@ import type { Client } from "pg";
 import { normalize } from "@/lib/math";
 import { effectiveUserVector } from "./vector/effective";
 import { retrieveTopKByVector, type FeedItem } from "./retrieve";
-import { getOrInitProfileMode } from "./profile-mode";
+import { fetchAllModesInBucket } from "./multimode/dispatch";
+import { rrfFuse, type RankedList, type FusedItem } from "./retrieve/rrf";
+import { fetchPopularByCohort } from "./retrieve/popular-by-cohort";
+import { fetchLastViewedProduct } from "./retrieve/last-viewed";
 import { readSessionState } from "./session/state";
-import { EMBEDDING_DIM } from "@/lib/embeddings/voyage";
 import type { CohortId } from "./cohorts/definitions";
+import { getOrInitProfileMode } from "./profile-mode";
+import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
 
 export interface GenerateFeedOpts {
   user_id: string | null;
@@ -75,6 +79,29 @@ async function fetchSessionVectorUnnorm(
   return JSON.parse(r.rows[0].v) as number[];
 }
 
+async function resolveFromFused(
+  fused: FusedItem[],
+  pg: Client,
+): Promise<FeedItem[]> {
+  if (fused.length === 0) return [];
+  const ids = fused.map((f) => f.id);
+  const r = await pg.query(
+    `SELECT id, title, description, price_cents, currency, image_url, metadata, created_at
+     FROM products
+     WHERE id = ANY($1::uuid[]) AND is_active = true`,
+    [ids],
+  );
+  const byId = new Map<string, ProductListRow>(
+    (r.rows as ProductListRow[]).map((p) => [p.id, p]),
+  );
+  return fused
+    .filter((f) => byId.has(f.id))
+    .map((f) => ({
+      product: byId.get(f.id) as ProductListRow,
+      similarity: f.rrf_score,
+    }));
+}
+
 export async function generateFeed(
   opts: GenerateFeedOpts,
   pg: Client,
@@ -99,26 +126,71 @@ export async function generateFeed(
     sessionUnnorm = await fetchSessionVectorUnnorm(opts.session_id, pg);
   }
 
-  let modeVec: number[];
+  const excluded = await fetchExcludedIds(opts.user_id, opts.anonymous_id, pg);
+
+  // ---- Source A: semantic, one list per active mode (init if none)
+  const listsA: RankedList[] = [];
   if (profile_id) {
-    const mode = await getOrInitProfileMode(
-      {
-        user_profile_id: profile_id,
-        recipient_id: recipientId,
-        cohort_id: cohortId,
-      },
+    let modes = await fetchAllModesInBucket(
+      { user_profile_id: profile_id, recipient_id: recipientId, cohort_id: cohortId },
       pg,
     );
-    modeVec = mode.vector_unnormalized;
-  } else {
-    modeVec = new Array<number>(EMBEDDING_DIM).fill(0);
+    if (modes.length === 0) {
+      const init = await getOrInitProfileMode(
+        { user_profile_id: profile_id, recipient_id: recipientId, cohort_id: cohortId },
+        pg,
+      );
+      modes = [
+        {
+          id: init.id,
+          mode_index: 1,
+          vector_unnormalized: init.vector_unnormalized,
+          weight_sum: init.weight_sum,
+          n_events_in_mode: init.n_events_in_mode,
+        },
+      ];
+    }
+    for (const m of modes) {
+      const u = normalize(m.vector_unnormalized);
+      const sessionNorm = sessionUnnorm ? normalize(sessionUnnorm) : null;
+      const eff = effectiveUserVector(u, sessionNorm, nEventsSession);
+      const items = await retrieveTopKByVector(eff, excluded, 50, pg);
+      listsA.push({
+        source: `mode_${m.mode_index}`,
+        items: items.map((it, r) => ({ id: it.product.id, rank: r + 1 })),
+      });
+    }
   }
 
-  const profileNorm = normalize(modeVec);
-  const sessionNorm = sessionUnnorm ? normalize(sessionUnnorm) : null;
-  const eff = effectiveUserVector(profileNorm, sessionNorm, nEventsSession);
+  // ---- Source B: co-occurrence with last viewed
+  let listB: RankedList = { source: "cooccurrence", items: [] };
+  if (opts.session_id) {
+    const lastViewed = await fetchLastViewedProduct(opts.session_id, pg);
+    if (lastViewed) {
+      const r = await pg.query(
+        `SELECT related_product_id::text AS id, rank
+         FROM co_occurrence_top
+         WHERE product_id = $1
+           AND NOT (related_product_id = ANY($2::uuid[]))
+         ORDER BY rank ASC LIMIT 30`,
+        [lastViewed, excluded],
+      );
+      listB.items = (r.rows as Array<{ id: string; rank: number }>).map((x) => ({
+        id: x.id,
+        rank: Number(x.rank),
+      }));
+    }
+  }
 
-  const excluded = await fetchExcludedIds(opts.user_id, opts.anonymous_id, pg);
-  const items = await retrieveTopKByVector(eff, excluded, limit * 3, pg);
-  return items.slice(0, limit);
+  // ---- Source C: popular by cohort
+  const popularItems = await fetchPopularByCohort(cohortId, excluded, 20, pg);
+  const listC: RankedList = { source: "popular", items: popularItems };
+
+  const all: RankedList[] = [...listsA, listB, listC].filter(
+    (l) => l.items.length > 0,
+  );
+  if (all.length === 0) return [];
+
+  const fused = rrfFuse(all).slice(0, limit);
+  return resolveFromFused(fused, pg);
 }
