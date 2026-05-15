@@ -9,8 +9,10 @@ describe("eval-personalization-3b smoke", () => {
       crossSellCoSessions: 3,
       diversityEventsPerUser: 5,
     });
-    expect(Number.isFinite(r.multimode_ndcg_multi)).toBe(true);
-    expect(Number.isFinite(r.multimode_ndcg_single)).toBe(true);
+    expect(Number.isFinite(r.multimode_balance_multi)).toBe(true);
+    expect(Number.isFinite(r.multimode_balance_single)).toBe(true);
+    expect(typeof r.multimode_formal_multi).toBe("number");
+    expect(typeof r.multimode_casual_multi).toBe("number");
     expect(typeof r.crosssell_fundas_in_top10).toBe("number");
     expect(Number.isFinite(r.diversity_jaccard_avg)).toBe(true);
     expect(typeof r.multimode_pass).toBe("boolean");
