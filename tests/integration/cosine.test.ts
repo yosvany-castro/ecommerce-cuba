@@ -71,4 +71,107 @@ describe("cosineSearch (real Voyage + pgvector)", () => {
       expect(out.map((r) => r.id)).toEqual([active.id]);
     });
   }, 60_000);
+
+  test("filter by gender_target='femenino' excludes 'masculino' but includes 'unisex'", async () => {
+    await withTestDb(async (pg) => {
+      const fem = await seedProductWithEmbedding(pg, {
+        title: "Vestido elegante",
+        metadata: { category: "ropa", gender_target: "femenino" },
+      });
+      await seedProductWithEmbedding(pg, {
+        title: "Camisa formal",
+        metadata: { category: "ropa", gender_target: "masculino" },
+      });
+      const uni = await seedProductWithEmbedding(pg, {
+        title: "Sudadera unisex",
+        metadata: { category: "ropa", gender_target: "unisex" },
+      });
+      const [emb] = await embed(["ropa"], { inputType: "query" });
+      const out = await cosineSearch(emb, { gender_target: "femenino" }, 10, pg);
+      const ids = out.map((r) => r.id);
+      expect(ids).toContain(fem.id);
+      expect(ids).toContain(uni.id);
+      expect(ids).toHaveLength(2);
+    });
+  }, 60_000);
+
+  test("filter by age range: age_min=60 excludes products with age_target.max<=12", async () => {
+    await withTestDb(async (pg) => {
+      const adult = await seedProductWithEmbedding(pg, {
+        title: "Bastón ortopedico",
+        metadata: { category: "otros", age_target: { min: 60, max: 99 } },
+      });
+      await seedProductWithEmbedding(pg, {
+        title: "Juguete musical",
+        metadata: { category: "juguetes_bebe", age_target: { min: 0, max: 5 } },
+      });
+      const [emb] = await embed(["regalo abuelo"], { inputType: "query" });
+      const out = await cosineSearch(emb, { age_min: 65, age_max: 90 }, 10, pg);
+      expect(out.map((r) => r.id)).toEqual([adult.id]);
+    });
+  }, 60_000);
+
+  test("filter by price_range='bajo' excludes products > $19.99", async () => {
+    await withTestDb(async (pg) => {
+      const cheap = await seedProductWithEmbedding(pg, { title: "Llavero simple", price_cents: 500 });
+      await seedProductWithEmbedding(pg, { title: "Llavero premium oro", price_cents: 30000 });
+      const [emb] = await embed(["llavero"], { inputType: "query" });
+      const out = await cosineSearch(emb, { price_range: "bajo" }, 10, pg);
+      expect(out.map((r) => r.id)).toEqual([cheap.id]);
+    });
+  }, 60_000);
+
+  test("filter by price_range='medio' includes $20-$99 products only", async () => {
+    await withTestDb(async (pg) => {
+      const med = await seedProductWithEmbedding(pg, { title: "Mochila escolar", price_cents: 4500 });
+      await seedProductWithEmbedding(pg, { title: "Mochila premium", price_cents: 25000 });
+      await seedProductWithEmbedding(pg, { title: "Mochila barata", price_cents: 800 });
+      const [emb] = await embed(["mochila"], { inputType: "query" });
+      const out = await cosineSearch(emb, { price_range: "medio" }, 10, pg);
+      expect(out.map((r) => r.id)).toEqual([med.id]);
+    });
+  }, 60_000);
+
+  test("filter by price_range='alto' includes only products >= $100", async () => {
+    await withTestDb(async (pg) => {
+      const high = await seedProductWithEmbedding(pg, { title: "Auricular profesional", price_cents: 30000 });
+      await seedProductWithEmbedding(pg, { title: "Auricular básico", price_cents: 1500 });
+      const [emb] = await embed(["auricular"], { inputType: "query" });
+      const out = await cosineSearch(emb, { price_range: "alto" }, 10, pg);
+      expect(out.map((r) => r.id)).toEqual([high.id]);
+    });
+  }, 60_000);
+
+  test("filters compose: gender + age + price together narrow to single match", async () => {
+    await withTestDb(async (pg) => {
+      const target = await seedProductWithEmbedding(pg, {
+        title: "Vestido fiesta mujer adulta",
+        price_cents: 4500,
+        metadata: { category: "ropa", gender_target: "femenino", age_target: { min: 18, max: 65 } },
+      });
+      await seedProductWithEmbedding(pg, {
+        title: "Vestido fiesta hombre",
+        price_cents: 4500,
+        metadata: { category: "ropa", gender_target: "masculino", age_target: { min: 18, max: 65 } },
+      });
+      await seedProductWithEmbedding(pg, {
+        title: "Vestido fiesta infantil",
+        price_cents: 4500,
+        metadata: { category: "ropa", gender_target: "femenino", age_target: { min: 5, max: 11 } },
+      });
+      await seedProductWithEmbedding(pg, {
+        title: "Vestido fiesta premium",
+        price_cents: 30000,
+        metadata: { category: "ropa", gender_target: "femenino", age_target: { min: 18, max: 65 } },
+      });
+      const [emb] = await embed(["vestido"], { inputType: "query" });
+      const out = await cosineSearch(
+        emb,
+        { gender_target: "femenino", age_min: 25, age_max: 50, price_range: "medio" },
+        10,
+        pg,
+      );
+      expect(out.map((r) => r.id)).toEqual([target.id]);
+    });
+  }, 60_000);
 });
