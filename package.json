@@ -33,6 +33,7 @@
     "@anthropic-ai/sdk": "0.95.0",
     "@auth0/nextjs-auth0": "4.20.0",
     "@supabase/supabase-js": "2.105.3",
+    "ml-kmeans": "^7.0.0",
     "next": "16.2.5",
     "openai": "^6.36.0",
     "pg": "8.20.0",
