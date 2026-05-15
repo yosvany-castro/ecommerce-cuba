@@ -14,6 +14,8 @@ import { withPg } from "@/lib/db/helpers";
 import { hybridSearch } from "@/sectors/c-search/search";
 import { searchLike } from "@/sectors/b-catalog/repository/products";
 
+const SCOPE: "public" | "test" = process.env.EVAL_SCOPE === "test" ? "test" : "public";
+
 const QUERIES: { category: string; q: string }[] = [
   { category: "literal", q: "Nike Air Max 270 talle 42" },
   { category: "literal", q: "iPhone 15 Pro 256GB" },
@@ -81,13 +83,13 @@ console.log(`---\n`);
     let likeTop: string[] = [];
     let hybridErr: string | null = null;
     try {
-      const r = await withPg((pg) => hybridSearch(q, { pg, anonymous_id: null, user_id: null }));
+      const r = await withPg((pg) => hybridSearch(q, { pg, anonymous_id: null, user_id: null }), { scope: SCOPE });
       hybridTop = r.products.slice(0, 10).map((p) => `${p.title} ($${(p.price_cents / 100).toFixed(2)})`);
     } catch (e) {
       hybridErr = e instanceof Error ? e.message : String(e);
     }
     try {
-      const products = await withPg((pg) => searchLike({ query: q, limit: 10, pg }));
+      const products = await withPg((pg) => searchLike({ query: q, limit: 10, pg }), { scope: SCOPE });
       likeTop = products.map((p) => `${p.title} ($${(p.price_cents / 100).toFixed(2)})`);
     } catch (e) {
       likeTop = [`(LIKE error: ${e instanceof Error ? e.message : String(e)})`];
