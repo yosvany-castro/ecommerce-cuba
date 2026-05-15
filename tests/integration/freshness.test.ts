@@ -34,7 +34,7 @@ describe("getCategoryFreshness", () => {
       await pg.query(`UPDATE products SET last_refreshed_at = $1 WHERE id = $2`, [olderIso, a.id]);
       await pg.query(`UPDATE products SET last_refreshed_at = $1 WHERE id = $2`, [newerIso, b.id]);
       const out = await getCategoryFreshness("electronica", pg);
-      expect(out).not.toBeNull();
+      expect(out === null).toBe(false);
       const diffMs = Math.abs(out!.getTime() - new Date(newerIso).getTime());
       expect(diffMs).toBeLessThan(1000);
     });

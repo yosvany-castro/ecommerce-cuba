@@ -32,15 +32,15 @@ describe("hybridSearch trace mode", () => {
         { trace: true },
       );
       const trace = result.trace;
-      expect(trace).toBeDefined();
+      expect(trace === undefined).toBe(false);
       expect(trace!.raw_query).toBe("audifonos bluetooth");
       expect(typeof trace!.hash).toBe("string");
       expect(trace!.hash.length).toBeGreaterThan(0);
       expect(trace!.cache.exact_hit).toBe(false);
       expect(trace!.cache.semantic_hit).toBe(false);
-      expect(trace!.embedding).not.toBeNull();
+      expect(trace!.embedding === null).toBe(false);
       expect(trace!.embedding!.dim).toBeGreaterThan(0);
-      expect(trace!.normalized).not.toBeNull();
+      expect(trace!.normalized === null).toBe(false);
       expect(typeof trace!.filters_applied).toBe("object");
       expect(typeof trace!.freshness).toBe("object");
       expect(Array.isArray(trace!.retrieval.bm25)).toBe(true);

@@ -31,7 +31,7 @@ describe("generateProductsWithLLM (REAL DeepSeek)", () => {
       expect(p.price_cents).toBeGreaterThanOrEqual(0);
       expect(typeof p.raw_category).toBe("string");
       expect(typeof p.attributes).toBe("object");
-      expect(p.attributes).not.toBeNull();
+      expect(p.attributes === null).toBe(false);
     }
   }, 60_000);
 
