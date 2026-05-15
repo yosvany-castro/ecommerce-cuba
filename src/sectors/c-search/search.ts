@@ -5,10 +5,11 @@ import { lookupExact, writeExact, EXACT_CACHE_TTL_SECONDS } from "./cache/exact"
 import { lookupSemantic, DEFAULT_THETA } from "./cache/semantic";
 import { normalizeQueryWithLLM } from "./normalizer/normalize";
 import type { NormalizedQuery } from "./normalizer/prompt";
-import { bm25Search } from "./retrieve/bm25";
+import { bm25Search, type SearchFilters } from "./retrieve/bm25";
 import { cosineSearch } from "./retrieve/cosine";
 import { rrfFuse, RRF_K0, type FusedProduct, type RankedProduct } from "./retrieve/rrf";
 import { shouldCallMock } from "./decide/shouldCallMock";
+import { getCategoryFreshness } from "./decide/freshness";
 import { persistSearch, type SearchMethod } from "./persist/searches";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
 import { fetchFromAggregator } from "@/sectors/b-catalog/mock/aggregator";
@@ -111,7 +112,18 @@ export async function hybridSearch(rawQuery: string, ctx: HybridSearchCtx): Prom
   }
 
   const searchTerms = normalized?.search_terms ?? rawQuery;
-  const filters = { categories: normalized?.categories ?? undefined };
+  const ageMin = normalized?.recipient_age_min ?? undefined;
+  const ageMax = normalized?.recipient_age_max ?? undefined;
+  const ageBothPresent = typeof ageMin === "number" && typeof ageMax === "number";
+  const filters: SearchFilters = normalized
+    ? {
+        categories: normalized.categories?.length ? normalized.categories : undefined,
+        gender_target: normalized.recipient_gender ?? undefined,
+        age_min: ageBothPresent ? ageMin : undefined,
+        age_max: ageBothPresent ? ageMax : undefined,
+        price_range: normalized.price_range ?? undefined,
+      }
+    : {};
 
   // 5. BM25 + cosine in parallel
   const [bm25, cos] = await Promise.all([
@@ -124,7 +136,11 @@ export async function hybridSearch(rawQuery: string, ctx: HybridSearchCtx): Prom
   let calledMock = false;
 
   // 7. Mock fallback: fetch external products, enrich via pipeline, re-run retrieval
-  if (normalized && shouldCallMock(fused.length, normalized.confidence)) {
+  const lastRefreshedAt = normalized
+    ? await getCategoryFreshness(normalized.categories?.[0] ?? null, pg)
+    : null;
+
+  if (normalized && shouldCallMock(fused.length, normalized.confidence, lastRefreshedAt)) {
     try {
       const limitOverride = process.env.HYBRID_SEARCH_MOCK_LIMIT
         ? parseInt(process.env.HYBRID_SEARCH_MOCK_LIMIT, 10)
