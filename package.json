@@ -14,6 +14,7 @@
     "cron:profile-recompute": "tsx scripts/cron-profile-recompute.ts",
     "cron:npmi-recompute": "tsx scripts/cron-npmi-recompute.ts",
     "eval:personalization-3a": "tsx scripts/eval-personalization-3a.ts",
+    "eval:personalization-3b": "tsx scripts/eval-personalization-3b.ts",
     "start": "next start",
     "lint": "eslint --no-error-on-unmatched-pattern src tests scripts",
     "typecheck": "tsc --noEmit",
