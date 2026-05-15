@@ -13,6 +13,10 @@ import {
   updateProfileModeWithProduct,
 } from "./profile-mode";
 import type { CohortId } from "./cohorts/definitions";
+import { captureCoOccurrence } from "./co-occurrence/capture";
+import { modesForEvents } from "./multimode/thresholds";
+import { recomputeModesForBucket } from "./multimode/recompute";
+import { fetchAllModesInBucket, pickBestMode } from "./multimode/dispatch";
 
 interface TrackInput {
   anonymous_id: string;
@@ -122,7 +126,24 @@ async function runPipeline(
     pg,
   );
 
-  if (!newCohort) return; // still in warmup
+  // Co-occurrence capture runs INDEPENDENT of warmup state — pairs accumulate
+  // from the very first event in a session.
+  if (
+    input.event_type === "product_view" ||
+    input.event_type === "add_to_cart" ||
+    input.event_type === "purchase"
+  ) {
+    await captureCoOccurrence(
+      {
+        session_id: input.session_id,
+        current_product_id: product_id,
+        current_event_type: input.event_type,
+      },
+      pg,
+    );
+  }
+
+  if (!newCohort) return; // warmup not complete — no vector update yet
 
   const profile_id = await getOrCreateProfile(
     input.anonymous_id,
@@ -141,10 +162,63 @@ async function runPipeline(
   const weight =
     EVENT_WEIGHTS[input.event_type as keyof typeof EVENT_WEIGHTS] ?? 0;
   if (weight > 0) {
-    await updateProfileModeWithProduct(
-      { mode_id: mode.id, product_id, event_weight: weight },
+    // If bucket has multi-modo (>1 mode), dispatch to closest mode by cosine
+    const modes = await fetchAllModesInBucket(
+      {
+        user_profile_id: profile_id,
+        recipient_id,
+        cohort_id: newCohort as CohortId,
+      },
       pg,
     );
+    let targetModeId = mode.id;
+    if (modes.length > 1) {
+      const productR = await pg.query(
+        `SELECT embedding::text AS v FROM products
+         WHERE id = $1 AND embedding IS NOT NULL`,
+        [product_id],
+      );
+      if (productR.rows.length > 0) {
+        const productEmb = JSON.parse(productR.rows[0].v) as number[];
+        const best = await pickBestMode(
+          {
+            user_profile_id: profile_id,
+            recipient_id,
+            cohort_id: newCohort as CohortId,
+          },
+          productEmb,
+          pg,
+        );
+        if (best) targetModeId = best.id;
+      }
+    }
+    await updateProfileModeWithProduct(
+      { mode_id: targetModeId, product_id, event_weight: weight },
+      pg,
+    );
+
+    // Trigger multi-modo recompute if aggregate n_events crosses threshold
+    const totalR = await pg.query(
+      `SELECT COALESCE(SUM(n_events_in_mode), 0)::int AS total
+       FROM user_profile_modes
+       WHERE user_profile_id = $1
+         AND ((recipient_id IS NULL AND $2::uuid IS NULL) OR recipient_id = $2)
+         AND cohort_id = $3`,
+      [profile_id, recipient_id, newCohort],
+    );
+    const total = Number(totalR.rows[0].total);
+    const target = modesForEvents(total);
+    if (target > modes.length && target > 0) {
+      await recomputeModesForBucket(
+        {
+          user_profile_id: profile_id,
+          recipient_id,
+          cohort_id: newCohort as CohortId,
+          target_modes: target as 1 | 2 | 3,
+        },
+        pg,
+      );
+    }
   }
 
   await pg.query(
