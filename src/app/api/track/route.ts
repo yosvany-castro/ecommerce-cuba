@@ -4,6 +4,7 @@ import { eventInputSchema } from "@/sectors/a-tracking/events/schema";
 import { insertEvent } from "@/sectors/a-tracking/events/insert";
 import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
+import { processEventForPersonalization } from "@/sectors/d-personalization/track-hook";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -45,6 +46,24 @@ export async function POST(req: NextRequest) {
     const result = await withPg((pg) =>
       insertEvent(envelope, { pg, anonymous_id, session_id, user_id }),
     );
+    // Best-effort personalization hook — failures do not break tracking.
+    try {
+      await withPg((pg) =>
+        processEventForPersonalization(
+          {
+            anonymous_id,
+            user_id,
+            session_id,
+            event_type: envelope.event_type,
+            payload: envelope.payload as Record<string, unknown>,
+            occurred_at: envelope.occurred_at,
+          },
+          pg,
+        ),
+      );
+    } catch (e) {
+      console.warn("[track] personalization hook failed:", e);
+    }
     return NextResponse.json(result, { status: 200 });
   } catch (e) {
     if (e instanceof ZodError) {
