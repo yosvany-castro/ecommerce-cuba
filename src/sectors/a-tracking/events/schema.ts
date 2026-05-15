@@ -13,6 +13,7 @@ export const EVENT_TYPES = [
   "page_view",
   "session_start",
   "session_end",
+  "dismiss",
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -49,6 +50,12 @@ export const PAYLOAD_SCHEMAS = {
   page_view: z.object({ path: z.string().min(1) }),
   session_start: z.object({}).strict(),
   session_end: z.object({ duration_ms: z.number().int().min(0) }),
+  dismiss: z.object({
+    product_id: uuid,
+    reason: z
+      .enum(["not_interested", "already_have", "wrong_recipient", "other"])
+      .optional(),
+  }),
 } as const satisfies Record<EventType, z.ZodTypeAny>;
 
 export const eventInputSchema = z.object({

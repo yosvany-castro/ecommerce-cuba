@@ -5,6 +5,7 @@ import { insertEvent } from "@/sectors/a-tracking/events/insert";
 import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { processEventForPersonalization } from "@/sectors/d-personalization/track-hook";
+import { handleDismissAutoExclude } from "@/sectors/d-personalization/exclusion/dismiss-handler";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -63,6 +64,19 @@ export async function POST(req: NextRequest) {
       );
     } catch (e) {
       console.warn("[track] personalization hook failed:", e);
+    }
+    if (envelope.event_type === "dismiss") {
+      try {
+        const payload = envelope.payload as { product_id: string };
+        await withPg((pg) =>
+          handleDismissAutoExclude(
+            { anonymous_id, user_id, product_id: payload.product_id },
+            pg,
+          ),
+        );
+      } catch (e) {
+        console.warn("[track] dismiss auto-exclude failed:", e);
+      }
     }
     return NextResponse.json(result, { status: 200 });
   } catch (e) {
