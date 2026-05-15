@@ -19,6 +19,7 @@ const validCases: Record<EventType, unknown> = {
   page_view:       { path: "/products/123" },
   session_start:   {},
   session_end:     { duration_ms: 60000 },
+  dismiss:         { product_id: validId, reason: "not_interested" },
 };
 
 describe("eventInputSchema (envelope)", () => {
