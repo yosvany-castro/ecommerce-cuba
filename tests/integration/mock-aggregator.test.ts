@@ -43,10 +43,15 @@ describe("mock aggregator", () => {
     for (const p of res.products) expect(p.raw_category).toBe("electronica");
   });
 
-  it("returns empty products array when query matches nothing", async () => {
-    const res = await fetchFromAggregator({ query: "xyzzz_nothing_matches_this_xyzzz" });
-    expect(res.products).toHaveLength(0);
-    expect(res.cost_cents).toBe(4); // still counts as a call
+  it("returns empty products array when query matches nothing (fixture-only mode)", async () => {
+    process.env.MOCK_AGGREGATOR_MODE = "fixture-only";
+    try {
+      const res = await fetchFromAggregator({ query: "xyzzz_nothing_matches_this_xyzzz" });
+      expect(res.products).toHaveLength(0);
+      expect(res.cost_cents).toBe(4); // still counts as a call
+    } finally {
+      delete process.env.MOCK_AGGREGATOR_MODE;
+    }
   });
 
   it("latency is between 2 and 4 seconds (5 measurements)", async () => {

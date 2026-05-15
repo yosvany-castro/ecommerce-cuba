@@ -148,9 +148,7 @@ export async function hybridSearch(rawQuery: string, ctx: HybridSearchCtx): Prom
       const t0 = Date.now();
       const mockResult = await fetchFromAggregator({
         category: normalized.categories?.[0] as MockCategory | undefined,
-        // Do not pass query: the mock fixture has static templates that won't
-        // substring-match arbitrary normalized search_terms, so we rely on
-        // category-level sampling to fill the catalogue.
+        query: normalized.search_terms,
         limit: limitOverride,
       });
       // Log mock call in mock_calls table

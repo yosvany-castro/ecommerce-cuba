@@ -8,16 +8,17 @@ beforeEach(async () => {
   await truncateTestTables(["product_query_cache", "searches", "products", "mock_calls"]);
   resetCallCount();
   process.env.HYBRID_SEARCH_MOCK_LIMIT = "2"; // keep tests cheap
+  process.env.MOCK_AGGREGATOR_ERROR_RATE = "0"; // determinism in integration
 });
 
 afterEach(() => {
   delete process.env.HYBRID_SEARCH_MOCK_LIMIT;
+  delete process.env.MOCK_AGGREGATOR_ERROR_RATE;
 });
 
 describe("hybridSearch mock fallback (REAL APIs, capped at 2 products per call)", () => {
-  test("count < 12 + confidence > 0.5 → mock invoked + products enriched + retrieval re-runs", async () => {
+  test("count < 12 + confidence > 0.5 → mock invoked + smart mock genera productos relevantes", async () => {
     await withTestDb(async (pg) => {
-      // No products seeded → count starts at 0
       const callsBefore = getCallCount();
       const result = await hybridSearch("auriculares bluetooth con cancelación de ruido", {
         pg,
@@ -27,15 +28,19 @@ describe("hybridSearch mock fallback (REAL APIs, capped at 2 products per call)"
       expect(result.calledMock).toBe(true);
       expect(getCallCount() - callsBefore).toBeGreaterThanOrEqual(1);
 
-      // mock_calls table received the call
       const mc = await pg.query(`SELECT count(*)::int AS c FROM mock_calls`);
       expect(mc.rows[0].c).toBeGreaterThanOrEqual(1);
 
-      // Products got enriched and stored
       const productCount = await pg.query(`SELECT count(*)::int AS c FROM products`);
       expect(productCount.rows[0].c).toBeGreaterThan(0);
 
-      // searches row reflects called_mock=true
+      // Smart mock should generate relevant products: at least one product mentions audio/bluetooth keywords.
+      const relevant = await pg.query(
+        `SELECT count(*)::int AS c FROM products
+         WHERE lower(title) ~ '(auricular|audifono|audio|headphone|earphone|bluetooth)'`,
+      );
+      expect(relevant.rows[0].c).toBeGreaterThan(0);
+
       const search = await pg.query(`SELECT called_mock FROM searches`);
       expect(search.rows[0].called_mock).toBe(true);
     });
