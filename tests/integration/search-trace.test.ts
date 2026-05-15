@@ -71,3 +71,15 @@ describe("hybridSearch trace mode", () => {
     });
   }, 60_000);
 });
+
+describe("/api/search?debug=true gate", () => {
+  test("calling GET handler with debug=true and no session → 401", async () => {
+    const { GET } = await import("@/app/api/search/route");
+    const { NextRequest } = await import("next/server");
+    const req = new NextRequest(new URL("http://localhost/api/search?q=test&debug=true"));
+    const res = await GET(req);
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBe("debug_requires_auth");
+  });
+});

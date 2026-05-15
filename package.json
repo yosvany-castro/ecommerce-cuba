@@ -20,6 +20,7 @@
     "test:quality": "tsx scripts/check-test-quality.ts",
     "migrate": "tsx scripts/apply-migrations.ts",
     "verify:supabase": "tsx scripts/verify-supabase.ts",
+    "explain": "tsx scripts/explain-search.ts",
     "health-check": "tsx scripts/health-check.ts",
     "seed:fixture": "tsx scripts/seed-fixture.ts",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
