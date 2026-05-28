@@ -10,7 +10,13 @@ export interface ProductCardData {
   image_url: string | null;
 }
 
-export function ProductCard({ product }: { product: ProductCardData }) {
+export function ProductCard({
+  product,
+  reason,
+}: {
+  product: ProductCardData;
+  reason?: string;
+}) {
   const [hidden, setHidden] = useState(false);
 
   if (hidden) return null;
@@ -54,6 +60,15 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <p className="text-sm text-gray-500 mt-1">
           ${(product.price_cents / 100).toFixed(2)}
         </p>
+        {reason && (
+          <p
+            className="text-xs text-blue-600 mt-1 italic line-clamp-2"
+            title={reason}
+            data-testid="product-card-reason"
+          >
+            {reason}
+          </p>
+        )}
       </Link>
       <button
         type="button"
