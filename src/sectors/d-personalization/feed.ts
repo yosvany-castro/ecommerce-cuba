@@ -3,13 +3,32 @@ import { normalize } from "@/lib/math";
 import { effectiveUserVector } from "./vector/effective";
 import { retrieveTopKByVector, type FeedItem } from "./retrieve";
 import { fetchAllModesInBucket } from "./multimode/dispatch";
-import { rrfFuse, type RankedList, type FusedItem } from "./retrieve/rrf";
+import { rrfFuse, type RankedList } from "./retrieve/rrf";
 import { fetchPopularByCohort } from "./retrieve/popular-by-cohort";
 import { fetchLastViewedProduct } from "./retrieve/last-viewed";
 import { readSessionState } from "./session/state";
 import type { CohortId } from "./cohorts/definitions";
 import { getOrInitProfileMode } from "./profile-mode";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
+import { mmrSelect } from "./retrieve/mmr";
+import { rerankWithLLM } from "./reranker/rerank";
+import { buildProfileSummary } from "./reranker/profile-summary";
+import { buildRerankCacheKey } from "./reranker/cache-key";
+import {
+  lookupRerankCache,
+  writeRerankCache,
+  type CachedRerankItem,
+} from "./reranker/cache";
+
+const DAYS_ES = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábado",
+];
 
 export interface GenerateFeedOpts {
   user_id: string | null;
@@ -79,12 +98,58 @@ async function fetchSessionVectorUnnorm(
   return JSON.parse(r.rows[0].v) as number[];
 }
 
-async function resolveFromFused(
-  fused: FusedItem[],
+async function fetchProductEmbeddings(
+  ids: string[],
+  pg: Client,
+): Promise<Map<string, number[]>> {
+  if (ids.length === 0) return new Map();
+  const r = await pg.query(
+    `SELECT id::text, embedding::text AS v
+     FROM products WHERE id = ANY($1::uuid[]) AND embedding IS NOT NULL`,
+    [ids],
+  );
+  const out = new Map<string, number[]>();
+  for (const row of r.rows as { id: string; v: string }[]) {
+    out.set(row.id, JSON.parse(row.v) as number[]);
+  }
+  return out;
+}
+
+async function fetchRerankerCandidates(
+  ids: string[],
+  pg: Client,
+): Promise<
+  Array<{
+    product_id: string;
+    title: string;
+    price_cents: number;
+    brand: string;
+    category: string;
+  }>
+> {
+  if (ids.length === 0) return [];
+  const r = await pg.query(
+    `SELECT id::text AS product_id, title, price_cents,
+            COALESCE(metadata->>'brand', '') AS brand,
+            COALESCE(metadata->>'category', '') AS category
+     FROM products WHERE id = ANY($1::uuid[]) AND is_active = true`,
+    [ids],
+  );
+  return r.rows as Array<{
+    product_id: string;
+    title: string;
+    price_cents: number;
+    brand: string;
+    category: string;
+  }>;
+}
+
+async function resolveWithReasons(
+  items: CachedRerankItem[],
   pg: Client,
 ): Promise<FeedItem[]> {
-  if (fused.length === 0) return [];
-  const ids = fused.map((f) => f.id);
+  if (items.length === 0) return [];
+  const ids = items.map((x) => x.product_id);
   const r = await pg.query(
     `SELECT id, title, description, price_cents, currency, image_url, metadata, created_at
      FROM products
@@ -94,11 +159,12 @@ async function resolveFromFused(
   const byId = new Map<string, ProductListRow>(
     (r.rows as ProductListRow[]).map((p) => [p.id, p]),
   );
-  return fused
-    .filter((f) => byId.has(f.id))
-    .map((f) => ({
-      product: byId.get(f.id) as ProductListRow,
-      similarity: f.rrf_score,
+  return items
+    .filter((it) => byId.has(it.product_id))
+    .map((it) => ({
+      product: byId.get(it.product_id) as ProductListRow,
+      similarity: 1 / (it.rank + 1),
+      reason: it.reason || undefined,
     }));
 }
 
@@ -128,16 +194,23 @@ export async function generateFeed(
 
   const excluded = await fetchExcludedIds(opts.user_id, opts.anonymous_id, pg);
 
-  // ---- Source A: semantic, one list per active mode (init if none)
   const listsA: RankedList[] = [];
   if (profile_id) {
     let modes = await fetchAllModesInBucket(
-      { user_profile_id: profile_id, recipient_id: recipientId, cohort_id: cohortId },
+      {
+        user_profile_id: profile_id,
+        recipient_id: recipientId,
+        cohort_id: cohortId,
+      },
       pg,
     );
     if (modes.length === 0) {
       const init = await getOrInitProfileMode(
-        { user_profile_id: profile_id, recipient_id: recipientId, cohort_id: cohortId },
+        {
+          user_profile_id: profile_id,
+          recipient_id: recipientId,
+          cohort_id: cohortId,
+        },
         pg,
       );
       modes = [
@@ -162,11 +235,15 @@ export async function generateFeed(
     }
   }
 
-  // ---- Source B: co-occurrence with last viewed
   let listB: RankedList = { source: "cooccurrence", items: [] };
+  let lastViewedTitle: string | null = null;
   if (opts.session_id) {
     const lastViewed = await fetchLastViewedProduct(opts.session_id, pg);
     if (lastViewed) {
+      const tR = await pg.query(`SELECT title FROM products WHERE id = $1`, [
+        lastViewed,
+      ]);
+      lastViewedTitle = tR.rows[0]?.title ?? null;
       const r = await pg.query(
         `SELECT related_product_id::text AS id, rank
          FROM co_occurrence_top
@@ -182,7 +259,6 @@ export async function generateFeed(
     }
   }
 
-  // ---- Source C: popular by cohort
   const popularItems = await fetchPopularByCohort(cohortId, excluded, 20, pg);
   const listC: RankedList = { source: "popular", items: popularItems };
 
@@ -191,6 +267,58 @@ export async function generateFeed(
   );
   if (all.length === 0) return [];
 
-  const fused = rrfFuse(all).slice(0, limit);
-  return resolveFromFused(fused, pg);
+  const fused = rrfFuse(all).slice(0, 100);
+  if (fused.length === 0) return [];
+
+  const embeddings = await fetchProductEmbeddings(
+    fused.map((f) => f.id),
+    pg,
+  );
+  const top30 = mmrSelect({ candidates: fused, embeddings, k: 30 });
+  if (top30.length === 0) return [];
+
+  if (!profile_id || top30.length < 10) {
+    const items: CachedRerankItem[] = top30.slice(0, limit).map((t, i) => ({
+      product_id: t.id,
+      rank: i + 1,
+      reason: "",
+    }));
+    return resolveWithReasons(items, pg);
+  }
+
+  const top30Ids = top30.map((t) => t.id);
+  const cacheKey = buildRerankCacheKey(profile_id, top30Ids);
+  let cached = await lookupRerankCache(cacheKey, pg);
+
+  if (!cached) {
+    try {
+      const candidates = await fetchRerankerCandidates(top30Ids, pg);
+      const context = {
+        profile_summary: await buildProfileSummary(
+          profile_id,
+          recipientId,
+          cohortId,
+          pg,
+        ),
+        hour: new Date().getHours(),
+        day_of_week: DAYS_ES[new Date().getDay()],
+        last_interaction: lastViewedTitle
+          ? `Vio ${lastViewedTitle} hace pocos minutos`
+          : null,
+        recent_query: null,
+      };
+      const r = await rerankWithLLM({ candidates, context });
+      cached = r.items;
+      await writeRerankCache(cacheKey, profile_id, cached, pg);
+    } catch (e) {
+      console.warn("[feed] reranker failed, fallback to MMR top-10:", e);
+      cached = top30.slice(0, 10).map((t, i) => ({
+        product_id: t.id,
+        rank: i + 1,
+        reason: "",
+      }));
+    }
+  }
+
+  return resolveWithReasons(cached.slice(0, limit), pg);
 }
