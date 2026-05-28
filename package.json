@@ -13,6 +13,7 @@
     "cron:cohort-centroids": "tsx scripts/cron-cohort-centroids.ts",
     "cron:profile-recompute": "tsx scripts/cron-profile-recompute.ts",
     "cron:npmi-recompute": "tsx scripts/cron-npmi-recompute.ts",
+    "cron:rerank-cache-cleanup": "tsx scripts/cron-rerank-cache-cleanup.ts",
     "eval:personalization-3a": "tsx scripts/eval-personalization-3a.ts",
     "eval:personalization-3b": "tsx scripts/eval-personalization-3b.ts",
     "start": "next start",
