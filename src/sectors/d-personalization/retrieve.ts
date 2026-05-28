@@ -4,6 +4,7 @@ import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
 export interface FeedItem {
   product: ProductListRow;
   similarity: number;
+  reason?: string;
 }
 
 export async function retrieveTopKByVector(
