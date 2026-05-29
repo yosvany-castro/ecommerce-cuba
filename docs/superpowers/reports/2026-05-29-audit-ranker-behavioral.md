@@ -120,9 +120,10 @@ prompt del reranker no debería afirmar perfil cuando no hay señal.
   observabilidad/staleness.
 - El **cap en 10 / `limit` ignorado** (P2) se confirma: todos los feeds
   personalizados volvieron 10 ítems aun pidiendo más internamente.
-- La **no invalidación por compra** (P2): en exp1 el ítem comprado **no** reapareció
-  (el reranker no lo retuvo ese turno) — el riesgo real es vía **cache hit** con
-  top-30 sin cambios, no garantía de reaparición.
+- La **no invalidación por compra** (P2): **confirmado en exp1** — tras comprar el
+  "Vestido de noche largo", el ítem **reaparece en el feed (#2)** y la llamada
+  siguiente devuelve el feed **idéntico** (cache hit, top-30 sin cambios). El
+  reseller le re-muestra al usuario lo que ACABA de comprar, hasta 4h.
 
 ---
 

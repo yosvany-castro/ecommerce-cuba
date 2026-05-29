@@ -96,7 +96,7 @@ export async function printState(pg: Pg, p: Persona, label: string) {
 
 export async function printCoocc(pg: Pg, productId: string, title: string) {
   const r = await pg.query(
-    `SELECT p.title, p.metadata->>'tag' AS tag, c.rank, c.npmi
+    `SELECT p.title, p.metadata->>'tag' AS tag, c.rank, c.npmi_score AS npmi
      FROM co_occurrence_top c JOIN products p ON p.id = c.related_product_id
      WHERE c.product_id = $1 ORDER BY c.rank ASC LIMIT 10`,
     [productId],

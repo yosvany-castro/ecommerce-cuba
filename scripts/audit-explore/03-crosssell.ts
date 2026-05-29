@@ -54,7 +54,7 @@ async function main() {
       const aid = id(anchor);
       console.log(`\n===== ANCHOR: ${anchor} =====`);
       const co = await pg.query(
-        `SELECT p.title, p.metadata->>'tag' tag, c.rank, c.npmi,
+        `SELECT p.title, p.metadata->>'tag' tag, c.rank, c.npmi_score AS npmi,
                 1 - (p.embedding <=> (SELECT embedding FROM products WHERE id=$1)) cos
          FROM co_occurrence_top c JOIN products p ON p.id=c.related_product_id
          WHERE c.product_id=$1 ORDER BY c.rank LIMIT 6`, [aid]);
