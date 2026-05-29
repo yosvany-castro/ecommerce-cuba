@@ -1,0 +1,195 @@
+/**
+ * Thesis evaluation metric suite — pure, side-effect-free functions.
+ *
+ * All metrics operate on a ranked list of predicted item IDs and a ground-truth
+ * relevant set. No DB, network, Date, or Math.random calls are made here.
+ *
+ * Metric semantics follow the standard IR definitions used in academic work:
+ *   - Positions are 0-based internally; log2 discount uses position + 2 so rank-1 = log2(2) = 1.
+ *   - k is the cutoff: only the first k items in `ranked` are considered.
+ *   - All functions return 0 for degenerate inputs (empty relevant set, no hits, etc.).
+ */
+
+// ─── private helpers ────────────────────────────────────────────────────────
+
+/**
+ * Cosine similarity between two vectors. Returns 0 for zero-magnitude vectors.
+ */
+function cosine(a: number[], b: number[]): number {
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(magA) * Math.sqrt(magB);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+/**
+ * Floor for popularity values to prevent log2(0) = -Infinity.
+ * Chosen small enough not to distort realistic popularity distributions.
+ */
+const POPULARITY_EPSILON = 1e-9;
+
+// ─── public metric functions ─────────────────────────────────────────────────
+
+/**
+ * Recall@k — fraction of relevant items found in the top-k ranked results.
+ * Returns 0 when the relevant set is empty.
+ */
+export function recallAtK(
+  ranked: string[],
+  relevant: Set<string>,
+  k: number,
+): number {
+  if (relevant.size === 0) return 0;
+  const topK = ranked.slice(0, k);
+  const hits = topK.filter((id) => relevant.has(id)).length;
+  return hits / relevant.size;
+}
+
+/**
+ * nDCG@k — normalized Discounted Cumulative Gain with binary relevance.
+ *
+ * DCG uses gain 1 for relevant items at 0-based position i with discount 1/log2(i+2).
+ * IDCG is computed assuming the ideal ranking fills the first min(|relevant|, k) slots.
+ * Returns 0 when IDCG is 0 (no relevant items or k=0).
+ */
+export function ndcgAtK(
+  ranked: string[],
+  relevant: Set<string>,
+  k: number,
+): number {
+  const topK = ranked.slice(0, k);
+
+  let dcg = 0;
+  for (let i = 0; i < topK.length; i++) {
+    if (relevant.has(topK[i])) {
+      dcg += 1 / Math.log2(i + 2); // i+2 because log2(1)=0; rank-1 gives log2(2)=1
+    }
+  }
+
+  // Ideal DCG: first min(|relevant|, k) positions are all hits
+  const idealHits = Math.min(relevant.size, k);
+  let idcg = 0;
+  for (let i = 0; i < idealHits; i++) {
+    idcg += 1 / Math.log2(i + 2);
+  }
+
+  return idcg === 0 ? 0 : dcg / idcg;
+}
+
+/**
+ * MRR — Mean Reciprocal Rank of the first relevant item in the ranked list.
+ * Considers the full ranked list (no cutoff). Returns 0 if no hit is found.
+ */
+export function mrr(ranked: string[], relevant: Set<string>): number {
+  for (let i = 0; i < ranked.length; i++) {
+    if (relevant.has(ranked[i])) {
+      return 1 / (i + 1);
+    }
+  }
+  return 0;
+}
+
+/**
+ * MAP@k — Mean Average Precision at k.
+ *
+ * For each relevant item found at 0-based position i among the top-k,
+ * precision = (number of hits up to and including i) / (i + 1).
+ * The average is taken over min(|relevant|, k) — the maximum number of
+ * relevant items that could appear in the top-k window.
+ * Returns 0 when the relevant set is empty.
+ */
+export function mapAtK(
+  ranked: string[],
+  relevant: Set<string>,
+  k: number,
+): number {
+  if (relevant.size === 0) return 0;
+  const topK = ranked.slice(0, k);
+  let hits = 0;
+  let precisionSum = 0;
+  for (let i = 0; i < topK.length; i++) {
+    if (relevant.has(topK[i])) {
+      hits++;
+      precisionSum += hits / (i + 1);
+    }
+  }
+  const denominator = Math.min(relevant.size, k);
+  return precisionSum / denominator;
+}
+
+/**
+ * Hit Rate@k — 1 if any relevant item appears in the top-k; 0 otherwise.
+ */
+export function hitRateAtK(
+  ranked: string[],
+  relevant: Set<string>,
+  k: number,
+): number {
+  const topK = ranked.slice(0, k);
+  return topK.some((id) => relevant.has(id)) ? 1 : 0;
+}
+
+/**
+ * Complement Recall@k — fraction of known complement items found in the top-k.
+ *
+ * Semantically identical to recallAtK; named separately for clarity in
+ * complement-recommendation evaluation contexts.
+ */
+export function complementRecallAtK(
+  ranked: string[],
+  complements: Set<string>,
+  k: number,
+): number {
+  return recallAtK(ranked, complements, k);
+}
+
+/**
+ * Intra-List Diversity — 1 minus the average pairwise cosine similarity of
+ * the embedding vectors of the ranked items.
+ *
+ * A value of 1 means all pairs are orthogonal (maximally diverse);
+ * 0 means all items are identical in embedding space.
+ * Returns 0 when fewer than 2 vectors are provided.
+ */
+export function intraListDiversity(vectors: number[][]): number {
+  if (vectors.length < 2) return 0;
+  let totalSimilarity = 0;
+  let pairCount = 0;
+  for (let i = 0; i < vectors.length; i++) {
+    for (let j = i + 1; j < vectors.length; j++) {
+      totalSimilarity += cosine(vectors[i], vectors[j]);
+      pairCount++;
+    }
+  }
+  const avgSimilarity = totalSimilarity / pairCount;
+  return 1 - avgSimilarity;
+}
+
+/**
+ * Novelty@k — mean self-information of items in the top-k, measured via popularity.
+ *
+ * For each item, novelty = −log2(max(POPULARITY_EPSILON, popularity)).
+ * Items absent from the popularity map are treated as having popularity = POPULARITY_EPSILON
+ * (maximally novel). Returns 0 when the top-k window is empty.
+ *
+ * @param popularity  Map from item ID to its popularity in [0, 1].
+ */
+export function novelty(
+  ranked: string[],
+  popularity: Map<string, number>,
+  k: number,
+): number {
+  const topK = ranked.slice(0, k);
+  if (topK.length === 0) return 0;
+  const totalNovelty = topK.reduce((sum, id) => {
+    const pop = Math.max(POPULARITY_EPSILON, popularity.get(id) ?? POPULARITY_EPSILON);
+    return sum + -Math.log2(pop);
+  }, 0);
+  return totalNovelty / topK.length;
+}
