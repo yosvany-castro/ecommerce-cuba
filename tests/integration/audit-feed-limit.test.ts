@@ -1,4 +1,5 @@
-import { describe, test, expect, beforeAll } from "vitest";
+import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { randomUUID } from "node:crypto";
 import { withTestDb, truncateTestTables } from "../helpers/db";
 import { seedProductWithEmbedding } from "../helpers/seed";
 import { generateFeed } from "@/sectors/d-personalization/feed";
@@ -24,37 +25,52 @@ import { generateFeed } from "@/sectors/d-personalization/feed";
  *
  * EXPECTED ON MAIN: FAILS — feed.length === 10, not 12.
  */
+let savedKey: string | undefined;
+
+beforeEach(async () => {
+  savedKey = process.env.DEEPSEEK_API_KEY;
+  await truncateTestTables([
+    "feed_rerank_cache",
+    "events",
+    "user_profile_modes",
+    "user_profiles",
+    "session_vectors",
+    "products",
+    "anonymous_sessions",
+  ]);
+});
+
+afterEach(() => {
+  if (savedKey !== undefined) process.env.DEEPSEEK_API_KEY = savedKey;
+  else delete process.env.DEEPSEEK_API_KEY;
+});
+
 describe("AUDIT: personalised feed ignores limit > 10", () => {
-  beforeAll(() => {
-    process.env.DEEPSEEK_API_KEY = "sk-invalid-deliberately-broken-audit";
-  });
-
   test("limit=20 with 12 candidates returns 12 for a personalised user", async () => {
+    process.env.DEEPSEEK_API_KEY = "invalid-key-to-force-fallback-audit";
     await withTestDb(async (pg) => {
-      await truncateTestTables([
-        "feed_rerank_cache",
-        "user_profile_modes",
-        "user_profiles",
-        "events",
-        "products",
-      ]);
-
       const N = 12;
       for (let i = 0; i < N; i++) {
         await seedProductWithEmbedding(pg, {
-          title: `Producto ${i} camiseta algodón`,
+          title: `Producto ${i} camiseta algodon`,
           metadata: { brand: "GenericBrand", category: "ropa" },
         });
       }
 
+      const anonymous_id = randomUUID();
+      await pg.query(
+        `INSERT INTO anonymous_sessions (anonymous_id) VALUES ($1)`,
+        [anonymous_id],
+      );
+
       // A non-zero mode vector so vector retrieval returns all 12 in a defined
-      // order (top30 = 12 ≥ 10 → personalised reranker path is taken).
+      // order (top30 = 12 >= 10 → personalised reranker path is taken).
       const modeVec = Array(1024).fill(0);
       modeVec[0] = 1;
 
       const prof = await pg.query(
         `INSERT INTO user_profiles (anonymous_id, n_events) VALUES ($1, 5) RETURNING id::text`,
-        ["anon-limit-audit"],
+        [anonymous_id],
       );
       const profileId = prof.rows[0].id;
       await pg.query(
@@ -67,7 +83,7 @@ describe("AUDIT: personalised feed ignores limit > 10", () => {
       const feed = await generateFeed(
         {
           user_id: null,
-          anonymous_id: "anon-limit-audit",
+          anonymous_id,
           session_id: null,
           limit: 20,
         },
