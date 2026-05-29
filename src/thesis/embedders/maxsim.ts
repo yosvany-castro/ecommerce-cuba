@@ -36,7 +36,7 @@ export function maxSimRanker(
       const q = queryChunksFor(ctx) ?? [];
       return candidates
         .map((c) => ({ id: c.id, s: maxSim(q, itemChunks.get(c.id) ?? []) }))
-        .sort((a, b) => b.s - a.s)
+        .sort((a, b) => b.s - a.s || a.id.localeCompare(b.id))
         .map((x) => x.id);
     },
   };

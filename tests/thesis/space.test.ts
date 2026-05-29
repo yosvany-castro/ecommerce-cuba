@@ -16,6 +16,9 @@ describe("space utils", () => {
   test("meanPool of empty returns empty", () => {
     expect(meanPool([])).toEqual([]);
   });
+  test("meanPool throws on ragged input (guards silent NaN)", () => {
+    expect(() => meanPool([[1, 2], [1, 2, 3]])).toThrow();
+  });
   test("cosineSim of identical unit vectors = 1", () => {
     expect(cosineSim([1, 0], [1, 0])).toBeCloseTo(1, 9);
   });

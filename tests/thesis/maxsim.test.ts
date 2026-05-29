@@ -32,4 +32,17 @@ describe("maxSimRanker", () => {
     expect(out[0]).toBe("doc1");
     expect(out[2]).toBe("doc3");
   });
+
+  test("empty query → all scores 0 → deterministic id-ascending order", () => {
+    const itemChunks = new Map<string, number[][]>([
+      ["z", [[1, 0]]], ["a", [[0, 1]]], ["m", [[1, 1]]],
+    ]);
+    const r = maxSimRanker(itemChunks, () => []);
+    const out = r.rank({ userVector: [], cohort: null }, [
+      { id: "z", popularity: 0, vector: [] },
+      { id: "a", popularity: 0, vector: [] },
+      { id: "m", popularity: 0, vector: [] },
+    ]);
+    expect(out).toEqual(["a", "m", "z"]);
+  });
 });

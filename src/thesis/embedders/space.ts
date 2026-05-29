@@ -29,6 +29,9 @@ export function l2normalize(v: number[]): number[] {
 export function meanPool(vectors: number[][]): number[] {
   if (vectors.length === 0) return [];
   const d = vectors[0].length;
+  for (const v of vectors) {
+    if (v.length !== d) throw new Error("meanPool: all vectors must share the same dimension");
+  }
   const out = new Array<number>(d).fill(0);
   for (const v of vectors) for (let i = 0; i < d; i++) out[i] += v[i];
   return out.map((x) => x / vectors.length);

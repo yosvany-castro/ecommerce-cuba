@@ -19,12 +19,29 @@ describe("trainTwoTower", () => {
     expect(m1.itemVectors.get("a")).toEqual(m2.itemVectors.get("a"));
   });
 
+  test("learned user vectors are deterministic by seed", () => {
+    const o = { dim: 8, epochs: 30, negatives: 2, seed: 5 };
+    const m1 = trainTwoTower(pairs, itemFeatures, o);
+    const m2 = trainTwoTower(pairs, itemFeatures, o);
+    expect(m1.userVector("u1")).toEqual(m2.userVector("u1"));
+  });
+
   test("a user's vector is closer to their liked items than to the other cluster", () => {
     const m = trainTwoTower(pairs, itemFeatures, { dim: 16, epochs: 200, negatives: 3, seed: 2 });
     const u1 = m.userVector("u1")!;
     const simA = cosineSim(u1, m.itemVectors.get("a")!);
     const simX = cosineSim(u1, m.itemVectors.get("x")!);
     expect(simA).toBeGreaterThan(simX);
+  });
+
+  test("user is closer to liked cluster than other across seeds (robust margin)", () => {
+    for (const seed of [1, 2, 3]) {
+      const m = trainTwoTower(pairs, itemFeatures, { dim: 16, epochs: 200, negatives: 3, seed });
+      const u1 = m.userVector("u1")!;
+      const simA = cosineSim(u1, m.itemVectors.get("a")!);
+      const simX = cosineSim(u1, m.itemVectors.get("x")!);
+      expect(simA - simX).toBeGreaterThan(0.05);
+    }
   });
 
   test("userVectorFromItems pools the given item vectors for an unknown user", () => {

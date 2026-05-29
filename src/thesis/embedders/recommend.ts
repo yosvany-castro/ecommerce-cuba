@@ -29,6 +29,6 @@ export function recommendProductionSpace(
       const utility = quality - opts.costWeight * (s.servingCost / maxCost);
       return { space: s.space, quality, utility };
     })
-    .sort((a, b) => b.utility - a.utility);
+    .sort((a, b) => b.utility - a.utility || a.space.localeCompare(b.space));
   return { winner: ranked[0].space, ranked };
 }

@@ -21,4 +21,13 @@ describe("recommendProductionSpace", () => {
     expect(rec.ranked.length).toBe(4);
     expect(rec.ranked[0].space).toBe(rec.winner);
   });
+
+  test("ties on utility break deterministically by space name", () => {
+    const tied = [
+      { space: "zspace", ndcg10: 0.3, complementRecall10: 0.3, servingCost: 1 },
+      { space: "aspace", ndcg10: 0.3, complementRecall10: 0.3, servingCost: 1 },
+    ];
+    const rec = recommendProductionSpace(tied, { costWeight: 0.5 });
+    expect(rec.winner).toBe("aspace");
+  });
 });

@@ -73,6 +73,7 @@ export function trainTwoTower(
       const cand: string[] = [p.item];
       for (let n = 0; n < opts.negatives; n++) {
         const neg = items[rng.int(items.length)];
+        // a negative equal to the positive is skipped (not resampled), so the effective negative count can be < opts.negatives — acceptable for sampled softmax
         if (neg !== p.item) cand.push(neg);
       }
       const vecs = cand.map(itemVec);
