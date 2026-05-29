@@ -42,4 +42,13 @@ describe("buildRelations", () => {
     const rels = buildRelations(cat);
     for (const r of rels) expect(r.product_a_id).not.toBe(r.product_b_id);
   });
+
+  test("complement edges are never same-subcategory (commercial, not linguistic)", () => {
+    const cat = sampleCatalog(500, 21);
+    const rels = buildRelations(cat);
+    const sub = new Map(cat.map((p) => [p.source_product_id, p.attrs.subcategory]));
+    const comps = rels.filter((r) => r.relation_type === "complement");
+    expect(comps.length).toBeGreaterThan(0);
+    for (const r of comps) expect(sub.get(r.product_a_id)).not.toBe(sub.get(r.product_b_id));
+  });
 });
