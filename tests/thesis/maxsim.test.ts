@@ -1,0 +1,35 @@
+import { describe, test, expect } from "vitest";
+import { maxSim, maxSimRanker } from "@/thesis/embedders/maxsim";
+
+describe("maxSim", () => {
+  test("sum over query chunks of best doc-chunk cosine", () => {
+    const q = [[1, 0], [0, 1]];
+    const d = [[1, 0], [0, 1]];
+    expect(maxSim(q, d)).toBeCloseTo(2, 9);
+  });
+  test("a doc matching only one query chunk scores ~1", () => {
+    expect(maxSim([[1, 0], [0, 1]], [[1, 0]])).toBeCloseTo(1, 9);
+  });
+  test("empty query or doc → 0", () => {
+    expect(maxSim([], [[1, 0]])).toBe(0);
+    expect(maxSim([[1, 0]], [])).toBe(0);
+  });
+});
+
+describe("maxSimRanker", () => {
+  test("ranks the doc whose chunks best cover the query first", () => {
+    const itemChunks = new Map<string, number[][]>([
+      ["doc1", [[1, 0], [0, 1]]],
+      ["doc2", [[1, 0]]],
+      ["doc3", [[0, 0, 1]]],
+    ]);
+    const r = maxSimRanker(itemChunks, () => [[1, 0], [0, 1]]);
+    const out = r.rank({ userVector: [], cohort: null }, [
+      { id: "doc1", popularity: 0, vector: [] },
+      { id: "doc2", popularity: 0, vector: [] },
+      { id: "doc3", popularity: 0, vector: [] },
+    ]);
+    expect(out[0]).toBe("doc1");
+    expect(out[2]).toBe("doc3");
+  });
+});
