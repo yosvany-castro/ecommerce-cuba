@@ -1,25 +1,37 @@
 # Thesis F1 — Embedding Study
 
-Cases vary per space (users with ≥1 train item in that space).
+## Fair-comparison disclosure
+
+- Common candidate universe (items representable in EVERY participating space): **1997** items.
+- Eval cases (identical users across all spaces): **1042**.
+- Complement targets are intersected with the candidate universe (and exclude the user's train items).
+- Per-space representation / dimension:
+- `e0_text`: 1024
+- `e1_prod2vec`: 64
+- `e3_two_tower`: 64
+- `e5_context3`: 1024
+- `e2_hybrid`: score-fusion (text 1024-d ⊕ behaviour 64-d)
+- `e4_late`: chunk-MaxSim
+- E4 late-interaction query is capped at **24** chunks per user.
 
 | Space | cases | MRR | nDCG@5 | nDCG@10 | nDCG@20 | Recall@5 | Recall@10 | Recall@20 | complR@10 |
 |---|---|---|---|---|---|---|---|---|---|
-| e0_text | 222 | 0.137 | 0.132 | 0.169 | 0.194 | 0.207 | 0.324 | 0.419 | 0.027 |
-| e1_prod2vec | 222 | 0.217 | 0.231 | 0.255 | 0.281 | 0.351 | 0.423 | 0.527 | 0.061 |
-| e3_two_tower | 222 | 0.149 | 0.145 | 0.191 | 0.209 | 0.230 | 0.374 | 0.441 | 0.027 |
-| e5_context3 | 222 | 0.133 | 0.127 | 0.165 | 0.187 | 0.198 | 0.315 | 0.401 | 0.019 |
-| e2_hybrid | 222 | 0.221 | 0.237 | 0.262 | 0.288 | 0.360 | 0.437 | 0.545 | 0.036 |
-| e4_late | 222 | 0.134 | 0.134 | 0.176 | 0.192 | 0.221 | 0.351 | 0.414 | 0.032 |
+| e0_text | 1042 | 0.040 | 0.027 | 0.039 | 0.063 | 0.049 | 0.086 | 0.181 | 0.001 |
+| e1_prod2vec | 1042 | 0.084 | 0.073 | 0.104 | 0.139 | 0.127 | 0.225 | 0.361 | 0.000 |
+| e3_two_tower | 1042 | 0.044 | 0.027 | 0.042 | 0.066 | 0.045 | 0.090 | 0.188 | 0.001 |
+| e5_context3 | 1042 | 0.046 | 0.031 | 0.045 | 0.065 | 0.047 | 0.092 | 0.171 | 0.001 |
+| e2_hybrid | 1042 | 0.101 | 0.084 | 0.126 | 0.163 | 0.134 | 0.265 | 0.411 | 0.001 |
+| e4_late | 1042 | 0.041 | 0.026 | 0.039 | 0.062 | 0.042 | 0.083 | 0.174 | 0.001 |
 
 ## Production recommendation
 
-**Deploy: `e1_prod2vec`** (utility = quality − 0.5·normalizedCost).
+**Deploy: `e2_hybrid`** (utility = quality − 0.5·normalizedCost).
 
 | Space | quality | utility |
 |---|---|---|
-| e1_prod2vec | 0.177 | 0.077 |
-| e2_hybrid | 0.171 | 0.071 |
-| e3_two_tower | 0.126 | 0.026 |
-| e0_text | 0.112 | 0.012 |
-| e5_context3 | 0.106 | -0.094 |
-| e4_late | 0.118 | -0.382 |
+| e2_hybrid | 0.076 | -0.024 |
+| e1_prod2vec | 0.063 | -0.037 |
+| e3_two_tower | 0.025 | -0.075 |
+| e0_text | 0.024 | -0.076 |
+| e5_context3 | 0.028 | -0.172 |
+| e4_late | 0.024 | -0.476 |
