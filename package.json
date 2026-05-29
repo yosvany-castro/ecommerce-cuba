@@ -19,6 +19,7 @@
     "thesis:behavior": "tsx scripts/thesis/data/behavior-gen.ts",
     "thesis:eval": "tsx scripts/thesis/eval-run.ts",
     "thesis:public": "tsx scripts/thesis/data/public-adapter.ts",
+    "thesis:train-prod2vec": "tsx scripts/thesis/embedders/train-prod2vec.ts",
     "eval:personalization-3a": "tsx scripts/eval-personalization-3a.ts",
     "eval:personalization-3b": "tsx scripts/eval-personalization-3b.ts",
     "eval:personalization-3c": "tsx scripts/eval-personalization-3c.ts",
