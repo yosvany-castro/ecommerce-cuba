@@ -21,6 +21,8 @@
     "thesis:public": "tsx scripts/thesis/data/public-adapter.ts",
     "thesis:train-prod2vec": "tsx scripts/thesis/embedders/train-prod2vec.ts",
     "thesis:train-two-tower": "tsx scripts/thesis/embedders/train-two-tower.ts",
+    "thesis:build-chunks": "tsx scripts/thesis/embedders/build-chunk-embeddings.ts",
+    "thesis:build-context3": "tsx scripts/thesis/embedders/build-context3.ts",
     "eval:personalization-3a": "tsx scripts/eval-personalization-3a.ts",
     "eval:personalization-3b": "tsx scripts/eval-personalization-3b.ts",
     "eval:personalization-3c": "tsx scripts/eval-personalization-3c.ts",
