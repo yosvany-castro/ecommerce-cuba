@@ -44,6 +44,21 @@ describe("trainTwoTower", () => {
     }
   });
 
+  test("empty itemFeatures returns empty model without throwing", () => {
+    const m = trainTwoTower([], new Map(), { dim: 8, epochs: 5, negatives: 2, seed: 1 });
+    expect(m.itemVectors.size).toBe(0);
+    expect(m.userVector("nobody")).toBe(null);
+    expect(m.userVectorFromItems(["x"])).toBe(null);
+  });
+
+  test("training is still deterministic with popularity-based negatives", () => {
+    const o = { dim: 8, epochs: 30, negatives: 2, seed: 5 };
+    const m1 = trainTwoTower(pairs, itemFeatures, o);
+    const m2 = trainTwoTower(pairs, itemFeatures, o);
+    expect(m1.itemVectors.get("a")).toEqual(m2.itemVectors.get("a"));
+    expect(m1.userVector("u1")).toEqual(m2.userVector("u1"));
+  });
+
   test("userVectorFromItems pools the given item vectors for an unknown user", () => {
     const m = trainTwoTower(pairs, itemFeatures, { dim: 8, epochs: 10, negatives: 2, seed: 1 });
     const v = m.userVectorFromItems(["a", "b"]);

@@ -3,8 +3,11 @@ import { l2normalize, meanPool } from "./space";
 
 /**
  * Two-tower retrieval model (Yi et al., RecSys'19 style) trained with sampled
- * softmax over (positive + sampled negatives) and logQ popularity correction.
- * Pure TS, CPU — no GPU/torch.
+ * softmax: negatives sampled ∝ popularity; logits corrected by −log Q(item)
+ * with Q ∝ popularity (Yi et al. 2019 sampled-softmax logQ correction). Because
+ * the sampler and the correction use the SAME popularity distribution, the logQ
+ * term is self-consistent (it down-weights frequently-drawn popular negatives
+ * rather than injecting bias). Pure TS, CPU — no GPU/torch.
  *  - item tower = linear projection W (dim x featDim) of the item's input
  *    features (here the E0 text vector) into the shared space;
  *  - user tower = a learned embedding per training user.
@@ -33,15 +36,43 @@ export function trainTwoTower(
   const lr0 = opts.lr ?? 0.05;
 
   const items = [...itemFeatures.keys()].sort();
+  if (items.length === 0) {
+    return { itemVectors: new Map(), userVector: () => null, userVectorFromItems: () => null };
+  }
   const featDim = itemFeatures.get(items[0])!.length;
   const users = [...new Set(pairs.map((p) => p.user))].sort();
   const userIdx = new Map(users.map((u, i) => [u, i]));
 
-  // item popularity for logQ correction (sampling bias).
+  // item popularity (count of appearances as a positive); items that never
+  // appear get a floor of 1 so every item is both correctable and sampleable.
   const pop = new Map<string, number>();
   for (const p of pairs) pop.set(p.item, (pop.get(p.item) ?? 0) + 1);
+  const popOf = (id: string) => pop.get(id) ?? 1;
   const totalPairs = pairs.length;
-  const logQ = (id: string) => Math.log((pop.get(id) ?? 1) / totalPairs);
+  // logQ correction: Q ∝ popularity, normalized by totalPairs (matches sampler).
+  const logQ = (id: string) => Math.log(popOf(id) / totalPairs);
+
+  // Popularity-proportional negative sampler over `items` (sorted, deterministic):
+  // cumulative-weight array with weight = pop floor; draw by rng.next()*total + search.
+  const cumWeights: number[] = new Array(items.length);
+  let acc = 0;
+  for (let i = 0; i < items.length; i++) {
+    acc += popOf(items[i]);
+    cumWeights[i] = acc;
+  }
+  const totalWeight = acc;
+  const sampleNeg = (): string => {
+    const target = rng.next() * totalWeight;
+    // binary search for first cumulative weight strictly greater than target
+    let lo = 0;
+    let hi = items.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cumWeights[mid] > target) hi = mid;
+      else lo = mid + 1;
+    }
+    return items[lo];
+  };
 
   // Parameters: item projection W (dim x featDim), user embeddings U (users x dim).
   const W = Array.from({ length: opts.dim }, () => Array.from({ length: featDim }, () => (rng.next() - 0.5) / featDim));
@@ -72,7 +103,7 @@ export function trainTwoTower(
       // candidate set = positive (index 0) + sampled negatives, scored with logQ correction
       const cand: string[] = [p.item];
       for (let n = 0; n < opts.negatives; n++) {
-        const neg = items[rng.int(items.length)];
+        const neg = sampleNeg(); // ∝ popularity, matching the logQ correction
         // a negative equal to the positive is skipped (not resampled), so the effective negative count can be < opts.negatives — acceptable for sampled softmax
         if (neg !== p.item) cand.push(neg);
       }
