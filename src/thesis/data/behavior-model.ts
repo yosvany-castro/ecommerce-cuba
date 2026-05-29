@@ -1,0 +1,561 @@
+/**
+ * Generative behaviour model for the thesis evaluation framework.
+ *
+ * GENERATIVE STORY
+ * ────────────────
+ * Each SimUser has a LATENT STATE: a small set of preferred subcategories
+ * (tasteSubcategories) and a preferred price tier (budgetBand).  These are
+ * sampled once at user-creation time and are NEVER written to the output tables
+ * that any ranking model will see — they only appear in `SimUser.latent_state`
+ * which is used solely by the evaluation harness as ground truth.
+ *
+ * WHY THE TASTE IS LEARNABLE BUT NOT LEAKED
+ * ──────────────────────────────────────────
+ * The click model assigns a high affinity score (AFFINITY_IN_TASTE = 10) to
+ * products in the user's taste subcategories and a low score (AFFINITY_OUT = 1)
+ * to everything else.  The resulting event stream is statistically biased toward
+ * the planted taste:  >50 % of product_view events land in taste subcategories
+ * (validated by the concentration test).  A collaborative-filter or embedding
+ * model can therefore *learn* the taste from co-occurrence — but the raw taste
+ * labels are kept separate and no model is given direct access to them.  This is
+ * the key epistemic property required by the thesis.
+ *
+ * GIFT SESSIONS
+ * ─────────────
+ * With probability p_gift a session becomes a gift purchase for one of the
+ * user's pre-sampled recipients.  The click model then pivots: affinity is
+ * driven by demographic match (gender + age band) rather than the shopper's own
+ * taste.  This introduces realistic noise that prevents trivial taste recovery.
+ *
+ * TEMPORAL HOLDOUT — SESSION-LEVEL SPLIT (LEAKAGE-FREE)
+ * ──────────────────────────────────────────────────────
+ * The split granularity is the SESSION, not the individual purchase.  Rationale:
+ * an examiner will ask "split at what granularity?" — the answer is session-level
+ * so that no test item can co-occur with a train item inside the same basket.
+ *
+ * Policy:
+ *   • Group each user's purchases by session.
+ *   • If the user has purchases in ≥ 2 DISTINCT sessions: ALL purchases of the
+ *     user's LAST purchasing session → split = "test"; every purchase in any
+ *     earlier session → split = "train".
+ *   • Otherwise (purchases in 0 or 1 session): all purchases → "train"
+ *     (no test row for that user).
+ *
+ * Because session start times are STRICTLY increasing per user and every event
+ * is STRICTLY after every event of all prior sessions, this guarantees:
+ *   (1) every test purchase occurs strictly after every train purchase, and
+ *   (2) the test session shares NO purchase with any train session
+ *       — i.e. a co-occurrence recommender cannot recover the test item from
+ *       the train basket.  This is the leakage-free temporal split the thesis
+ *       claims.
+ *
+ * DETERMINISM
+ * ───────────
+ * All randomness is drawn from `makeRng(opts.seed)`.  Timestamps derive from
+ * BASE_DATE_MS (a fixed epoch) + a per-user cumulative session offset that
+ * strictly increases with session index — never from Date.now() and never from
+ * a draw that could collide on the same instant.
+ */
+
+import { makeRng } from "./rng";
+import type { SynthProduct } from "./catalog-model";
+
+// ─── Fixed epoch — all timestamps are offsets from this date ─────────────────
+/** 2026-01-01T00:00:00Z in ms.  Never use Date.now() — all ts derived here. */
+const BASE_DATE_MS = Date.parse("2026-01-01T00:00:00Z");
+const MS_PER_DAY = 86_400_000;
+
+// ─── Click-model coefficients (named for thesis readability) ─────────────────
+
+/**
+ * Affinity multiplier when a product's subcategory is in the user's taste.
+ * High value (10) ensures taste signal clearly dominates noise, making it
+ * learnable while remaining non-trivial (other products still appear).
+ */
+const AFFINITY_IN_TASTE = 10;
+
+/**
+ * Baseline affinity for out-of-taste products.  Kept at 1 (not 0) so the
+ * user occasionally browses outside their taste — realistic serendipity.
+ */
+const AFFINITY_OUT = 1;
+
+/**
+ * How strongly budget mismatch suppresses a product's score.
+ * score *= exp(-PRICE_PENALTY_COEFF * price_sensitivity * |priceBand - budgetBand|)
+ */
+const PRICE_PENALTY_COEFF = 0.7;
+
+/** Small Gaussian noise std added to scores before ranking (prevents ties). */
+const SCORE_NOISE_STD = 0.05;
+
+/**
+ * Affinity multiplier for a gift product whose gender/age matches the recipient.
+ * Same magnitude as AFFINITY_IN_TASTE to produce comparable signal strength.
+ */
+const GIFT_AFFINITY_MATCH = 10;
+
+/** Baseline affinity for gift products that don't match the recipient's profile. */
+const GIFT_AFFINITY_MISMATCH = 1;
+
+/** Cart conversion probability per viewed product. */
+const P_CART = 0.4;
+
+/** Purchase conversion probability per carted product. */
+const P_BUY = 0.5;
+
+/** Min/max number of products shown per session (top-k window). */
+const VIEW_WINDOW_MIN = 4;
+const VIEW_WINDOW_MAX = 8;
+
+/** Min/max number of shopping sessions generated per user. */
+const SESSIONS_PER_USER_MIN = 2;
+const SESSIONS_PER_USER_MAX = 7;
+
+/** Min/max number of taste subcategories assigned to each user. */
+const TASTE_K_MIN = 1;
+const TASTE_K_MAX = 3;
+
+/** Max budget band index (inclusive). */
+const BUDGET_BAND_MAX = 3;
+
+/** p_gift upper bound when drawn from uniform (capped at 0.6 to keep self sessions dominant). */
+const P_GIFT_NATURAL_MAX = 0.6;
+
+/** price_sensitivity range [min, max]. */
+const PRICE_SENS_MIN = 0.3;
+const PRICE_SENS_RANGE = 0.7; // actual = min + rng.next() * range → [0.3, 1.0)
+
+/** Each user has 1–3 recipients. */
+const RECIPIENT_COUNT_MIN = 1;
+const RECIPIENT_COUNT_MAX = 3;
+
+// ─── Recipient profile pool ───────────────────────────────────────────────────
+
+interface RecipientProfile {
+  relation: string;
+  gender: string;
+  age_min: number;
+  age_max: number;
+}
+
+/**
+ * Fixed pool of gift recipient archetypes.  Drawn from by each user to populate
+ * their recipients list.  Age ranges are intentionally broad to match AgeBand
+ * boundaries: bebe[0-2], nino[3-12], joven[13-24], adulto[25-59], mayor[60+].
+ */
+const RECIPIENT_PROFILES: RecipientProfile[] = [
+  { relation: "pareja",   gender: "femenino",  age_min: 25, age_max: 59 },
+  { relation: "hijo",     gender: "masculino", age_min: 3,  age_max: 12 },
+  { relation: "hija",     gender: "femenino",  age_min: 3,  age_max: 12 },
+  { relation: "madre",    gender: "femenino",  age_min: 40, age_max: 75 },
+  { relation: "padre",    gender: "masculino", age_min: 40, age_max: 75 },
+  { relation: "amigo",    gender: "masculino", age_min: 13, age_max: 35 },
+  { relation: "amiga",    gender: "femenino",  age_min: 13, age_max: 35 },
+  { relation: "abuelo",   gender: "masculino", age_min: 60, age_max: 90 },
+  { relation: "abuela",   gender: "femenino",  age_min: 60, age_max: 90 },
+  { relation: "bebe",     gender: "unisex",    age_min: 0,  age_max: 2  },
+] as const;
+
+// ─── AgeBand → numeric range map ─────────────────────────────────────────────
+
+const AGE_BAND_RANGE: Record<string, [number, number]> = {
+  bebe:   [0,   2],
+  nino:   [3,   12],
+  joven:  [13,  24],
+  adulto: [25,  59],
+  mayor:  [60,  120],
+};
+
+// ─── Public interfaces ────────────────────────────────────────────────────────
+
+export interface SimUser {
+  user_id: string;
+  latent_state: { tasteSubcategories: string[]; budgetBand: number };
+  p_gift: number;
+  price_sensitivity: number;
+  recipients: { id: string; relation: string; gender: string; age_min: number; age_max: number }[];
+}
+
+export interface SimSession {
+  session_id: string;
+  user_id: string;
+  intent: "self" | "gift";
+  recipient_id: string | null;
+  started_at: string;
+}
+
+export interface SimEvent {
+  user_id: string;
+  session_id: string;
+  event_type: "product_view" | "add_to_cart" | "purchase";
+  product_id: string;
+  occurred_at: string;
+}
+
+export interface HoldoutRow {
+  user_id: string;
+  product_id: string;
+  occurred_at: string;
+  split: "train" | "test";
+}
+
+export interface BehaviorOutput {
+  users: SimUser[];
+  sessions: SimSession[];
+  events: SimEvent[];
+  holdout: HoldoutRow[];
+}
+
+export interface BehaviorOpts {
+  users: number;
+  days: number;
+  seed: number;
+  pGiftOverride?: number;
+}
+
+// ─── UUID v4 generator ────────────────────────────────────────────────────────
+
+/**
+ * Generate a UUID v4 string from the shared Rng.
+ * Layout: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+ *   version nibble = 4
+ *   variant nibble = one of [8,9,a,b]
+ * This satisfies the regex /^[0-9a-f]{8}-...-4...-[89ab]...-[0-9a-f]{12}$/.
+ */
+function makeUuidV4(rng: ReturnType<typeof makeRng>): string {
+  // 32 random hex nibbles → 16 bytes
+  const hex = Array.from({ length: 32 }, () => rng.int(16).toString(16)).join("");
+  // UUID v4 layout (no hyphens, 32 hex chars):
+  //   [0..7]  time_low              (8 hex)
+  //   [8..11] time_mid              (4 hex)
+  //   [12..15] time_hi_and_version  (4 hex) — char 12 MUST be '4'
+  //   [16..19] clock_seq            (4 hex) — char 16 MUST be in [89ab]
+  //   [20..31] node                 (12 hex)
+  const withVersion =
+    hex.slice(0, 12) + "4" + hex.slice(13);            // 32 chars: inject version at 12
+  const variantNibble = ["8", "9", "a", "b"][rng.int(4)];
+  const full =
+    withVersion.slice(0, 16) + variantNibble + withVersion.slice(17); // 32 chars: inject variant at 16
+  return (
+    full.slice(0, 8)  + "-" +
+    full.slice(8, 12) + "-" +
+    full.slice(12, 16) + "-" +
+    full.slice(16, 20) + "-" +
+    full.slice(20, 32)
+  );
+}
+
+// ─── Timestamp helper ─────────────────────────────────────────────────────────
+
+/** Convert a millisecond offset from BASE_DATE_MS to an ISO 8601 string. */
+function msOffsetToIso(msOffset: number): string {
+  return new Date(BASE_DATE_MS + Math.floor(msOffset)).toISOString();
+}
+
+/**
+ * Minimum strictly-positive gap (ms) added per session index so that
+ * session s+1 always starts after session s for the SAME user, even when the
+ * random day spread would otherwise collide on the same instant.  One minute is
+ * far larger than the per-event second-granularity spacing, so sessions can
+ * never interleave in time.
+ */
+const SESSION_INDEX_GAP_MS = 60_000; // 1 minute per session index
+
+/** Strictly-increasing per-event spacing (ms). 1 second guarantees ordering. */
+const EVENT_STEP_MS = 1_000;
+
+// ─── Distinct subcategory extractor ──────────────────────────────────────────
+
+function distinctSubcategories(catalog: SynthProduct[]): string[] {
+  const seen = new Set<string>();
+  for (const p of catalog) seen.add(p.attrs.subcategory);
+  // Sort for determinism regardless of catalog ordering
+  return [...seen].sort();
+}
+
+// ─── Age-band overlap helper ──────────────────────────────────────────────────
+
+/**
+ * Returns true if the product's age band range overlaps the recipient's
+ * [age_min, age_max].  Overlap = the ranges share at least one integer year.
+ */
+function ageBandFitsRecipient(ageBand: string, recipientAgeMin: number, recipientAgeMax: number): boolean {
+  const range = AGE_BAND_RANGE[ageBand];
+  if (!range) return false;
+  return range[0] <= recipientAgeMax && range[1] >= recipientAgeMin;
+}
+
+// ─── Click-model score ────────────────────────────────────────────────────────
+
+/**
+ * Compute the affinity score of `product` for a given shopping context.
+ *
+ * For SELF sessions: affinity = AFFINITY_IN_TASTE if subcategory ∈ taste, else AFFINITY_OUT.
+ * For GIFT sessions: affinity = GIFT_AFFINITY_MATCH if gender and age both fit recipient.
+ *
+ * Price fit: exp(-PRICE_PENALTY_COEFF * price_sensitivity * |priceBand - budgetBand|).
+ * Small Gaussian noise prevents degenerate ties that would make the ranking
+ * trivially deterministic within a score tier.
+ */
+function scoreProduct(
+  product: SynthProduct,
+  tasteSubs: Set<string>,
+  budgetBand: number,
+  priceSensitivity: number,
+  isGift: boolean,
+  recipient: RecipientProfile | null,
+  noise: number,
+): number {
+  let affinity: number;
+
+  if (isGift && recipient !== null) {
+    const genderMatch =
+      product.attrs.gender === "unisex" ||
+      product.attrs.gender === recipient.gender;
+    const ageMatch = ageBandFitsRecipient(product.attrs.ageBand, recipient.age_min, recipient.age_max);
+    affinity = genderMatch && ageMatch ? GIFT_AFFINITY_MATCH : GIFT_AFFINITY_MISMATCH;
+  } else {
+    affinity = tasteSubs.has(product.attrs.subcategory) ? AFFINITY_IN_TASTE : AFFINITY_OUT;
+  }
+
+  const priceDelta = Math.abs(product.attrs.priceBand - budgetBand);
+  // exp(...) ∈ (0, 1]; clamp to a small positive floor so a large budget
+  // mismatch can never drive price-fit to ~0 (which would let additive noise
+  // invert the affinity ranking) and never goes negative.
+  const priceFit = Math.max(0.05, Math.exp(-PRICE_PENALTY_COEFF * priceSensitivity * priceDelta));
+
+  return affinity * priceFit + noise;
+}
+
+// ─── Main export ─────────────────────────────────────────────────────────────
+
+/**
+ * Generate the full synthetic behavioural dataset.
+ *
+ * @param catalog - Output of sampleCatalog(); treated as read-only.
+ * @param opts    - Simulation parameters.  All randomness comes from makeRng(opts.seed).
+ */
+export function sampleBehavior(
+  catalog: SynthProduct[],
+  opts: BehaviorOpts,
+): BehaviorOutput {
+  const rng = makeRng(opts.seed);
+
+  const allSubs = distinctSubcategories(catalog);
+
+  // ── 1. Generate users ────────────────────────────────────────────────────────
+  const users: SimUser[] = [];
+  for (let i = 0; i < opts.users; i++) {
+    const k = TASTE_K_MIN + rng.int(TASTE_K_MAX - TASTE_K_MIN + 1); // [1,3]
+    // Sample k distinct taste subcategories without replacement
+    const shuffled = [...allSubs];
+    for (let j = 0; j < k; j++) {
+      const idx = j + rng.int(shuffled.length - j);
+      [shuffled[j], shuffled[idx]] = [shuffled[idx], shuffled[j]];
+    }
+    const tasteSubcategories = shuffled.slice(0, k);
+    const budgetBand = rng.int(BUDGET_BAND_MAX + 1); // [0,3]
+    const p_gift =
+      opts.pGiftOverride !== undefined
+        ? opts.pGiftOverride
+        : rng.next() * P_GIFT_NATURAL_MAX;
+    const price_sensitivity = PRICE_SENS_MIN + rng.next() * PRICE_SENS_RANGE;
+
+    // 1–3 recipients drawn from the fixed pool (allow repeats for small pools)
+    const numRecipients = RECIPIENT_COUNT_MIN + rng.int(RECIPIENT_COUNT_MAX - RECIPIENT_COUNT_MIN + 1);
+    const recipients = Array.from({ length: numRecipients }, () => {
+      const profile = rng.pick(RECIPIENT_PROFILES);
+      return { id: makeUuidV4(rng), ...profile };
+    });
+
+    users.push({
+      user_id: makeUuidV4(rng),
+      latent_state: { tasteSubcategories, budgetBand },
+      p_gift,
+      price_sensitivity,
+      recipients,
+    });
+  }
+
+  // ── 2. Generate sessions + events ────────────────────────────────────────────
+  const sessions: SimSession[] = [];
+  const events: SimEvent[] = [];
+
+  for (const user of users) {
+    const tasteSubsSet = new Set(user.latent_state.tasteSubcategories);
+    const numSessions = SESSIONS_PER_USER_MIN + rng.int(SESSIONS_PER_USER_MAX - SESSIONS_PER_USER_MIN + 1);
+
+    // Space session start times across the days window with random jitter, but
+    // make the start STRICTLY increasing per user.  The random day spread keeps
+    // realism; the `si * SESSION_INDEX_GAP_MS` term guarantees session s+1 starts
+    // strictly after session s even if the random spread collides on the same
+    // instant.  Per-event spacing (EVENT_STEP_MS, seconds) is always smaller than
+    // SESSION_INDEX_GAP_MS (a minute), so a session's events can never overlap the
+    // next session's start.
+    let dayCursor = rng.next() * (opts.days / numSessions);
+
+    for (let si = 0; si < numSessions; si++) {
+      const sessionDay = dayCursor;
+      dayCursor += rng.next() * ((opts.days - dayCursor) / (numSessions - si));
+
+      // Strictly-increasing session start in ms from BASE_DATE_MS.
+      const sessionStartMs = sessionDay * MS_PER_DAY + si * SESSION_INDEX_GAP_MS;
+
+      const isGift = rng.next() < user.p_gift;
+      const recipient =
+        isGift && user.recipients.length > 0 ? rng.pick(user.recipients) : null;
+
+      const session: SimSession = {
+        session_id: makeUuidV4(rng),
+        user_id: user.user_id,
+        intent: isGift ? "gift" : "self",
+        recipient_id: isGift && recipient ? recipient.id : null,
+        started_at: msOffsetToIso(sessionStartMs),
+      };
+      sessions.push(session);
+
+      // Score catalog and pick top-k products to show
+      const viewWindow = VIEW_WINDOW_MIN + rng.int(VIEW_WINDOW_MAX - VIEW_WINDOW_MIN + 1);
+      const scored = catalog.map((p) => ({
+        p,
+        score: scoreProduct(
+          p,
+          tasteSubsSet,
+          user.latent_state.budgetBand,
+          user.price_sensitivity,
+          isGift,
+          recipient
+            ? { relation: recipient.relation, gender: recipient.gender, age_min: recipient.age_min, age_max: recipient.age_max }
+            : null,
+          rng.gaussian() * SCORE_NOISE_STD,
+        ),
+      }));
+      // Sort descending by score (stable enough; ties broken by insertion order)
+      scored.sort((a, b) => b.score - a.score);
+      const topK = scored.slice(0, viewWindow);
+
+      // Emit product_view → add_to_cart → purchase chain per product.
+      // `eventCounter` strictly increases within the session, giving every event
+      // a unique, strictly-ordered occurred_at = sessionStart + counter seconds.
+      // Because the max in-session offset (events * EVENT_STEP_MS) stays well
+      // below SESSION_INDEX_GAP_MS, all events of session s are strictly before
+      // session s+1's start — so every event has a globally well-defined order
+      // per user.
+      let eventCounter = 0;
+      const eventTs = (): string =>
+        msOffsetToIso(sessionStartMs + ++eventCounter * EVENT_STEP_MS);
+      for (const { p } of topK) {
+        events.push({
+          user_id: user.user_id,
+          session_id: session.session_id,
+          event_type: "product_view",
+          product_id: p.source_product_id,
+          occurred_at: eventTs(),
+        });
+
+        if (rng.next() < P_CART) {
+          events.push({
+            user_id: user.user_id,
+            session_id: session.session_id,
+            event_type: "add_to_cart",
+            product_id: p.source_product_id,
+            occurred_at: eventTs(),
+          });
+
+          if (rng.next() < P_BUY) {
+            events.push({
+              user_id: user.user_id,
+              session_id: session.session_id,
+              event_type: "purchase",
+              product_id: p.source_product_id,
+              occurred_at: eventTs(),
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // ── 3. Build SESSION-LEVEL temporal holdout (leakage-free) ─────────────────────
+  // Policy (see header doc): group each user's purchases by session; if the user
+  // has purchases in ≥2 distinct sessions, ALL purchases of the user's LAST
+  // purchasing session → "test" and every earlier-session purchase → "train".
+  // Otherwise all purchases → "train".  Because session start times strictly
+  // increase per user and every event is strictly after every prior session's
+  // events, the test session is guaranteed to be strictly after — and disjoint
+  // in products from — all train sessions of that user.
+  const holdout: HoldoutRow[] = [];
+
+  // session_id → its strictly-increasing start (ms order key) for the owning user
+  const sessionStartIso = new Map<string, string>();
+  for (const s of sessions) sessionStartIso.set(s.session_id, s.started_at);
+
+  // Group purchases by user, then by session.
+  const purchasesByUser = new Map<string, Map<string, SimEvent[]>>();
+  for (const ev of events) {
+    if (ev.event_type !== "purchase") continue;
+    let bySession = purchasesByUser.get(ev.user_id);
+    if (!bySession) {
+      bySession = new Map<string, SimEvent[]>();
+      purchasesByUser.set(ev.user_id, bySession);
+    }
+    const arr = bySession.get(ev.session_id) ?? [];
+    arr.push(ev);
+    bySession.set(ev.session_id, arr);
+  }
+
+  for (const [userId, bySession] of purchasesByUser) {
+    // Order this user's purchasing sessions by their (strictly-increasing) start.
+    const orderedSessionIds = [...bySession.keys()].sort((a, b) =>
+      (sessionStartIso.get(a) ?? "").localeCompare(sessionStartIso.get(b) ?? ""),
+    );
+    const distinctSessions = orderedSessionIds.length;
+    const lastSessionId = orderedSessionIds[distinctSessions - 1];
+    const hasTestSession = distinctSessions >= 2;
+
+    // Products purchased in any EARLIER (train) session.  A product that also
+    // appears in the last session is NOT a valid holdout — the model already saw
+    // it in train — so it stays train-only (removed from the test set below).
+    const trainProducts = new Set<string>();
+    if (hasTestSession) {
+      for (const sessionId of orderedSessionIds) {
+        if (sessionId === lastSessionId) continue;
+        for (const ev of bySession.get(sessionId)!) trainProducts.add(ev.product_id);
+      }
+    }
+
+    for (const sessionId of orderedSessionIds) {
+      const isTestSession = hasTestSession && sessionId === lastSessionId;
+
+      // Deduplicate purchases on product_id within the session, keeping the
+      // latest occurrence (deterministic: occurred_at is strictly increasing).
+      const dedupedMap = new Map<string, SimEvent>();
+      for (const ev of bySession.get(sessionId)!) dedupedMap.set(ev.product_id, ev);
+      const deduped = [...dedupedMap.values()].sort((a, b) =>
+        a.occurred_at.localeCompare(b.occurred_at),
+      );
+
+      for (const ev of deduped) {
+        if (isTestSession && trainProducts.has(ev.product_id)) {
+          // This product was already purchased in a train session, so it is
+          // already in the train holdout via its earlier row.  Adding it again
+          // here (as a late "train" row in the test session) would push the
+          // train time window past the test rows and break the strict temporal
+          // ordering; and labelling it "test" would leak.  Drop it entirely:
+          // the product is represented by its earlier train row.
+          continue;
+        }
+        const split: "train" | "test" = isTestSession ? "test" : "train";
+        holdout.push({
+          user_id: userId,
+          product_id: ev.product_id,
+          occurred_at: ev.occurred_at,
+          split,
+        });
+      }
+    }
+  }
+
+  return { users, sessions, events, holdout };
+}
