@@ -170,7 +170,7 @@ Modelo generativo con verdad conocida:
   Todo baseline y todo método futuro (embedders, reranker, multi-objetivo) lo
   implementa. Permite ablations uniformes.
 - **`Embedder` interface:** `embedItems(products) → vectors`, `embedQuery(userCtx)
-  → vector(s)`, `score(query, item) → number`. E0..E4 lo implementan.
+  → vector(s)`, `score(query, item) → number`. E0..E5 lo implementan.
 - **Splitter** (`split.ts`): holdout temporal por usuario (train<t*, test≥t*) +
   leave-one-out next-purchase. Determinista.
 - **Métricas** (`metrics.ts`, con fórmulas y tests known-answer):
@@ -204,10 +204,23 @@ Interfaz común `Embedder`. Secuenciadas (cada una entregable y medible sola):
   usuario), entrenadas con in-batch negatives + hard negatives + **corrección logQ
   de sesgo de muestreo** (Yi et al., RecSys'19). El embedding de la torre item se
   usa para retrieval ANN; la torre query produce el vector de consulta.
-- **E4 Late-interaction (ColBERT)** — multi-vector por ítem (nivel
-  token/atributo), score `MaxSim`; base multilingüe pre-entrenada
-  (Jina-ColBERT-v2). En este bloque se aplica como **re-scoring de un candidate
+- **E4 Late-interaction (chunk-MaxSim, in-repo)** — multi-vector por ítem
+  embebiendo por separado los chunks del producto (título / descripción /
+  atributos) con Voyage; score `MaxSim`. Aproxima ColBERT a nivel de chunk SIN
+  GPU/torch (el repo no los tiene); ColBERT real vía Jina API queda como variante
+  futura. **Decisión 2026-05-29.** Se aplica como **re-scoring de un candidate
   set** (no ANN completo) para mantener costo acotado.
+- **E5 voyage-context-3 (candidato de producción)** — embeddings contextualizados
+  de chunk (un vector por chunk con contexto global del documento) vía la API
+  `voyage-context-3`, pooled a un vector por ítem. No es MaxSim multi-vector; es
+  el **candidato realista de serving** (un vector denso por ítem, drop-in para
+  pgvector) que el estudio compara contra E0–E4. **Añadido 2026-05-29** por el
+  objetivo producción-primero.
+
+> **Entregable de producción de F1:** además de las tablas académicas E0–E5, el
+> runner del estudio emite una **recomendación explícita** del embedder a
+> desplegar, ponderando calidad (taste/complementos/cola) contra costo/latencia
+> de serving. Conecta la tesis con el producto que debe ganar dinero.
 
 ---
 
