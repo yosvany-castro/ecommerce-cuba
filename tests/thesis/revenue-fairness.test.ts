@@ -23,6 +23,12 @@ describe("sellerExposureGini", () => {
     const s = new Map<string, string>([["a", "s1"], ["b", "s1"], ["c", "s1"]]);
     expect(sellerExposureGini(["a", "b", "c"], s, 3)).toBeGreaterThan(0.5);
   });
+  test("known value for n>1: counts [s1=2, s2=1] → Gini ≈ 0.1667", () => {
+    // values sorted ascending [1,2], n=2, sum=3:
+    // Gini = (2·(1·1 + 2·2))/(2·3) − (2+1)/2 = 10/6 − 1.5 = 0.16667
+    const s = new Map<string, string>([["a", "s1"], ["b", "s1"], ["c", "s2"]]);
+    expect(sellerExposureGini(["a", "b", "c"], s, 3)).toBeCloseTo(0.1667, 4);
+  });
   test("empty → 0", () => {
     expect(sellerExposureGini([], seller, 3)).toBe(0);
   });

@@ -2,9 +2,9 @@ import { describe, test, expect } from "vitest";
 import { OBJECTIVE_NAMES, extractObjectiveFeatures, type ObjCtx, type ObjCandidate } from "@/thesis/objectives/objective-features";
 
 describe("extractObjectiveFeatures", () => {
-  const ctx: ObjCtx = { modeMedoids: [[1, 0, 0]], budgetBand: 2, maxPopularity: 100 };
+  const ctx: ObjCtx = { modeMedoids: [[1, 0, 0]], budgetBand: 2, maxPopularity: 100, maxRevenue: 10000 };
   const cand: ObjCandidate = {
-    id: "x", vector: [1, 0, 0], priceBand: 2, margin_pct: 0.4, popularity: 1, seller_age_days: 10,
+    id: "x", vector: [1, 0, 0], priceBand: 2, price_cents: 1720, margin_pct: 0.4, popularity: 1, seller_age_days: 10,
   };
 
   test("returns one value per OBJECTIVE_NAMES entry, all in [0,1]", () => {
@@ -32,5 +32,20 @@ describe("extractObjectiveFeatures", () => {
     const aligned = extractObjectiveFeatures(ctx, cand);
     const off = extractObjectiveFeatures(ctx, { ...cand, vector: [0, 1, 0] });
     expect(aligned.convProb).toBeGreaterThan(off.convProb);
+  });
+  test("revenue feature is present and in [0,1]", () => {
+    const f = extractObjectiveFeatures(ctx, cand);
+    expect(typeof f.revenue).toBe("number");
+    expect(f.revenue).toBeGreaterThanOrEqual(0);
+    expect(f.revenue).toBeLessThanOrEqual(1);
+  });
+  test("revenue is monotone in price given equal relevance/margin", () => {
+    const cheap = extractObjectiveFeatures(ctx, { ...cand, price_cents: 688 });
+    const pricey = extractObjectiveFeatures(ctx, { ...cand, price_cents: 4030 });
+    expect(pricey.revenue).toBeGreaterThan(cheap.revenue);
+  });
+  test("revenue is 0 when maxRevenue <= 0", () => {
+    const f = extractObjectiveFeatures({ ...ctx, maxRevenue: 0 }, cand);
+    expect(f.revenue).toBe(0);
   });
 });
