@@ -193,3 +193,43 @@ export function novelty(
   }, 0);
   return totalNovelty / topK.length;
 }
+
+/** Demographic targeting of a catalog item (from product metadata). */
+export interface ItemDemographics {
+  gender_target: string | null;
+  age_min: number;
+  age_max: number;
+}
+
+/** The recipient a gift session is for (from sim_user_recipients ground truth). */
+export interface RecipientProfile {
+  gender: string;
+  age_min: number;
+  age_max: number;
+}
+
+/**
+ * Recipient-fit@k: fraction of the top-k whose demographic targeting matches the
+ * gift recipient. An item fits when (a) its gender_target is null/unisex OR equals
+ * the recipient's gender, AND (b) its age band overlaps the recipient's age range.
+ * Measures whether a gift feed actually targets the right person. Denominator is
+ * min(k, ranked.length).
+ */
+export function recipientFitAtK(
+  ranked: string[],
+  recipient: RecipientProfile,
+  demographics: Record<string, ItemDemographics>,
+  k: number,
+): number {
+  const top = ranked.slice(0, k);
+  if (top.length === 0) return 0;
+  let fit = 0;
+  for (const id of top) {
+    const d = demographics[id];
+    if (!d) continue;
+    const genderOk = d.gender_target === null || d.gender_target === "unisex" || d.gender_target === recipient.gender;
+    const ageOk = d.age_min <= recipient.age_max && d.age_max >= recipient.age_min;
+    if (genderOk && ageOk) fit++;
+  }
+  return fit / top.length;
+}
