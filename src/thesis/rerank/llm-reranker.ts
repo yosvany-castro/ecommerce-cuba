@@ -58,12 +58,15 @@ export async function llmRerank(candidates: LlmCandidate[], ctx: LlmRerankContex
     });
     const parsed = responseSchema.parse(JSON.parse(stripMarkdownWrapper(res.text)));
     const allowed = new Set(inputOrder);
-    const ordered = parsed.items
-      .filter((it) => allowed.has(it.product_id))
-      .sort((a, b) => a.rank - b.rank)
-      .map((it) => it.product_id);
-    const seen = new Set(ordered);
-    for (const id of inputOrder) if (!seen.has(id)) ordered.push(id);
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    for (const it of parsed.items.slice().sort((a, b) => a.rank - b.rank)) {
+      if (allowed.has(it.product_id) && !seen.has(it.product_id)) {
+        seen.add(it.product_id);
+        ordered.push(it.product_id);
+      }
+    }
+    for (const id of inputOrder) if (!seen.has(id)) { seen.add(id); ordered.push(id); }
     return { order: ordered, usedFallback: false };
   } catch {
     return { order: inputOrder, usedFallback: true };

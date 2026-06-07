@@ -14,6 +14,37 @@ describe("llmRerank (real DeepSeek)", () => {
     expect([...r.order].sort()).toEqual(cands.map((c) => c.product_id).sort());
   }, 60_000);
 
+  test("duplicate product_id from LLM is deduped — result is exact permutation", async () => {
+    // LLM returns id[0] twice (rank 1 and rank 3) and omits id[2].
+    // The deduped build must still produce a full permutation of all 3 ids.
+    const id0 = cands[0].product_id;
+    const id1 = cands[1].product_id;
+    const id2 = cands[2].product_id;
+    const duplicatedResponse = JSON.stringify({
+      items: [
+        { product_id: id0, rank: 1 },
+        { product_id: id1, rank: 2 },
+        { product_id: id0, rank: 3 }, // duplicate — must be ignored
+        // id2 is missing — must be appended via tail-fill
+      ],
+    });
+    const spy = vi.spyOn(providers.defaultProvider, "chat").mockResolvedValueOnce({
+      text: duplicatedResponse,
+      inputTokens: 0,
+      outputTokens: 0,
+    });
+    try {
+      const r = await llmRerank(cands, { profile_summary: "test", is_gift: false, recipient_summary: null, last_viewed: null });
+      expect(r.usedFallback).toBe(false);
+      expect(r.order.length).toBe(3);
+      expect([...r.order].sort()).toEqual([id0, id1, id2].sort());
+      // Verify no duplicates
+      expect(new Set(r.order).size).toBe(3);
+    } finally {
+      spy.mockRestore();
+    }
+  }, 10_000);
+
   test("provider error → counted fallback, input order preserved", async () => {
     // The DeepSeek client is a singleton that caches the API key at first use, so
     // rotating the env var mid-process doesn't reinitialize it. Instead we spy on

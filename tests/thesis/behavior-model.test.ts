@@ -93,6 +93,52 @@ describe("sampleBehavior", () => {
     }
   });
 
+  test("test holdout is leakage-free under complement seeding (temporal + product disjoint per user)", () => {
+    // This sibling covers the complement-seeding code path that the taste-only leakage test
+    // never exercises (behavior-gen.ts always passes a non-empty complement map).
+    const cat = sampleCatalog(400, 2);
+    const comps = complementMap(cat);
+    expect(comps.size).toBeGreaterThan(0); // seeding branch is actually exercised
+
+    // Self-only sessions so complement seeding fires (it targets self sessions).
+    const out = sampleBehavior(cat, { users: 40, days: 60, seed: 55, pGiftOverride: 0.0 }, comps);
+
+    // Verify at least one complement co-occurrence exists (seeding branch was hit).
+    const viewsBySession = new Map<string, Set<string>>();
+    for (const ev of out.events) {
+      if (ev.event_type !== "product_view") continue;
+      const s = viewsBySession.get(ev.session_id) ?? new Set<string>();
+      s.add(ev.product_id);
+      viewsBySession.set(ev.session_id, s);
+    }
+    let coOccurringSessions = 0;
+    for (const [, viewed] of viewsBySession) {
+      for (const anchor of viewed) {
+        const targets = comps.get(anchor);
+        if (targets?.some((t) => viewed.has(t))) { coOccurringSessions++; break; }
+      }
+    }
+    expect(coOccurringSessions).toBeGreaterThan(0);
+
+    // Leakage-free invariants — identical assertions to the taste-only test above,
+    // now executed over complement-seeded output.
+    const byUser = new Map<string, { train: typeof out.holdout; test: typeof out.holdout }>();
+    for (const h of out.holdout) {
+      const e = byUser.get(h.user_id) ?? { train: [], test: [] };
+      (h.split === "test" ? e.test : e.train).push(h);
+      byUser.set(h.user_id, e);
+    }
+    for (const [, e] of byUser) {
+      if (e.test.length === 0) continue;
+      expect(e.train.length).toBeGreaterThan(0);
+      const maxTrain = Math.max(...e.train.map((h) => Date.parse(h.occurred_at)));
+      const minTest = Math.min(...e.test.map((h) => Date.parse(h.occurred_at)));
+      expect(minTest > maxTrain).toBe(true);
+      const trainProducts = new Set(e.train.map((h) => h.product_id));
+      for (const t of e.test) expect(trainProducts.has(t.product_id)).toBe(false);
+    }
+  });
+
   test("seeded GT complements co-occur with their anchor in the same session (§4.4)", () => {
     const cat = sampleCatalog(800, 5);
     const comps = complementMap(cat);
