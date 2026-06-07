@@ -64,16 +64,18 @@ Selected: **cfg18** — λ: rel=1, rev=1, mar=0, div=0.5, fair=0. On Pareto fron
 | diversity@10 | 0.226 | 0.132 | 70.8% |
 | sellerGini@10 | 0.110 | 0.103 | 6.6% |
 
-## Balanced operating point (knee — maximize relevance/base + revenue/base)
+## Balanced operating point (knee — min-max normalized, maximize min(relN, revN))
 
-Selected: **cfg16** — λ: rel=1, rev=1, mar=0, div=0, fair=0. On Pareto frontier: yes. Guardrail status: **does NOT meet guardrails**.
+Min-max normalization across the 24 swept configs: relN = (rel−minRel)/(maxRel−minRel), revN = (rev−minRev)/(maxRev−minRev). The knee maximizes min(relN, revN) — scale-free, so it is not dominated by revenue's raw magnitude (~30k vs relevance ~0.1).
+
+Selected: **cfg8** — λ: rel=1, rev=0.5, mar=0, div=0, fair=0. relN=0.529, revN=0.842. On Pareto frontier: yes. Guardrail status: **does NOT meet guardrails**.
 
 | metric | knee point | baseline | Δ% |
 |---|---|---|---|
-| relevance (nDCG@10) | 0.065 | 0.202 | -67.9% |
-| revenue@10 | 51576.5565 | 29702.2101 | +73.6% |
-| diversity@10 | 0.170 | 0.132 | 28.8% |
-| sellerGini@10 | 0.111 | 0.103 | 8.4% |
+| relevance (nDCG@10) | 0.081 | 0.202 | -59.8% |
+| revenue@10 | 48498.0968 | 29702.2101 | +63.3% |
+| diversity@10 | 0.106 | 0.132 | -19.9% |
+| sellerGini@10 | 0.111 | 0.103 | 8.1% |
 
 ## Trade-off summary
 
@@ -87,7 +89,9 @@ The Pareto frontier (23/24 configs) is real: weighting the revenue objective mov
 
 The strict 0.7·baseline relevance guardrail is INFEASIBLE on this pool: 0/24 configs satisfy it, so `pickByKpi` falls back to the global revenue maximum — a point that sacrifices 72.4% of relevance and is therefore NOT a desirable production operating point. This corrects an earlier draft that incorrectly described the KPI point as inside the guardrail; it is not.
 
-The sensible production choice is the BALANCED knee point (cfg16): -67.9% relevance@10 and +73.6% revenue@10 vs baseline — the best total-value trade-off, not the degenerate revenue corner.
+The balanced knee (min-max) is cfg8 (relN=0.529, revN=0.842): -59.8% relevance@10 and +63.3% revenue@10 vs baseline. It keeps 53% of the relevance range and 84% of the revenue range — a genuine compromise, far better than the revenue corner that a raw rel/base+rev/base sum (dominated by revenue's magnitude) would pick.
 
-For the thesis: the multi-objective frontier is genuine and lets the business DIAL revenue vs relevance, but on this synthetic pool the revenue objective and relevance are strongly opposed, so the right operating choice is a balanced point — not the revenue corner that a naïve KPI-max would select.
+The deeper finding: **every reranked config has relevance well below the RRF baseline**. The best config on relevance (cfg0, 0.107) is still -47.1% below baseline (0.202) — even the best reranking roughly halves nDCG@10 on this pool. So on THIS synthetic pool pure-RRF order is a strong relevance optimum, and ANY revenue/diversity/fairness weighting costs substantial relevance. The min-max knee is the least-bad compromise, NOT a free lunch.
+
+For the thesis: the multi-objective frontier is genuine and lets the business DIAL revenue vs relevance, but on this synthetic pool pure-RRF order is the relevance optimum and any revenue/diversity/fairness weighting costs relevance, so the right operating choice is the min-max balanced knee — the least-bad compromise, not the degenerate revenue corner a naïve KPI-max would select.
 

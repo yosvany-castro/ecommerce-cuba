@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T17:23:15.999Z",
+  "generated_at": "2026-06-07T17:26:53.539Z",
   "item_space": "e1_prod2vec",
   "common_universe": 1998,
   "eval_cases": 1107,
@@ -571,10 +571,10 @@
     "is_fallback": true
   },
   "knee_pick": {
-    "id": "cfg16",
+    "id": "cfg8",
     "weights": {
       "relevance": 1,
-      "revenue": 1,
+      "revenue": 0.5,
       "margin": 0,
       "diversity": 0,
       "sellerFairness": 0,
@@ -582,17 +582,26 @@
       "novelty": 0
     },
     "metrics": {
-      "relevance": 0.06469762512164626,
-      "revenue": 51576.55648721299,
-      "diversity": 0.1703088010622119,
-      "novelty": -3.9052522132374063,
-      "sellerGini": 0.11142328042328008
+      "relevance": 0.08099176276533945,
+      "revenue": 48498.096845269894,
+      "diversity": 0.10597134805169343,
+      "novelty": -3.918783095794025,
+      "sellerGini": 0.11106216931216902
     },
     "on_frontier": true,
     "guardrail_feasible": false,
-    "relevance_delta_pct": -67.92550764466768,
-    "revenue_delta_pct": 73.64551753519906,
-    "objective": "max relevance/base + revenue/base"
+    "relevance_delta_pct": -59.84752653938422,
+    "revenue_delta_pct": 63.2811048224395,
+    "relevance_norm": 0.5288085007422763,
+    "revenue_norm": 0.8417535531808974,
+    "objective": "min-max normalized: max min(relN, revN) across configs"
+  },
+  "relevance_finding": {
+    "max_config_relevance": 0.1067355330938524,
+    "max_config_relevance_id": "cfg0",
+    "baseline_relevance": 0.20171051938999868,
+    "best_config_vs_baseline_pct": -47.08479586655378,
+    "every_config_below_baseline_relevance": true
   },
   "tradeoff": {
     "revenue_delta_pct": 76.8351913627343,

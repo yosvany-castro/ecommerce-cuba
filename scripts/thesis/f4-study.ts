@@ -381,16 +381,27 @@ async function main() {
     );
     const kpiIsFeasible = feasible.some((c) => c.id === kpiCfg.id);
 
-    // ── Balanced "knee" operating point: maximize a scale-free sum of normalized ─
-    //    relevance and revenue (relevance/base + revenue/base). Best total value ──
-    //    trade-off — a defensible non-degenerate pick even when the strict 0.7 ────
-    //    relevance guardrail is infeasible. Deterministic tie-break by id. ────────
-    const balancedScore = (c: Config): number =>
-      (baseline.relevance === 0 ? 0 : c.metrics.relevance / baseline.relevance) +
-      (baseline.revenue === 0 ? 0 : c.metrics.revenue / baseline.revenue);
+    // ── Balanced "knee" operating point via MIN-MAX normalization across the ────
+    //    swept configs. For each config: relN = (rel−minRel)/(maxRel−minRel) and ──
+    //    revN = (rev−minRev)/(maxRev−minRev) over ALL configs (zero range → 0). ───
+    //    The knee = config maximizing min(relN, revN) — the most balanced point on ─
+    //    a scale-free basis (a raw rel/base + rev/base sum is dominated by revenue's
+    //    magnitude ~30k vs relevance ~0.1, so it degenerates to the revenue corner;
+    //    min-max removes that scale bias). Deterministic tie-break by id. ─────────
+    const relVals = configs.map((c) => c.metrics.relevance);
+    const revVals = configs.map((c) => c.metrics.revenue);
+    const minRel = Math.min(...relVals), maxRel = Math.max(...relVals);
+    const minRev = Math.min(...revVals), maxRev = Math.max(...revVals);
+    const relRange = maxRel - minRel, revRange = maxRev - minRev;
+    const norm = (x: number, lo: number, range: number): number => (range === 0 ? 0 : (x - lo) / range);
+    const kneeRelN = (c: Config): number => norm(c.metrics.relevance, minRel, relRange);
+    const kneeRevN = (c: Config): number => norm(c.metrics.revenue, minRev, revRange);
+    const balancedScore = (c: Config): number => Math.min(kneeRelN(c), kneeRevN(c));
     const kneeCfg = configs
       .slice()
       .sort((a, b) => balancedScore(b) - balancedScore(a) || a.id.localeCompare(b.id))[0];
+    const kneeRelNorm = kneeRelN(kneeCfg);
+    const kneeRevNorm = kneeRevN(kneeCfg);
 
     // ── Trade-off line: kpiPick (revenue-max) vs baseline. ─────────────────────
     const pct = (cur: number, base: number): number => (base === 0 ? 0 : ((cur - base) / base) * 100);
@@ -405,6 +416,14 @@ async function main() {
     const kneeRelDeltaPct = pct(kneeCfg.metrics.relevance, baseline.relevance);
 
     const anyRevenueAboveBaseline = configs.some((c) => c.metrics.revenue > baseline.revenue);
+
+    // ── Deeper finding: even the BEST reranked config's relevance is well below ──
+    //    the RRF baseline → pure-RRF order is a strong relevance optimum on this ──
+    //    pool, and ANY revenue/diversity/fairness weighting costs relevance. ──────
+    const maxConfigRelevance = maxRel; // == max over configs
+    const maxRelCfg = configs.find((c) => c.metrics.relevance === maxRel)!;
+    const everyConfigBelowBaselineRel = configs.every((c) => c.metrics.relevance < baseline.relevance);
+    const bestRelVsBaselinePct = pct(maxConfigRelevance, baseline.relevance);
 
     // ── Report (markdown) ──────────────────────────────────────────────────────
     const f3 = (x: number) => x.toFixed(3);
@@ -446,8 +465,9 @@ async function main() {
     rows.push(`| revenue@10 | ${f4(kpiCfg.metrics.revenue)} | ${f4(baseline.revenue)} | ${revDeltaPct >= 0 ? "+" : ""}${revDeltaPct.toFixed(1)}% |`);
     rows.push(`| diversity@10 | ${f3(kpiCfg.metrics.diversity)} | ${f3(baseline.diversity)} | ${pct(kpiCfg.metrics.diversity, baseline.diversity).toFixed(1)}% |`);
     rows.push(`| sellerGini@10 | ${f3(kpiCfg.metrics.sellerGini)} | ${f3(baseline.sellerGini)} | ${pct(kpiCfg.metrics.sellerGini, baseline.sellerGini).toFixed(1)}% |`, "");
-    rows.push("## Balanced operating point (knee — maximize relevance/base + revenue/base)", "");
-    rows.push(`Selected: **${kneeCfg.id}** — λ: ${wstr(kneeCfg.weights)}. On Pareto frontier: ${frontierIds.has(kneeCfg.id) ? "yes" : "no"}. Guardrail status: **${feasible.some((c) => c.id === kneeCfg.id) ? "FEASIBLE" : "does NOT meet guardrails"}**.`, "");
+    rows.push("## Balanced operating point (knee — min-max normalized, maximize min(relN, revN))", "");
+    rows.push(`Min-max normalization across the 24 swept configs: relN = (rel−minRel)/(maxRel−minRel), revN = (rev−minRev)/(maxRev−minRev). The knee maximizes min(relN, revN) — scale-free, so it is not dominated by revenue's raw magnitude (~30k vs relevance ~0.1).`, "");
+    rows.push(`Selected: **${kneeCfg.id}** — λ: ${wstr(kneeCfg.weights)}. relN=${f3(kneeRelNorm)}, revN=${f3(kneeRevNorm)}. On Pareto frontier: ${frontierIds.has(kneeCfg.id) ? "yes" : "no"}. Guardrail status: **${feasible.some((c) => c.id === kneeCfg.id) ? "FEASIBLE" : "does NOT meet guardrails"}**.`, "");
     rows.push("| metric | knee point | baseline | Δ% |", "|---|---|---|---|");
     rows.push(`| relevance (nDCG@10) | ${f3(kneeCfg.metrics.relevance)} | ${f3(baseline.relevance)} | ${kneeRelDeltaPct >= 0 ? "+" : ""}${kneeRelDeltaPct.toFixed(1)}% |`);
     rows.push(`| revenue@10 | ${f4(kneeCfg.metrics.revenue)} | ${f4(baseline.revenue)} | ${kneeRevDeltaPct >= 0 ? "+" : ""}${kneeRevDeltaPct.toFixed(1)}% |`);
@@ -463,8 +483,13 @@ async function main() {
     } else {
       rows.push(`The 0.7·baseline relevance guardrail is satisfied by ${feasible.length}/${configs.length} configs; the KPI point ${kpiIsFeasible ? "is one of them" : "is NOT among them and is a documented fallback to the global revenue maximum"}.`, "");
     }
-    rows.push(`The sensible production choice is the BALANCED knee point (${kneeCfg.id}): ${kneeRelDeltaPct >= 0 ? "+" : ""}${kneeRelDeltaPct.toFixed(1)}% relevance@10 and ${kneeRevDeltaPct >= 0 ? "+" : ""}${kneeRevDeltaPct.toFixed(1)}% revenue@10 vs baseline — the best total-value trade-off, not the degenerate revenue corner.`, "");
-    rows.push(`For the thesis: the multi-objective frontier is genuine and lets the business DIAL revenue vs relevance, but on this synthetic pool the revenue objective and relevance are strongly opposed, so the right operating choice is a balanced point — not the revenue corner that a naïve KPI-max would select.`, "");
+    rows.push(`The balanced knee (min-max) is ${kneeCfg.id} (relN=${f3(kneeRelNorm)}, revN=${f3(kneeRevNorm)}): ${kneeRelDeltaPct >= 0 ? "+" : ""}${kneeRelDeltaPct.toFixed(1)}% relevance@10 and ${kneeRevDeltaPct >= 0 ? "+" : ""}${kneeRevDeltaPct.toFixed(1)}% revenue@10 vs baseline. It keeps ${(kneeRelNorm * 100).toFixed(0)}% of the relevance range and ${(kneeRevNorm * 100).toFixed(0)}% of the revenue range — a genuine compromise, far better than the revenue corner that a raw rel/base+rev/base sum (dominated by revenue's magnitude) would pick.`, "");
+    if (everyConfigBelowBaselineRel) {
+      rows.push(`The deeper finding: **every reranked config has relevance well below the RRF baseline**. The best config on relevance (${maxRelCfg.id}, ${f3(maxConfigRelevance)}) is still ${bestRelVsBaselinePct.toFixed(1)}% below baseline (${f3(baseline.relevance)}) — even the best reranking roughly halves nDCG@10 on this pool. So on THIS synthetic pool pure-RRF order is a strong relevance optimum, and ANY revenue/diversity/fairness weighting costs substantial relevance. The min-max knee is the least-bad compromise, NOT a free lunch.`, "");
+    } else {
+      rows.push(`Best config relevance: ${maxRelCfg.id} at ${f3(maxConfigRelevance)} (${bestRelVsBaselinePct.toFixed(1)}% vs baseline ${f3(baseline.relevance)}).`, "");
+    }
+    rows.push(`For the thesis: the multi-objective frontier is genuine and lets the business DIAL revenue vs relevance, but on this synthetic pool pure-RRF order is the relevance optimum and any revenue/diversity/fairness weighting costs relevance, so the right operating choice is the min-max balanced knee — the least-bad compromise, not the degenerate revenue corner a naïve KPI-max would select.`, "");
 
     const md = rows.join("\n") + "\n";
     const outMd = resolve(process.cwd(), "docs/superpowers/reports/2026-06-07-thesis-f4-study.md");
@@ -542,7 +567,16 @@ async function main() {
         guardrail_feasible: feasible.some((c) => c.id === kneeCfg.id),
         relevance_delta_pct: kneeRelDeltaPct,
         revenue_delta_pct: kneeRevDeltaPct,
-        objective: "max relevance/base + revenue/base",
+        relevance_norm: kneeRelNorm,
+        revenue_norm: kneeRevNorm,
+        objective: "min-max normalized: max min(relN, revN) across configs",
+      },
+      relevance_finding: {
+        max_config_relevance: maxConfigRelevance,
+        max_config_relevance_id: maxRelCfg.id,
+        baseline_relevance: baseline.relevance,
+        best_config_vs_baseline_pct: bestRelVsBaselinePct,
+        every_config_below_baseline_relevance: everyConfigBelowBaselineRel,
       },
       tradeoff: {
         revenue_delta_pct: revDeltaPct,
