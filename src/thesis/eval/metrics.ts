@@ -237,3 +237,18 @@ export function recipientFitAtK(
   }
   return fit / top.length;
 }
+
+/**
+ * Set-change@k: fraction of the reranked top-k that is NOT in the base top-k.
+ * Measures how much a reranker actually changes membership of the top-k (set,
+ * not order) versus the base ordering. 0 = same items, 1 = fully replaced.
+ * Directly answers "does the reranker change the set?". Denominator = min(k, reranked.length).
+ */
+export function setChangeAtK(reranked: string[], base: string[], k: number): number {
+  const top = reranked.slice(0, k);
+  if (top.length === 0) return 0;
+  const baseSet = new Set(base.slice(0, k));
+  let changed = 0;
+  for (const id of top) if (!baseSet.has(id)) changed++;
+  return changed / top.length;
+}
