@@ -16,7 +16,7 @@ import { cosineSingleVectorRanker } from "@/thesis/eval/baselines";
 import { evaluateRanker, type EvalCase } from "@/thesis/eval/harness";
 import { aggregateCases } from "@/thesis/eval/aggregate";
 import { buildUserModes, type UserMode } from "@/thesis/multivector/modes";
-import { detectGiftIntent, type SessionItem } from "@/thesis/multivector/gift-detect";
+import { detectGiftIntent, type SessionItem, type UserDemographic } from "@/thesis/multivector/gift-detect";
 import { buildRecipientVector } from "@/thesis/multivector/gift-vector";
 import { multiModeRank } from "@/thesis/multivector/retrieve";
 import { recipientFitAtK, type ItemDemographics, type RecipientProfile } from "@/thesis/eval/metrics";
@@ -32,6 +32,24 @@ function ageBandOf(at: { min?: number; max?: number } | null | undefined): strin
   if (mid <= 25) return "joven";
   if (mid <= 59) return "adulto";
   return "mayor";
+}
+
+/** Most frequent non-null value; deterministic alphabetical tie-break. Null if none. */
+function modeOf(values: (string | null)[]): string | null {
+  const counts = new Map<string, number>();
+  for (const v of values) {
+    if (v === null) continue;
+    counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [v, c] of [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (c > bestCount) {
+      best = v;
+      bestCount = c;
+    }
+  }
+  return best;
 }
 
 async function main() {
@@ -73,6 +91,32 @@ async function main() {
     }
     const tests = (await pg.query(`SELECT user_id::text uid, product_id::text pid FROM thesis.holdout WHERE split='test'`)).rows as { uid: string; pid: string }[];
 
+    // Map each test (user, holdout product) to the session that exact product belongs to,
+    // then load THAT session's product items. The detector runs on the actual session,
+    // not the user's whole mixed train history.
+    // `${uid}|${pid}` -> the actual session (id + GT intent + recipient) the test item belongs to.
+    const testSession = new Map<string, { sid: string; intent: string; rid: string | null }>();
+    for (const r of (await pg.query(`
+      SELECT DISTINCT h.user_id::text uid, h.product_id::text pid, e.session_id::text sid,
+             s.intent, s.recipient_id::text rid
+      FROM thesis.holdout h
+      JOIN thesis.events e ON e.anonymous_id = h.user_id AND e.payload->>'product_id' = h.product_id::text
+      JOIN thesis.sim_sessions s ON s.session_id = e.session_id
+      WHERE h.split='test'`)).rows as { uid: string; pid: string; sid: string; intent: string; rid: string | null }[]) {
+      const k = `${r.uid}|${r.pid}`;
+      if (!testSession.has(k)) testSession.set(k, { sid: r.sid, intent: r.intent, rid: r.rid }); // first session containing the exact product
+    }
+    const sessionItems = new Map<string, string[]>(); // session_id -> distinct product_ids
+    for (const r of (await pg.query(`
+      SELECT e.session_id::text sid, e.payload->>'product_id' pid
+      FROM thesis.events e
+      WHERE e.payload->>'product_id' IS NOT NULL
+      GROUP BY 1, 2`)).rows as { sid: string; pid: string }[]) {
+      const a = sessionItems.get(r.sid) ?? [];
+      a.push(r.pid);
+      sessionItems.set(r.sid, a);
+    }
+
     // each user's most-recent session intent + recipient (GT, for segments + recipient-fit ONLY, never a ranker feature)
     const lastSession = new Map<string, { intent: string; rid: string | null }>();
     for (const r of (await pg.query(`SELECT user_id::text uid, intent, recipient_id::text rid FROM thesis.sim_sessions ORDER BY user_id, started_at DESC`)).rows as { uid: string; intent: string; rid: string | null }[]) {
@@ -106,14 +150,30 @@ async function main() {
       const history = train.map((id) => e1.get(id)!);
       const modes = buildUserModes(history, { distanceThreshold: 0.5, maxModes: 5 });
 
-      const sessionItems: SessionItem[] = train.map((id) => ({ product_id: id, vector: e1.get(id)!, gender_target: demo.get(id)?.gender_target ?? null, age_band: demo.get(id)?.ageBand ?? null }));
-      const gift = detectGiftIntent(sessionItems, modes, { minItems: 2, maxSimToModes: 0.5, minInternalCoherence: 0.5 });
+      // The actual session this test item belongs to (its product items + demographics).
+      const ts = testSession.get(`${t.uid}|${t.pid}`);
+      const sessionProductIds = (ts ? sessionItems.get(ts.sid) ?? [] : []).filter((id) => commonSet.has(id));
+      const session: SessionItem[] = sessionProductIds.map((id) => ({
+        product_id: id,
+        gender_target: demo.get(id)?.gender_target ?? null,
+        age_band: demo.get(id)?.ageBand ?? null,
+      }));
+      // Buyer's own dominant demographic = modal gender + age band across their TRAIN history.
+      const userDemographic: UserDemographic = {
+        gender: modeOf(train.map((id) => demo.get(id)?.gender_target ?? null)),
+        ageBand: modeOf(train.map((id) => demo.get(id)?.ageBand ?? null)),
+      };
+      const gift = detectGiftIntent(session, userDemographic, { minItems: 2, minDemographicCoherence: 0.6 });
 
-      const sess = lastSession.get(t.uid);
+      // GT intent + recipient from the test item's ACTUAL session (the one the detector
+      // ran on), falling back to the user's last session if the item maps to none.
+      const sess = ts ?? lastSession.get(t.uid);
       const recipient = sess?.rid ? (recById.get(sess.rid) ?? null) : null;
       const intent = sess?.intent ?? "self";
       const ctx: UserContext = { userVector: l2normalize(meanPool(history)), cohort: cohortById.get(t.pid) ?? null };
-      const f2Modes: UserMode[] = gift.isGift ? [{ medoid: buildRecipientVector(history), weight: 1, size: history.length }] : modes;
+      // Gift → ephemeral recipient vector built from the SESSION items' e1 vectors (never persisted).
+      const sessionVectors = sessionProductIds.map((id) => e1.get(id)!);
+      const f2Modes: UserMode[] = gift.isGift ? [{ medoid: buildRecipientVector(sessionVectors), weight: 1, size: sessionVectors.length }] : modes;
 
       const base: F2Case = { ctx, candidates, relevant, uid: t.uid, intent, nModes: modes.length, recipient, f2Modes, predGift: gift.isGift };
       baselineCases.push(base);
@@ -129,6 +189,7 @@ async function main() {
     rows.push("# Thesis F2 — Multi-vector × recipient + gift study", "");
     rows.push(`Item space: e1_prod2vec. Common universe: ${commonIds.length}. Test cases: ${f2Cases.length}.`, "");
     rows.push("Modes: average-linkage cosine clustering + medoids (PinnerSage-style), order-invariant. Retrieval: per-mode quota + RRF; gift sessions use a single ephemeral recipient vector.", "");
+    rows.push("Gift detection: demographic coherence + cross-cohort (gender/age) on the test item's actual session.", "");
     rows.push("| Segment | n | model | nDCG@10 | Recall@10 | MRR |", "|---|---|---|---|---|---|");
     const evalSeg = (label: string, bs: F2Case[], fs: F2Case[]) => {
       if (fs.length === 0) return;
@@ -141,7 +202,8 @@ async function main() {
     for (const seg of segments) evalSeg(seg, baselineCases.filter((c) => segOf(c) === seg), f2Cases.filter((c) => segOf(c) === seg));
 
     // gift-detection diagnostic vs ground truth (sim_sessions.intent). The detector
-    // fired iff predGift; ground-truth gift iff the user's last session intent == 'gift'.
+    // fired iff predGift; ground-truth gift iff the test item's ACTUAL session intent == 'gift'
+    // (the same session the detector ran on), for a faithful precision/recall.
     let tp = 0, fp = 0, fn = 0, tn = 0;
     for (const c of f2Cases) {
       const actualGift = c.intent === "gift";

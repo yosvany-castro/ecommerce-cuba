@@ -1,69 +1,90 @@
-import { cosineSim, meanPool } from "../embedders/space";
-import type { UserMode } from "./modes";
-
 /** An item observed in the current session. */
 export interface SessionItem {
   product_id: string;
-  vector: number[];
   gender_target: string | null;
-  // age_band: carried for downstream/diagnostics; not used by the current decision rule
   age_band: string | null;
+}
+
+/** The buyer's own dominant demographic, derived from their history. */
+export interface UserDemographic {
+  gender: string | null;
+  ageBand: string | null;
 }
 
 export interface GiftOpts {
   /** Minimum session items before gift can be inferred. */
   minItems: number;
-  /** Session counts as "away from the user" when its best similarity to any mode <= this. */
-  maxSimToModes: number;
-  /** Session counts as "internally coherent" when mean pairwise similarity >= this. */
-  minInternalCoherence: number;
+  /** Fraction of (gender-bearing) session items that must share the modal gender to count as coherent. */
+  minDemographicCoherence: number;
 }
 
 export interface GiftSignal {
   isGift: boolean;
   score: number;
   reasons: string[];
+  /** The recipient demographic the session points at (modal gender/age of the session). */
+  targetGender: string | null;
+  targetAgeBand: string | null;
 }
 
-/** Mean pairwise cosine of the session items (how focused the session is). */
-function internalCoherence(vectors: number[][]): number {
-  if (vectors.length < 2) return 1;
-  let s = 0, pairs = 0;
-  for (let i = 0; i < vectors.length; i++)
-    for (let j = i + 1; j < vectors.length; j++) { s += cosineSim(vectors[i], vectors[j]); pairs++; }
-  return pairs === 0 ? 1 : s / pairs;
+/** Most frequent non-null value; deterministic alphabetical tie-break. Null if no non-null values. */
+function modeOf(values: (string | null)[]): string | null {
+  const counts = new Map<string, number>();
+  for (const v of values) {
+    if (v === null) continue;
+    counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [v, c] of [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (c > bestCount) {
+      best = v;
+      bestCount = c;
+    }
+  }
+  return best;
 }
 
 /**
  * Heuristic, interpretable gift detection at the SESSION level (no trained model,
- * no ground-truth at inference). A session is a gift when it is BOTH:
- *  - coherent in itself (the user is focused on one kind of thing this session), AND
- *  - far from the user's own interest modes (it's not their own taste).
- * Demographic coherence (all items share a single non-null gender) is surfaced as
- * an explanatory signal only (does not change the decision).
+ * no ground-truth at inference). Per spec §4.2, the signal is DEMOGRAPHIC (not
+ * embedding) coherence: real gift sessions are product-diverse (the shopper browses
+ * across subcategories) yet target a single recipient, so the session's items are
+ * demographically coherent (shared gender/age band) and CROSS-COHORT relative to the
+ * buyer's own dominant demographic. This mirrors PinnerSage-adjacent gift modeling —
+ * a transient intent distinct from the buyer's persistent taste modes.
+ *
+ * A session is a gift when it is BOTH:
+ *  - demographically coherent (a clear modal gender shared by enough items), AND
+ *  - cross-cohort (its modal gender OR age band differs from the buyer's own).
+ *
+ * Pure and deterministic.
  */
-export function detectGiftIntent(session: SessionItem[], userModes: UserMode[], opts: GiftOpts): GiftSignal {
+export function detectGiftIntent(session: SessionItem[], user: UserDemographic, opts: GiftOpts): GiftSignal {
+  if (session.length < opts.minItems) {
+    return { isGift: false, score: 0, reasons: ["too_few_items"], targetGender: null, targetAgeBand: null };
+  }
+
+  const modalGender = modeOf(session.map((s) => s.gender_target));
+  const modalAgeBand = modeOf(session.map((s) => s.age_band));
+
+  const genderBearing = session.filter((s) => s.gender_target !== null);
+  const coherence =
+    genderBearing.length === 0
+      ? 0
+      : genderBearing.filter((s) => s.gender_target === modalGender).length / genderBearing.length;
+  const coherent = modalGender !== null && coherence >= opts.minDemographicCoherence;
+
+  const crossGender = modalGender !== user.gender;
+  const crossAge = modalAgeBand !== null && user.ageBand !== null && modalAgeBand !== user.ageBand;
+  const crossCohort = crossGender || crossAge;
+
   const reasons: string[] = [];
-  if (session.length < opts.minItems) return { isGift: false, score: 0, reasons: ["too_few_items"] };
+  if (coherent) reasons.push("demographically_coherent");
+  if (crossGender) reasons.push("cross_cohort_gender");
+  if (crossAge) reasons.push("cross_cohort_age");
 
-  const vectors = session.map((s) => s.vector);
-  const coherence = internalCoherence(vectors);
-  const sessionCentroid = meanPool(vectors);
-  const simToModes = userModes.length === 0 ? 0 : Math.max(...userModes.map((m) => cosineSim(sessionCentroid, m.medoid)));
-
-  const coherent = coherence >= opts.minInternalCoherence;
-  // Known limitation: a user with many diverse modes rarely registers as "away", so gift recall drops as mode count grows (accepted; an omnivore's gift looks like their own taste).
-  const awayFromUser = userModes.length === 0 ? false : simToModes <= opts.maxSimToModes;
-
-  const genders = new Set(session.map((s) => s.gender_target).filter((g) => g !== null));
-  const demoCoherent = genders.size === 1;
-
-  if (coherent) reasons.push("internally_coherent");
-  if (awayFromUser) reasons.push("away_from_user_modes");
-  if (demoCoherent) reasons.push("shared_recipient_demographics");
-
-  const isGift = coherent && awayFromUser;
-  const score = isGift ? coherence * (1 - simToModes) : 0;
-  // Known false-positive: a focused self-purchase in a brand-new category looks gift-like (coherent + far from existing modes).
-  return { isGift, score, reasons };
+  const isGift = coherent && crossCohort;
+  const score = isGift ? coherence : 0;
+  return { isGift, score, reasons, targetGender: modalGender, targetAgeBand: modalAgeBand };
 }
