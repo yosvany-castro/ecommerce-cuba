@@ -1,6 +1,20 @@
 import { describe, test, expect } from "vitest";
 import { sampleCatalog } from "@/thesis/data/catalog-model";
 import { sampleBehavior } from "@/thesis/data/behavior-model";
+import type { ComplementsBySource } from "@/thesis/data/behavior-model";
+import { buildRelations } from "@/thesis/data/relations-model";
+
+/** Build the GT complement adjacency the generator consumes (F0 spec §4.4). */
+function complementMap(cat: ReturnType<typeof sampleCatalog>): ComplementsBySource {
+  const map = new Map<string, string[]>();
+  for (const rel of buildRelations(cat)) {
+    if (rel.relation_type !== "complement") continue;
+    const arr = map.get(rel.product_a_id) ?? [];
+    arr.push(rel.product_b_id);
+    map.set(rel.product_a_id, arr);
+  }
+  return map;
+}
 
 describe("sampleBehavior", () => {
   test("full output is deterministic by seed (users, sessions, holdout)", () => {
@@ -77,6 +91,48 @@ describe("sampleBehavior", () => {
       const trainProducts = new Set(e.train.map((h) => h.product_id));
       for (const t of e.test) expect(trainProducts.has(t.product_id)).toBe(false);
     }
+  });
+
+  test("seeded GT complements co-occur with their anchor in the same session (§4.4)", () => {
+    const cat = sampleCatalog(800, 5);
+    const comps = complementMap(cat);
+    expect(comps.size).toBeGreaterThan(0);
+    // Self-only sessions so complement seeding (which targets self sessions) fires.
+    const out = sampleBehavior(cat, { users: 60, days: 60, seed: 99, pGiftOverride: 0.0 }, comps);
+
+    // Group viewed products per session.
+    const viewsBySession = new Map<string, Set<string>>();
+    for (const ev of out.events) {
+      if (ev.event_type !== "product_view") continue;
+      const s = viewsBySession.get(ev.session_id) ?? new Set<string>();
+      s.add(ev.product_id);
+      viewsBySession.set(ev.session_id, s);
+    }
+
+    // Count sessions where some anchor and one of its GT complements co-occur.
+    let coOccurringSessions = 0;
+    for (const [, viewed] of viewsBySession) {
+      let hit = false;
+      for (const anchor of viewed) {
+        const targets = comps.get(anchor);
+        if (!targets) continue;
+        if (targets.some((t) => viewed.has(t))) {
+          hit = true;
+          break;
+        }
+      }
+      if (hit) coOccurringSessions++;
+    }
+    expect(coOccurringSessions).toBeGreaterThan(0);
+  });
+
+  test("complement seeding is deterministic by seed", () => {
+    const cat = sampleCatalog(400, 5);
+    const comps = complementMap(cat);
+    const a = sampleBehavior(cat, { users: 30, days: 45, seed: 123 }, comps);
+    const b = sampleBehavior(cat, { users: 30, days: 45, seed: 123 }, comps);
+    expect(a.events).toEqual(b.events);
+    expect(a.holdout).toEqual(b.holdout);
   });
 
   test("gift-session views match the recipient's gender (or unisex)", () => {

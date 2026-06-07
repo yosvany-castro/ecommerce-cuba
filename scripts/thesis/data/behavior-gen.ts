@@ -26,6 +26,8 @@ config({ path: resolve(process.cwd(), ".env.local") });
 import { parseArgs } from "node:util";
 import { getPgClient } from "@/lib/db/pg";
 import { sampleBehavior } from "@/thesis/data/behavior-model";
+import type { ComplementsBySource } from "@/thesis/data/behavior-model";
+import { buildRelations } from "@/thesis/data/relations-model";
 import type { SynthProduct } from "@/thesis/data/catalog-model";
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
@@ -120,9 +122,26 @@ async function main(): Promise<void> {
 
     console.log(`[behavior] Loaded ${catalog.length} products.`);
 
+    // ── 1b. Build GT complement adjacency (source_product_id → complements) ───
+    // F0 spec §4.4: complements must co-occur intra-session. We derive the same
+    // ground-truth complement graph the relations CLI persists (buildRelations,
+    // filtered to relation_type='complement') and pass it to the behavior model
+    // so SELF sessions seed complements into the same basket → NPMI recovers them.
+    const complementsBySource: ComplementsBySource = (() => {
+      const map = new Map<string, string[]>();
+      for (const rel of buildRelations(catalog)) {
+        if (rel.relation_type !== "complement") continue;
+        const arr = map.get(rel.product_a_id) ?? [];
+        arr.push(rel.product_b_id);
+        map.set(rel.product_a_id, arr);
+      }
+      return map;
+    })();
+    console.log(`[behavior] GT complement anchors: ${complementsBySource.size}`);
+
     // ── 2. Run behavior model ────────────────────────────────────────────────
     console.log("[behavior] Generating synthetic behavior …");
-    const out = sampleBehavior(catalog, { users: USERS, days: DAYS, seed: SEED });
+    const out = sampleBehavior(catalog, { users: USERS, days: DAYS, seed: SEED }, complementsBySource);
     console.log(
       `[behavior] Generated: users=${out.users.length} sessions=${out.sessions.length} ` +
       `events=${out.events.length} holdout=${out.holdout.length}`,

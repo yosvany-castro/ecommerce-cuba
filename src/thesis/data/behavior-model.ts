@@ -130,6 +130,31 @@ const PRICE_SENS_RANGE = 0.7; // actual = min + rng.next() * range → [0.3, 1.0
 const RECIPIENT_COUNT_MIN = 1;
 const RECIPIENT_COUNT_MAX = 3;
 
+// ─── Complement co-occurrence seeding (F0 spec §4.4) ──────────────────────────
+
+/**
+ * Probability that a SELF session, after picking its taste-driven items, also
+ * pulls in ground-truth COMPLEMENTS of one of those items into the SAME basket.
+ *
+ * WHY THIS EXISTS — F0 spec §4.4 ("Co-ocurrencia intra-sesión sembrada desde el
+ * grafo GT — los complementos se co-ven/co-compran"):
+ * Without this, the only co-occurrence in the event stream comes from shared
+ * taste subcategories, so the NPMI co-occurrence graph is ORTHOGONAL to the GT
+ * complement graph (smartphone↔funda share no taste subcategory and never land
+ * in the same basket by chance). Cross-sell is then unrecoverable. Seeding GT
+ * complements into the same session makes anchor↔complement genuinely co-occur,
+ * so NPMI recovers the GT complement graph — the thesis's central claim.
+ *
+ * Kept ADDITIVE and a minority of events (≈0.5 of self sessions add 1–2 items on
+ * top of the 4–8 taste items) so the taste signal that F1/F2 rely on stays
+ * dominant.
+ */
+const P_COMPLEMENT_SEED = 0.5;
+
+/** Min/max number of GT complements injected into a seeded session. */
+const COMPLEMENTS_PER_SESSION_MIN = 1;
+const COMPLEMENTS_PER_SESSION_MAX = 2;
+
 // ─── Recipient profile pool ───────────────────────────────────────────────────
 
 interface RecipientProfile {
@@ -213,6 +238,16 @@ export interface BehaviorOpts {
   seed: number;
   pGiftOverride?: number;
 }
+
+/**
+ * Map from a product's `source_product_id` to the `source_product_id`s of its
+ * GROUND-TRUTH complements (relation_type='complement'). Built by the caller via
+ * `buildRelations(catalog)` filtered to complements. When provided (non-empty),
+ * SELF sessions probabilistically seed these complements into the same basket so
+ * NPMI co-occurrence recovers the GT complement graph (F0 spec §4.4). When empty
+ * or omitted, behaviour is identical to the pre-§4.4 generator (taste-only).
+ */
+export type ComplementsBySource = Map<string, readonly string[]>;
 
 // ─── UUID v4 generator ────────────────────────────────────────────────────────
 
@@ -335,14 +370,23 @@ function scoreProduct(
  *
  * @param catalog - Output of sampleCatalog(); treated as read-only.
  * @param opts    - Simulation parameters.  All randomness comes from makeRng(opts.seed).
+ * @param complementsBySource - Optional GT complement adjacency (source_product_id →
+ *   complement source_product_ids). When provided, SELF sessions seed complements
+ *   into the same basket per F0 spec §4.4. Defaults to empty (taste-only behaviour).
  */
 export function sampleBehavior(
   catalog: SynthProduct[],
   opts: BehaviorOpts,
+  complementsBySource: ComplementsBySource = new Map(),
 ): BehaviorOutput {
   const rng = makeRng(opts.seed);
 
   const allSubs = distinctSubcategories(catalog);
+
+  // Index catalog by source_product_id so seeded complements (looked up by id in
+  // the GT graph) resolve to the actual SynthProduct that goes through the funnel.
+  const productById = new Map<string, SynthProduct>();
+  for (const p of catalog) productById.set(p.source_product_id, p);
 
   // ── 1. Generate users ────────────────────────────────────────────────────────
   const users: SimUser[] = [];
@@ -433,7 +477,55 @@ export function sampleBehavior(
       }));
       // Sort descending by score (stable enough; ties broken by insertion order)
       scored.sort((a, b) => b.score - a.score);
-      const topK = scored.slice(0, viewWindow);
+      const basket: SynthProduct[] = scored.slice(0, viewWindow).map((s) => s.p);
+
+      // ── Complement co-occurrence seeding (F0 spec §4.4) ────────────────────
+      // For SELF sessions only (gift sessions pivot to demographic match, so a
+      // GT complement of a taste item is not the right intent there), with
+      // probability P_COMPLEMENT_SEED, pull 1–2 GT complements of one of the
+      // basket's items INTO THE SAME basket. These extra items are co-viewed
+      // (and may convert via the same funnel) so NPMI links anchor↔complement.
+      //
+      // Leakage-free split is preserved because the complements live in the SAME
+      // session as their anchor — they share that session's train/test fate
+      // exactly like the taste items; no cross-session injection occurs.
+      if (!isGift && complementsBySource.size > 0 && rng.next() < P_COMPLEMENT_SEED) {
+        // Candidate anchors = basket items that actually have GT complements
+        // present in this catalog. Sorted by id then chosen via rng → deterministic.
+        const inBasket = new Set(basket.map((p) => p.source_product_id));
+        const anchors = basket
+          .filter((p) => {
+            const comps = complementsBySource.get(p.source_product_id);
+            return comps !== undefined && comps.length > 0;
+          })
+          .sort((a, b) => a.source_product_id.localeCompare(b.source_product_id));
+
+        if (anchors.length > 0) {
+          const anchor = anchors[rng.int(anchors.length)];
+          // Complement source ids not already in the basket, sorted for determinism.
+          const compIds = [...(complementsBySource.get(anchor.source_product_id) ?? [])]
+            .filter((id) => !inBasket.has(id) && productById.has(id))
+            .sort((a, b) => a.localeCompare(b));
+
+          if (compIds.length > 0) {
+            const want =
+              COMPLEMENTS_PER_SESSION_MIN +
+              rng.int(COMPLEMENTS_PER_SESSION_MAX - COMPLEMENTS_PER_SESSION_MIN + 1);
+            const take = Math.min(want, compIds.length);
+            // Partial Fisher–Yates over a copy to pick `take` distinct complements.
+            const pool = [...compIds];
+            for (let j = 0; j < take; j++) {
+              const idx = j + rng.int(pool.length - j);
+              [pool[j], pool[idx]] = [pool[idx], pool[j]];
+              const comp = productById.get(pool[j]);
+              if (comp) {
+                basket.push(comp);
+                inBasket.add(comp.source_product_id);
+              }
+            }
+          }
+        }
+      }
 
       // Emit product_view → add_to_cart → purchase chain per product.
       // `eventCounter` strictly increases within the session, giving every event
@@ -445,7 +537,7 @@ export function sampleBehavior(
       let eventCounter = 0;
       const eventTs = (): string =>
         msOffsetToIso(sessionStartMs + ++eventCounter * EVENT_STEP_MS);
-      for (const { p } of topK) {
+      for (const p of basket) {
         events.push({
           user_id: user.user_id,
           session_id: session.session_id,
