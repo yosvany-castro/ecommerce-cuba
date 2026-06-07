@@ -27,7 +27,14 @@ export interface FeatureCandidate {
   sources: string[];
 }
 
-/** Fixed, ordered feature names — keep in lockstep with extractFeatures output. */
+/**
+ * Fixed, ordered feature names — keep in lockstep with extractFeatures output.
+ * NOTE: candidate `sources` is pool-construction metadata, NOT a user-relevance
+ * signal. It was removed as a feature because it leaks pool membership: LTR
+ * positives (train purchases) are excluded from the pool so their source one-hots
+ * are all 0, while pool negatives carry sources — the model would trivially learn
+ * "no source ⇒ positive", a membership artifact rather than relevance.
+ */
 export const FEATURE_NAMES = [
   "retrievalScore",
   "npmiScore",
@@ -35,10 +42,6 @@ export const FEATURE_NAMES = [
   "demoMatch",
   "isGift",
   "popularity",
-  "src_retrieval",
-  "src_npmi",
-  "src_popular",
-  "src_exploration",
 ] as const;
 
 const PRICE_BANDS = 4;
@@ -52,7 +55,7 @@ function demoFit(candGender: string | null, candAge: string | null, gender: stri
 /**
  * Build the numeric feature vector for a (user, candidate) pair. These are the
  * signals the pure retrieval ranking does NOT see (co-purchase, price-fit, gift/
- * demographic match, candidate source), which is what lets a reranker move the set.
+ * demographic match, popularity), which is what lets a reranker move the set.
  */
 export function extractFeatures(ctx: FeatureContext, cand: FeatureCandidate): number[] {
   const retrievalScore = ctx.modeMedoids.length === 0 ? 0 : Math.max(...ctx.modeMedoids.map((m) => cosineSim(m, cand.vector)));
@@ -60,7 +63,6 @@ export function extractFeatures(ctx: FeatureContext, cand: FeatureCandidate): nu
   const demoMatch = ctx.isGift
     ? demoFit(cand.gender_target, cand.ageBand, ctx.recipientGender, ctx.recipientAgeBand)
     : demoFit(cand.gender_target, cand.ageBand, ctx.buyerGender, ctx.buyerAgeBand);
-  const has = (s: string) => (cand.sources.includes(s) ? 1 : 0);
   return [
     retrievalScore,
     cand.npmiToLastViewed,
@@ -68,9 +70,5 @@ export function extractFeatures(ctx: FeatureContext, cand: FeatureCandidate): nu
     demoMatch,
     ctx.isGift ? 1 : 0,
     Math.log1p(cand.popularity),
-    has("retrieval"),
-    has("npmi"),
-    has("popular"),
-    has("exploration"),
   ];
 }

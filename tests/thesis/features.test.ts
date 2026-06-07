@@ -50,10 +50,19 @@ describe("extractFeatures", () => {
     expect(extractFeatures(giftCtx, giftCand)[i]).toBe(1);
   });
 
-  test("source one-hot flags set for contributing sources", () => {
-    const f = extractFeatures(ctx, cand);
-    expect(f[FEATURE_NAMES.indexOf("src_retrieval")]).toBe(1);
-    expect(f[FEATURE_NAMES.indexOf("src_npmi")]).toBe(1);
-    expect(f[FEATURE_NAMES.indexOf("src_popular")]).toBe(0);
+  test("popularity is the log1p of the candidate event count", () => {
+    const i = FEATURE_NAMES.indexOf("popularity");
+    expect(extractFeatures(ctx, cand)[i]).toBeCloseTo(Math.log1p(8), 9);
+  });
+
+  test("candidate source is NOT a feature (pool-membership leak — see FEATURE_NAMES doc)", () => {
+    expect(FEATURE_NAMES).not.toContain("src_retrieval");
+    expect(FEATURE_NAMES).not.toContain("src_npmi");
+    expect(FEATURE_NAMES).not.toContain("src_popular");
+    expect(FEATURE_NAMES).not.toContain("src_exploration");
+    // sources differing must not change the feature vector.
+    const withSources = extractFeatures(ctx, cand);
+    const noSources = extractFeatures(ctx, { ...cand, sources: [] });
+    expect(noSources).toEqual(withSources);
   });
 });
