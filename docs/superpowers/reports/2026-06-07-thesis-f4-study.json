@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T17:19:22.060Z",
+  "generated_at": "2026-06-07T17:23:15.999Z",
   "item_space": "e1_prod2vec",
   "common_universe": 1998,
   "eval_cases": 1107,
@@ -541,6 +541,13 @@
     "cfg22",
     "cfg23"
   ],
+  "guardrails": {
+    "relevance_min": 0.14119736357299906,
+    "sellerGini_max": 0.30277513227513203,
+    "feasible_ids": [],
+    "feasible_count": 0,
+    "feasible_empty": true
+  },
   "kpi_pick": {
     "id": "cfg18",
     "weights": {
@@ -559,7 +566,33 @@
       "novelty": -3.897178883632442,
       "sellerGini": 0.1095343915343912
     },
-    "on_frontier": true
+    "on_frontier": true,
+    "guardrail_feasible": false,
+    "is_fallback": true
+  },
+  "knee_pick": {
+    "id": "cfg16",
+    "weights": {
+      "relevance": 1,
+      "revenue": 1,
+      "margin": 0,
+      "diversity": 0,
+      "sellerFairness": 0,
+      "convProb": 0,
+      "novelty": 0
+    },
+    "metrics": {
+      "relevance": 0.06469762512164626,
+      "revenue": 51576.55648721299,
+      "diversity": 0.1703088010622119,
+      "novelty": -3.9052522132374063,
+      "sellerGini": 0.11142328042328008
+    },
+    "on_frontier": true,
+    "guardrail_feasible": false,
+    "relevance_delta_pct": -67.92550764466768,
+    "revenue_delta_pct": 73.64551753519906,
+    "objective": "max relevance/base + revenue/base"
   },
   "tradeoff": {
     "revenue_delta_pct": 76.8351913627343,

@@ -46,9 +46,16 @@ Frontier configs: 23/24.
 | cfg22 | rel=1, rev=1, mar=0.5, div=0.5, fair=0 | 0.057 | 52000.3291 | 0.212 | 0.110 | 0.890 |
 | cfg23 | rel=1, rev=1, mar=0.5, div=0.5, fair=0.5 | 0.056 | 46943.8102 | 0.216 | 0.117 | 0.883 |
 
+## Guardrail feasibility (relevance ≥ 0.7·base (0.141); sellerGini ≤ base+0.2 (0.303))
+
+Configs satisfying BOTH guardrails: **0/24**.
+
+No config satisfies the relevance≥0.7·baseline guardrail — the relevance↔revenue trade-off is steep on this pool; `pickByKpi` falls back to the global revenue maximum (reported below), which does NOT meet the guardrail.
+
+
 ## KPI-selected operating point (maximize revenue@10; guardrails: relevance ≥ 0.7·base, sellerGini ≤ base+0.2)
 
-Selected: **cfg18** — λ: rel=1, rev=1, mar=0, div=0.5, fair=0. On Pareto frontier: yes.
+Selected: **cfg18** — λ: rel=1, rev=1, mar=0, div=0.5, fair=0. On Pareto frontier: yes. Guardrail status: **FALLBACK (does NOT meet guardrails — global revenue maximum)**.
 
 | metric | KPI point | baseline | Δ% |
 |---|---|---|---|
@@ -56,6 +63,17 @@ Selected: **cfg18** — λ: rel=1, rev=1, mar=0, div=0.5, fair=0. On Pareto fron
 | revenue@10 | 52523.9601 | 29702.2101 | +76.8% |
 | diversity@10 | 0.226 | 0.132 | 70.8% |
 | sellerGini@10 | 0.110 | 0.103 | 6.6% |
+
+## Balanced operating point (knee — maximize relevance/base + revenue/base)
+
+Selected: **cfg16** — λ: rel=1, rev=1, mar=0, div=0, fair=0. On Pareto frontier: yes. Guardrail status: **does NOT meet guardrails**.
+
+| metric | knee point | baseline | Δ% |
+|---|---|---|---|
+| relevance (nDCG@10) | 0.065 | 0.202 | -67.9% |
+| revenue@10 | 51576.5565 | 29702.2101 | +73.6% |
+| diversity@10 | 0.170 | 0.132 | 28.8% |
+| sellerGini@10 | 0.111 | 0.103 | 8.4% |
 
 ## Trade-off summary
 
@@ -65,5 +83,11 @@ A config with revenue@10 > baseline exists: yes.
 
 ### Honest read
 
-Weighting the revenue objective lifts expected revenue@10 above the relevance-only RRF baseline, confirming a real relevance↔revenue trade-off: the KPI operating point earns more GMV (+76.8%) while staying inside the relevance guardrail (-72.4% nDCG@10). The Pareto frontier (23 configs) spans the achievable region across relevance, revenue, diversity, and seller fairness.
+The Pareto frontier (23/24 configs) is real: weighting the revenue objective moves the operating point along a genuine relevance↔revenue trade-off. At the revenue-max point (cfg18) the lift is +76.8% revenue@10 for −72.4% relevance@10 vs RRF.
+
+The strict 0.7·baseline relevance guardrail is INFEASIBLE on this pool: 0/24 configs satisfy it, so `pickByKpi` falls back to the global revenue maximum — a point that sacrifices 72.4% of relevance and is therefore NOT a desirable production operating point. This corrects an earlier draft that incorrectly described the KPI point as inside the guardrail; it is not.
+
+The sensible production choice is the BALANCED knee point (cfg16): -67.9% relevance@10 and +73.6% revenue@10 vs baseline — the best total-value trade-off, not the degenerate revenue corner.
+
+For the thesis: the multi-objective frontier is genuine and lets the business DIAL revenue vs relevance, but on this synthetic pool the revenue objective and relevance are strongly opposed, so the right operating choice is a balanced point — not the revenue corner that a naïve KPI-max would select.
 

@@ -370,13 +370,39 @@ async function main() {
     const kpiCfg = configs.find((c) => c.id === kpiPick.id)!;
     const frontierIds = new Set(frontier.map((p) => p.id));
 
-    // ── Trade-off line: kpiPick vs baseline. ───────────────────────────────────
+    // ── Guardrail feasibility (recomputed honestly in the runner). A config is ──
+    //    feasible iff relevance ≥ 0.7·base AND sellerGini ≤ base+0.2. The same ──
+    //    guardrails fed to pickByKpi; pickByKpi falls back to global-max-KPI when ─
+    //    `feasible` is empty (documented), so the KPI point can be a FALLBACK. ────
+    const relGuardMin = 0.7 * baseline.relevance;
+    const giniGuardMax = baseline.sellerGini + 0.2;
+    const feasible = configs.filter(
+      (c) => c.metrics.relevance >= relGuardMin && c.metrics.sellerGini <= giniGuardMax,
+    );
+    const kpiIsFeasible = feasible.some((c) => c.id === kpiCfg.id);
+
+    // ── Balanced "knee" operating point: maximize a scale-free sum of normalized ─
+    //    relevance and revenue (relevance/base + revenue/base). Best total value ──
+    //    trade-off — a defensible non-degenerate pick even when the strict 0.7 ────
+    //    relevance guardrail is infeasible. Deterministic tie-break by id. ────────
+    const balancedScore = (c: Config): number =>
+      (baseline.relevance === 0 ? 0 : c.metrics.relevance / baseline.relevance) +
+      (baseline.revenue === 0 ? 0 : c.metrics.revenue / baseline.revenue);
+    const kneeCfg = configs
+      .slice()
+      .sort((a, b) => balancedScore(b) - balancedScore(a) || a.id.localeCompare(b.id))[0];
+
+    // ── Trade-off line: kpiPick (revenue-max) vs baseline. ─────────────────────
     const pct = (cur: number, base: number): number => (base === 0 ? 0 : ((cur - base) / base) * 100);
     const revDeltaPct = pct(kpiCfg.metrics.revenue, baseline.revenue);
     const relDeltaPct = pct(kpiCfg.metrics.relevance, baseline.relevance);
     const revUp = Math.abs(revDeltaPct);
     const relDown = Math.abs(relDeltaPct);
     const tradeoffLine = `+${revUp.toFixed(1)}% revenue@10 for ${relDeltaPct >= 0 ? "+" : "−"}${relDown.toFixed(1)}% relevance@10 vs RRF`;
+
+    // ── Balanced knee Δs vs baseline. ──────────────────────────────────────────
+    const kneeRevDeltaPct = pct(kneeCfg.metrics.revenue, baseline.revenue);
+    const kneeRelDeltaPct = pct(kneeCfg.metrics.relevance, baseline.relevance);
 
     const anyRevenueAboveBaseline = configs.some((c) => c.metrics.revenue > baseline.revenue);
 
@@ -405,22 +431,40 @@ async function main() {
       rows.push(`| ${cfg.id} | ${wstr(cfg.weights)} | ${f3(cfg.metrics.relevance)} | ${f4(cfg.metrics.revenue)} | ${f3(cfg.metrics.diversity)} | ${f3(cfg.metrics.sellerGini)} | ${f3(1 - cfg.metrics.sellerGini)} |`);
     }
     rows.push("");
+    const relGuardStr = `relevance ≥ 0.7·base (${f3(relGuardMin)})`;
+    const giniGuardStr = `sellerGini ≤ base+0.2 (${f3(giniGuardMax)})`;
+    rows.push(`## Guardrail feasibility (${relGuardStr}; ${giniGuardStr})`, "");
+    rows.push(`Configs satisfying BOTH guardrails: **${feasible.length}/${configs.length}**${feasible.length > 0 ? ` (${feasible.map((c) => c.id).join(", ")})` : ""}.`, "");
+    if (feasible.length === 0) {
+      rows.push(`No config satisfies the relevance≥0.7·baseline guardrail — the relevance↔revenue trade-off is steep on this pool; \`pickByKpi\` falls back to the global revenue maximum (reported below), which does NOT meet the guardrail.`, "");
+    }
+    rows.push("");
     rows.push("## KPI-selected operating point (maximize revenue@10; guardrails: relevance ≥ 0.7·base, sellerGini ≤ base+0.2)", "");
-    rows.push(`Selected: **${kpiCfg.id}** — λ: ${wstr(kpiCfg.weights)}. On Pareto frontier: ${frontierIds.has(kpiCfg.id) ? "yes" : "no"}.`, "");
+    rows.push(`Selected: **${kpiCfg.id}** — λ: ${wstr(kpiCfg.weights)}. On Pareto frontier: ${frontierIds.has(kpiCfg.id) ? "yes" : "no"}. Guardrail status: **${kpiIsFeasible ? "FEASIBLE" : "FALLBACK (does NOT meet guardrails — global revenue maximum)"}**.`, "");
     rows.push("| metric | KPI point | baseline | Δ% |", "|---|---|---|---|");
     rows.push(`| relevance (nDCG@10) | ${f3(kpiCfg.metrics.relevance)} | ${f3(baseline.relevance)} | ${relDeltaPct >= 0 ? "+" : ""}${relDeltaPct.toFixed(1)}% |`);
     rows.push(`| revenue@10 | ${f4(kpiCfg.metrics.revenue)} | ${f4(baseline.revenue)} | ${revDeltaPct >= 0 ? "+" : ""}${revDeltaPct.toFixed(1)}% |`);
     rows.push(`| diversity@10 | ${f3(kpiCfg.metrics.diversity)} | ${f3(baseline.diversity)} | ${pct(kpiCfg.metrics.diversity, baseline.diversity).toFixed(1)}% |`);
     rows.push(`| sellerGini@10 | ${f3(kpiCfg.metrics.sellerGini)} | ${f3(baseline.sellerGini)} | ${pct(kpiCfg.metrics.sellerGini, baseline.sellerGini).toFixed(1)}% |`, "");
+    rows.push("## Balanced operating point (knee — maximize relevance/base + revenue/base)", "");
+    rows.push(`Selected: **${kneeCfg.id}** — λ: ${wstr(kneeCfg.weights)}. On Pareto frontier: ${frontierIds.has(kneeCfg.id) ? "yes" : "no"}. Guardrail status: **${feasible.some((c) => c.id === kneeCfg.id) ? "FEASIBLE" : "does NOT meet guardrails"}**.`, "");
+    rows.push("| metric | knee point | baseline | Δ% |", "|---|---|---|---|");
+    rows.push(`| relevance (nDCG@10) | ${f3(kneeCfg.metrics.relevance)} | ${f3(baseline.relevance)} | ${kneeRelDeltaPct >= 0 ? "+" : ""}${kneeRelDeltaPct.toFixed(1)}% |`);
+    rows.push(`| revenue@10 | ${f4(kneeCfg.metrics.revenue)} | ${f4(baseline.revenue)} | ${kneeRevDeltaPct >= 0 ? "+" : ""}${kneeRevDeltaPct.toFixed(1)}% |`);
+    rows.push(`| diversity@10 | ${f3(kneeCfg.metrics.diversity)} | ${f3(baseline.diversity)} | ${pct(kneeCfg.metrics.diversity, baseline.diversity).toFixed(1)}% |`);
+    rows.push(`| sellerGini@10 | ${f3(kneeCfg.metrics.sellerGini)} | ${f3(baseline.sellerGini)} | ${pct(kneeCfg.metrics.sellerGini, baseline.sellerGini).toFixed(1)}% |`, "");
     rows.push("## Trade-off summary", "");
     rows.push(`**${tradeoffLine}**`, "");
     rows.push(`A config with revenue@10 > baseline exists: ${anyRevenueAboveBaseline ? "yes" : "NO (no revenue headroom in this pool/outcome — see honest read)"}.`, "");
     rows.push("### Honest read", "");
-    if (anyRevenueAboveBaseline) {
-      rows.push(`Weighting the revenue objective lifts expected revenue@10 above the relevance-only RRF baseline, confirming a real relevance↔revenue trade-off: the KPI operating point earns ${revDeltaPct >= 0 ? "more" : "less"} GMV (${revDeltaPct >= 0 ? "+" : ""}${revDeltaPct.toFixed(1)}%) while staying inside the relevance guardrail (${relDeltaPct >= 0 ? "+" : ""}${relDeltaPct.toFixed(1)}% nDCG@10). The Pareto frontier (${frontier.length} configs) spans the achievable region across relevance, revenue, diversity, and seller fairness.`, "");
+    rows.push(`The Pareto frontier (${frontier.length}/${configs.length} configs) is real: weighting the revenue objective moves the operating point along a genuine relevance↔revenue trade-off. At the revenue-max point (${kpiCfg.id}) the lift is +${revUp.toFixed(1)}% revenue@10 for ${relDeltaPct >= 0 ? "+" : "−"}${relDown.toFixed(1)}% relevance@10 vs RRF.`, "");
+    if (feasible.length === 0) {
+      rows.push(`The strict 0.7·baseline relevance guardrail is INFEASIBLE on this pool: ${feasible.length}/${configs.length} configs satisfy it, so \`pickByKpi\` falls back to the global revenue maximum — a point that sacrifices ${relDown.toFixed(1)}% of relevance and is therefore NOT a desirable production operating point. This corrects an earlier draft that incorrectly described the KPI point as inside the guardrail; it is not.`, "");
     } else {
-      rows.push(`Even with revenue-weight=1, no config raised revenue@10 above the RRF baseline. On this pool/outcome the relevance-ranked top-10 already concentrates the highest expected-revenue items, leaving no revenue headroom to trade relevance for. This is a real finding, not a bug — recorded as such.`, "");
+      rows.push(`The 0.7·baseline relevance guardrail is satisfied by ${feasible.length}/${configs.length} configs; the KPI point ${kpiIsFeasible ? "is one of them" : "is NOT among them and is a documented fallback to the global revenue maximum"}.`, "");
     }
+    rows.push(`The sensible production choice is the BALANCED knee point (${kneeCfg.id}): ${kneeRelDeltaPct >= 0 ? "+" : ""}${kneeRelDeltaPct.toFixed(1)}% relevance@10 and ${kneeRevDeltaPct >= 0 ? "+" : ""}${kneeRevDeltaPct.toFixed(1)}% revenue@10 vs baseline — the best total-value trade-off, not the degenerate revenue corner.`, "");
+    rows.push(`For the thesis: the multi-objective frontier is genuine and lets the business DIAL revenue vs relevance, but on this synthetic pool the revenue objective and relevance are strongly opposed, so the right operating choice is a balanced point — not the revenue corner that a naïve KPI-max would select.`, "");
 
     const md = rows.join("\n") + "\n";
     const outMd = resolve(process.cwd(), "docs/superpowers/reports/2026-06-07-thesis-f4-study.md");
@@ -463,6 +507,13 @@ async function main() {
         },
       })),
       frontier_ids: frontier.map((p) => p.id),
+      guardrails: {
+        relevance_min: relGuardMin,
+        sellerGini_max: giniGuardMax,
+        feasible_ids: feasible.map((c) => c.id),
+        feasible_count: feasible.length,
+        feasible_empty: feasible.length === 0,
+      },
       kpi_pick: {
         id: kpiCfg.id,
         weights: kpiCfg.weights,
@@ -474,6 +525,24 @@ async function main() {
           sellerGini: kpiCfg.metrics.sellerGini,
         },
         on_frontier: frontierIds.has(kpiCfg.id),
+        guardrail_feasible: kpiIsFeasible,
+        is_fallback: !kpiIsFeasible,
+      },
+      knee_pick: {
+        id: kneeCfg.id,
+        weights: kneeCfg.weights,
+        metrics: {
+          relevance: kneeCfg.metrics.relevance,
+          revenue: kneeCfg.metrics.revenue,
+          diversity: kneeCfg.metrics.diversity,
+          novelty: kneeCfg.metrics.novelty,
+          sellerGini: kneeCfg.metrics.sellerGini,
+        },
+        on_frontier: frontierIds.has(kneeCfg.id),
+        guardrail_feasible: feasible.some((c) => c.id === kneeCfg.id),
+        relevance_delta_pct: kneeRelDeltaPct,
+        revenue_delta_pct: kneeRevDeltaPct,
+        objective: "max relevance/base + revenue/base",
       },
       tradeoff: {
         revenue_delta_pct: revDeltaPct,
