@@ -91,7 +91,7 @@ export function cosineSingleVectorRanker(): Ranker {
       return candidates
         .slice()
         .map((item) => ({ id: item.id, sim: cosine(ctx.userVector, item.vector) }))
-        .sort((a, b) => b.sim - a.sim)
+        .sort((a, b) => b.sim - a.sim || a.id.localeCompare(b.id))
         .map((x) => x.id);
     },
   };

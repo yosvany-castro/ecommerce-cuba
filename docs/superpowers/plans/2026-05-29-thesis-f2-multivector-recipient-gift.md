@@ -313,6 +313,13 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Task 3: Gift intent detection
 
+> **SUPERSEDED (2026-06-07):** the embedding-coherence + away-from-user detector
+> below was found to fire 0× on realistic gift sessions (which are product-diverse
+> but demographically coherent). It was redesigned per spec §4.2 to **demographic
+> coherence + cross-cohort (gender/age) on the actual session** (commit `a80ba89`).
+> See the spec §4.2 and `src/thesis/multivector/gift-detect.ts` for the shipped
+> design; the code/tests/report below this line describe the original draft only.
+
 **Files:**
 - Create: `src/thesis/multivector/gift-detect.ts`
 - Test: `tests/thesis/gift-detect.test.ts`
