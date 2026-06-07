@@ -24,8 +24,8 @@ el usuario tiene intereses genuinamente ortogonales. MIND [2] adopta un enfoque 
 en cápsulas de interés dinámicas, demostrando que la diversidad interna del perfil de usuario
 mejora la cobertura del recall. Trabajos más recientes de Pinterest [3] extienden esta línea
 modelando intereses implícitos y explícitos de forma conjunta, con señales comportamentales de
-alta frecuencia. Este trabajo aplica el núcleo de PinnerSage (clustering Ward con medoides
-adaptativos) y lo extiende con un **eje destinatario/regalo**: cuando la sesión revela
+alta frecuencia. Este trabajo aplica el núcleo de PinnerSage (representación multi-vector
+con medoides adaptativos, vía clustering aglomerativo de enlace promedio con distancia coseno) y lo extiende con un **eje destinatario/regalo**: cuando la sesión revela
 intención de regalo, el perfil del destinatario reemplaza temporalmente el perfil propio
 del comprador, evitando que el historial de regalos contamine los modos permanentes del
 usuario. Esta factorización usuario $\times$ destinatario no aparece modelada explícitamente

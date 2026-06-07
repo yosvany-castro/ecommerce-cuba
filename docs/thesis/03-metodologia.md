@@ -287,8 +287,8 @@ F2 ataca dos limitaciones del vector único que F1 puso de manifiesto: el usuari
 de intereses múltiples y ortogonales queda representado por un vector promedio que
 no refleja ninguno de sus gustos, y el usuario que compra regalos contamina su
 perfil con las preferencias ajenas. F2 implementa la representación multi-vector
-PinnerSage (Pal et al., KDD'20): clustering Ward jerárquico del historial en el
-espacio E1, con un número de modos adaptativo por usuario y cada modo representado
+PinnerSage (Pal et al., KDD'20): clustering aglomerativo de enlace promedio con
+distancia coseno sobre el historial en el espacio E1, con un número de modos adaptativo por usuario y cada modo representado
 por su medoide (ítem real, interpretable). La detección de intención de regalo se
 realiza a nivel de sesión mediante señales de desviación cross-cohort (la sesión
 apunta a una demografía alejada del perfil propio) sin acceder al ground-truth

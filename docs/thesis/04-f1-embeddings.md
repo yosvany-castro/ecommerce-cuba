@@ -46,7 +46,7 @@ La tabla siguiente recoge las métricas principales sobre el conjunto de evaluac
 
 ### Los embeddings comportamentales superan al texto en relevancia
 
-El resultado más nítido es la brecha entre los espacios comportamentales y el texto puro. `e2_hybrid` obtiene un `nDCG@10` de 0.124 y un `Recall@10` de 0.252, frente a 0.038 y 0.086 del embedding de texto `e0_text`. La ratio es aproximadamente $2.7\times$ en `nDCG@10` y $2.9\times$ en `Recall@10`. `e1_prod2vec`, sin ninguna componente textual, ya supera al texto en ambas métricas (0.101 vs. 0.038 en `nDCG@10`; 0.219 vs. 0.086 en `Recall@10`).
+El resultado más nítido es la brecha entre los espacios comportamentales y el texto puro. `e2_hybrid` obtiene un `nDCG@10` de 0.124 y un `Recall@10` de 0.252, frente a 0.038 y 0.086 del embedding de texto `e0_text`. La ratio es aproximadamente $3.3\times$ en `nDCG@10` y $2.9\times$ en `Recall@10`. `e1_prod2vec`, sin ninguna componente textual, ya supera al texto en ambas métricas (0.101 vs. 0.038 en `nDCG@10`, una ratio de $\approx 2.7\times$; 0.219 vs. 0.086 en `Recall@10`).
 
 Esta superioridad confirma la intuición de base: en un catálogo de reventa donde los usuarios compran ítems relacionados con su contexto de vida (no con las palabras del título), la geometría del espacio comportamental —aprendida directamente de co-compras— captura la relevancia percibida mejor que la semántica lexical.
 
@@ -66,7 +66,7 @@ La conclusión de programa es que el cross-sell debe resolverse en el grafo de c
 
 El análisis de utilidad normaliza la calidad frente al costo de indexación y consulta. Con la función $\text{utility} = \text{quality} - 0.5 \cdot \text{normalizedCost}$, `e2_hybrid` obtiene el mayor valor de calidad (0.074) y la mayor utilidad relativa entre las opciones evaluadas.
 
-La recomendación de producción es desplegar **`e2_hybrid`**: un vector denso construido por fusión de score entre el espacio de texto Voyage y el espacio Prod2Vec, sin reentrenamiento conjunto. La ventaja operativa es que es un vector denso compatible con pgvector sin modificaciones de esquema, la inferencia en línea combina dos llamadas ligeras, y la calidad de recuperación es $2.7\times$ superior al embedding de texto puro que tendría el sistema sin señal comportamental.
+La recomendación de producción es desplegar **`e2_hybrid`**: un vector denso construido por fusión de score entre el espacio de texto Voyage y el espacio Prod2Vec, sin reentrenamiento conjunto. La ventaja operativa es que es un vector denso compatible con pgvector sin modificaciones de esquema, la inferencia en línea combina dos llamadas ligeras, y la calidad de recuperación es $3.3\times$ superior al embedding de texto puro que tendría el sistema sin señal comportamental.
 
 ## Síntesis del capítulo
 

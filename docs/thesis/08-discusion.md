@@ -13,8 +13,8 @@ validez interna y externa.
 ### Los embeddings comportamentales son la capa correcta para relevancia
 
 F1 estableció que los embeddings entrenados sobre co-compras superan al texto
-puro en recuperación de relevancia con una ratio aproximada de $2.7\times$ en
-`nDCG@10`. La fusión híbrida `e2_hybrid` —que combina el espacio Voyage de
+puro en recuperación de relevancia, con una ratio de $\approx 2.7\times$ en `nDCG@10`
+para `e1_prod2vec` y $\approx 3.3\times$ para la fusión híbrida `e2_hybrid`. La fusión híbrida `e2_hybrid` —que combina el espacio Voyage de
 texto (1024 dimensiones) y el espacio Prod2Vec comportamental (64 dimensiones)
 mediante fusión de score— demostró que la señal comportamental no sustituye a
 la textual sino que la complementa: el híbrido supera a ambos componentes por

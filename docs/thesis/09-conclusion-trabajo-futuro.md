@@ -11,7 +11,8 @@ por ello, más útil para el diseño del sistema.
 
 **La representación importa, y su elección no es obvia.** F1 estableció que los
 embeddings comportamentales superan al texto puro en recuperación de relevancia,
-con una ratio de aproximadamente $2.7\times$ en `nDCG@10`. Pero el mismo
+con una ratio de aproximadamente $2.7\times$ para `e1_prod2vec` y $3.3\times$ para
+la fusión `e2_hybrid` en `nDCG@10`. Pero el mismo
 experimento demostró que esos embeddings no recuperan complementos: la columna
 `complement-recall@10` es prácticamente cero en todos los espacios evaluados.
 La conclusión arquitectónica —que la relevancia y el cross-sell requieren
