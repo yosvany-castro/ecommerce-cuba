@@ -94,6 +94,10 @@ async function main(): Promise<void> {
           age_target:    ageTarget(attrs.ageBand),
           style:         attrs.style,
           price_band:    attrs.priceBand,
+          margin_pct:        p.margin_pct,
+          stock_health:      p.stock_health,
+          seller_id:         p.seller_id,
+          seller_age_days:   p.seller_age_days,
         };
 
         // Format pgvector literal: '[x,x,x,...]'::vector
