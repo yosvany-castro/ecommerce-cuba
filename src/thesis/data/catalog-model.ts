@@ -84,11 +84,20 @@ export interface SynthProduct {
    * `factorDim()`. NEVER expose to any ranking model.
    */
   factor_vector: number[];
+  /** Gross margin fraction [0,1]; anti-correlated with price band (real-retail shape). */
+  margin_pct: number;
+  /** Stock health [0,1]; 1 = plenty, →0 = about to stock out. */
+  stock_health: number;
+  /** Seller this product belongs to (small pool). */
+  seller_id: string;
+  /** Days since the seller joined; <30 = a "new" seller fairness can boost. */
+  seller_age_days: number;
 }
 
 // ─── Sampler ─────────────────────────────────────────────────────────────────
 
 const LEAVES = allLeafCategories(); // computed once, stable
+const SELLER_COUNT = 30; // small marketplace seller pool
 
 /**
  * Generate `n` synthetic products deterministically from `seed`.
@@ -133,6 +142,15 @@ export function sampleCatalog(n: number, seed: number): SynthProduct[] {
     const closer = rng.pick(DESC_CLOSERS);
     const description = `${opener} este ${displaySub} ${brand} estilo ${style}. ${closer}`;
 
+    // ── F4 business signals (deterministic from the same rng) ──
+    // Margin anti-correlated with price band: cheaper/long-tail → higher margin.
+    const marginBase = 0.55 - 0.12 * priceBand;
+    const margin_pct = Math.min(0.9, Math.max(0.05, marginBase + (rng.next() - 0.5) * 0.1));
+    const stock_health = rng.next();
+    const sellerIdx = rng.int(SELLER_COUNT);
+    const seller_id = `seller-${sellerIdx}`;
+    const seller_age_days = rng.next() < 0.2 ? rng.int(30) : 30 + rng.int(1080);
+
     // 6. Assemble product
     products.push({
       // ids are unique within a catalog; encoding `n` prevents collisions when regenerating different sizes under the same seed.
@@ -143,6 +161,10 @@ export function sampleCatalog(n: number, seed: number): SynthProduct[] {
       price_cents,
       attrs,
       factor_vector: factorVectorFor(attrs),
+      margin_pct,
+      stock_health,
+      seller_id,
+      seller_age_days,
     });
   }
 
