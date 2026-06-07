@@ -42,6 +42,16 @@ describe("multiModeRank", () => {
     expect(multiModeRank({ modes: [], candidates, perModeK: 3 })).toEqual([]);
   });
 
+  test("an item in both modes' quotas still yields a permutation (no dup/missing)", () => {
+    const modes: UserMode[] = [
+      { medoid: [1, 0, 0], weight: 0.5, size: 5 },
+      { medoid: [0.8, 0.6, 0], weight: 0.5, size: 5 }, // near x too → 'x1' likely in both quotas
+    ];
+    const out = multiModeRank({ modes, candidates, perModeK: 3 });
+    expect([...out].sort()).toEqual(["x1", "x2", "y1", "y2", "z1"]);
+    expect(new Set(out).size).toBe(out.length); // no duplicates
+  });
+
   test("does not mutate the input candidates array", () => {
     const modes: UserMode[] = [{ medoid: [1, 0, 0], weight: 1, size: 5 }];
     const before = candidates.map((c) => c.id);

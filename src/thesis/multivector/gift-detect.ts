@@ -6,6 +6,7 @@ export interface SessionItem {
   product_id: string;
   vector: number[];
   gender_target: string | null;
+  // age_band: carried for downstream/diagnostics; not used by the current decision rule
   age_band: string | null;
 }
 
@@ -38,7 +39,8 @@ function internalCoherence(vectors: number[][]): number {
  * no ground-truth at inference). A session is a gift when it is BOTH:
  *  - coherent in itself (the user is focused on one kind of thing this session), AND
  *  - far from the user's own interest modes (it's not their own taste).
- * Demographic coherence (all items share a single non-null gender) reinforces it.
+ * Demographic coherence (all items share a single non-null gender) is surfaced as
+ * an explanatory signal only (does not change the decision).
  */
 export function detectGiftIntent(session: SessionItem[], userModes: UserMode[], opts: GiftOpts): GiftSignal {
   const reasons: string[] = [];
@@ -50,6 +52,7 @@ export function detectGiftIntent(session: SessionItem[], userModes: UserMode[], 
   const simToModes = userModes.length === 0 ? 0 : Math.max(...userModes.map((m) => cosineSim(sessionCentroid, m.medoid)));
 
   const coherent = coherence >= opts.minInternalCoherence;
+  // Known limitation: a user with many diverse modes rarely registers as "away", so gift recall drops as mode count grows (accepted; an omnivore's gift looks like their own taste).
   const awayFromUser = userModes.length === 0 ? false : simToModes <= opts.maxSimToModes;
 
   const genders = new Set(session.map((s) => s.gender_target).filter((g) => g !== null));
@@ -61,5 +64,6 @@ export function detectGiftIntent(session: SessionItem[], userModes: UserMode[], 
 
   const isGift = coherent && awayFromUser;
   const score = isGift ? coherence * (1 - simToModes) : 0;
+  // Known false-positive: a focused self-purchase in a brand-new category looks gift-like (coherent + far from existing modes).
   return { isGift, score, reasons };
 }

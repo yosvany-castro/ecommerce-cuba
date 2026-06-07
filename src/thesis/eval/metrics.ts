@@ -214,6 +214,10 @@ export interface RecipientProfile {
  * the recipient's gender, AND (b) its age band overlaps the recipient's age range.
  * Measures whether a gift feed actually targets the right person. Denominator is
  * min(k, ranked.length).
+ *
+ * Comparable across rankers ONLY when they return equal-length lists (denominator
+ * is min(k, ranked.length)); the F2 study guarantees this by ranking the same full
+ * candidate permutation.
  */
 export function recipientFitAtK(
   ranked: string[],

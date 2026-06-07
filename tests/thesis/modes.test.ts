@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { buildUserModes } from "@/thesis/multivector/modes";
 import { cosineSim } from "@/thesis/embedders/space";
 
-describe("buildUserModes (Ward + medoids)", () => {
+describe("buildUserModes (average-linkage + medoids)", () => {
   // Two orthogonal tastes: cluster A near x-axis, cluster B near y-axis.
   const history = [
     [1, 0, 0], [0.97, 0.02, 0], [0.95, 0.05, 0],     // A (3)
@@ -54,5 +54,22 @@ describe("buildUserModes (Ward + medoids)", () => {
     const a = buildUserModes(history, { distanceThreshold: 0.5, maxModes: 5 });
     const b = buildUserModes(history, { distanceThreshold: 0.5, maxModes: 5 });
     expect(a).toEqual(b);
+  });
+
+  test("order-invariant: shuffled/reversed history yields identical modes", () => {
+    const shuffled = [history[3], history[0], history[4], history[2], history[1]];
+    const a = buildUserModes(history, { distanceThreshold: 0.5, maxModes: 5 });
+    const b = buildUserModes([...history].reverse(), { distanceThreshold: 0.5, maxModes: 5 });
+    const c = buildUserModes(shuffled, { distanceThreshold: 0.5, maxModes: 5 });
+    expect(a).toEqual(b);
+    expect(a).toEqual(c);
+  });
+
+  test("tie-heavy history (duplicates) clusters deterministically regardless of order", () => {
+    const dup = [[1,0,0],[1,0,0],[0,1,0],[0,1,0]];
+    const a = buildUserModes(dup, { distanceThreshold: 0.5, maxModes: 5 });
+    const b = buildUserModes([dup[2],dup[0],dup[3],dup[1]], { distanceThreshold: 0.5, maxModes: 5 });
+    expect(a).toEqual(b);
+    expect(a.length).toBe(2);
   });
 });
