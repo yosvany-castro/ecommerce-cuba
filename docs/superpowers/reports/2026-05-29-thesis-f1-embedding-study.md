@@ -2,8 +2,8 @@
 
 ## Fair-comparison disclosure
 
-- Common candidate universe (items representable in EVERY participating space): **1997** items.
-- Eval cases (identical users across all spaces): **1042**.
+- Common candidate universe (items representable in EVERY participating space): **1999** items.
+- Eval cases (identical users across all spaces): **1098**.
 - Complement targets are intersected with the candidate universe (and exclude the user's train items).
 - Per-space representation / dimension:
 - `e0_text`: 1024
@@ -16,12 +16,12 @@
 
 | Space | cases | MRR | nDCG@5 | nDCG@10 | nDCG@20 | Recall@5 | Recall@10 | Recall@20 | complR@10 |
 |---|---|---|---|---|---|---|---|---|---|
-| e0_text | 1042 | 0.040 | 0.027 | 0.039 | 0.063 | 0.049 | 0.086 | 0.181 | 0.001 |
-| e1_prod2vec | 1042 | 0.084 | 0.073 | 0.104 | 0.139 | 0.127 | 0.225 | 0.361 | 0.000 |
-| e3_two_tower | 1042 | 0.044 | 0.027 | 0.042 | 0.066 | 0.045 | 0.090 | 0.188 | 0.001 |
-| e5_context3 | 1042 | 0.046 | 0.031 | 0.045 | 0.065 | 0.047 | 0.092 | 0.171 | 0.001 |
-| e2_hybrid | 1042 | 0.101 | 0.084 | 0.126 | 0.163 | 0.134 | 0.265 | 0.411 | 0.001 |
-| e4_late | 1042 | 0.041 | 0.026 | 0.039 | 0.062 | 0.042 | 0.083 | 0.174 | 0.001 |
+| e0_text | 1098 | 0.037 | 0.022 | 0.038 | 0.053 | 0.036 | 0.086 | 0.146 | 0.001 |
+| e1_prod2vec | 1098 | 0.082 | 0.071 | 0.101 | 0.136 | 0.124 | 0.219 | 0.360 | 0.000 |
+| e3_two_tower | 1098 | 0.051 | 0.036 | 0.049 | 0.070 | 0.053 | 0.094 | 0.177 | 0.000 |
+| e5_context3 | 1098 | 0.040 | 0.025 | 0.039 | 0.059 | 0.041 | 0.085 | 0.162 | 0.001 |
+| e2_hybrid | 1098 | 0.102 | 0.092 | 0.124 | 0.161 | 0.151 | 0.252 | 0.400 | 0.000 |
+| e4_late | 1098 | 0.039 | 0.025 | 0.039 | 0.058 | 0.041 | 0.087 | 0.164 | 0.002 |
 
 ## Production recommendation
 
@@ -29,9 +29,9 @@
 
 | Space | quality | utility |
 |---|---|---|
-| e2_hybrid | 0.076 | -0.024 |
-| e1_prod2vec | 0.063 | -0.037 |
-| e3_two_tower | 0.025 | -0.075 |
-| e0_text | 0.024 | -0.076 |
-| e5_context3 | 0.028 | -0.172 |
+| e2_hybrid | 0.074 | -0.026 |
+| e1_prod2vec | 0.061 | -0.039 |
+| e3_two_tower | 0.030 | -0.070 |
+| e0_text | 0.023 | -0.077 |
+| e5_context3 | 0.024 | -0.176 |
 | e4_late | 0.024 | -0.476 |
