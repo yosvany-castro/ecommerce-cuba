@@ -12,14 +12,14 @@ import { complementRecallAtK } from "@/thesis/eval/metrics";
  * its accessory complements, whereas the ground-truth graph holds the
  * complements by construction. This is the core thesis claim, on real data.
  *
- * NOTE: mutates the `thesis` schema (truncates + reseeds thesis.products). That
- * is consistent with how this repo's integration tests use their schema; the
- * data CLIs regenerate the working dataset deterministically afterwards.
+ * NOTE: all mutations (TRUNCATE + reseed) run inside a transaction that is
+ * rolled back in the finally block — avoid cascading-truncate of the shared study dataset.
  */
 describe("harness discrimination (real DB, thesis schema)", () => {
   test("text cosine misses accessory complements that the GT graph holds", async () => {
     const pg = await getPgClient({ scope: "thesis" });
     try {
+      await pg.query(`BEGIN`);
       await pg.query(`TRUNCATE thesis.products CASCADE`);
       const cat = sampleCatalog(120, 314);
       const vectors = await embed(cat.map((p) => p.canonicalText), { inputType: "document" });
@@ -58,6 +58,7 @@ describe("harness discrimination (real DB, thesis schema)", () => {
       // The thesis claim: text cosine does NOT surface the commercial complements as well as the GT graph.
       expect(cosComplementRecall).toBeLessThan(gtComplementRecall);
     } finally {
+      await pg.query(`ROLLBACK`);
       await pg.end();
     }
   }, 120_000);
