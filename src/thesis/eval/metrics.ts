@@ -252,3 +252,40 @@ export function setChangeAtK(reranked: string[], base: string[], k: number): num
   for (const id of top) if (!baseSet.has(id)) changed++;
   return changed / top.length;
 }
+
+/**
+ * Revenue@k: total expected revenue (GMV) of the top-k. `revenueById` maps a
+ * product id to its expected revenue (P(buy)·price·margin); missing → 0. The
+ * business counterpart to nDCG — what the feed is expected to earn.
+ */
+export function revenueAtK(ranked: string[], revenueById: Map<string, number>, k: number): number {
+  let total = 0;
+  for (const id of ranked.slice(0, k)) total += revenueById.get(id) ?? 0;
+  return total;
+}
+
+/**
+ * Gini coefficient of seller exposure in the top-k (0 = every seller equally
+ * exposed, →1 = one seller dominates). Fairness guardrail: lower is fairer.
+ * A single-seller slate of length>1 is maximal concentration (returns 1−1/len).
+ */
+export function sellerExposureGini(ranked: string[], sellerById: Map<string, string>, k: number): number {
+  const top = ranked.slice(0, k);
+  if (top.length === 0) return 0;
+  const counts = new Map<string, number>();
+  for (const id of top) {
+    const s = sellerById.get(id);
+    if (s === undefined) continue;
+    counts.set(s, (counts.get(s) ?? 0) + 1);
+  }
+  const values = [...counts.values()].sort((a, b) => a - b);
+  const n = values.length;
+  if (n === 0) return 0;
+  if (n === 1) return top.length > 1 ? 1 - 1 / top.length : 0;
+  const sum = values.reduce((s, x) => s + x, 0);
+  if (sum === 0) return 0;
+  // Gini = (2·Σ i·x_i)/(n·Σ x_i) − (n+1)/n , i 1-based over ascending values
+  let weighted = 0;
+  for (let i = 0; i < n; i++) weighted += (i + 1) * values[i];
+  return (2 * weighted) / (n * sum) - (n + 1) / n;
+}
