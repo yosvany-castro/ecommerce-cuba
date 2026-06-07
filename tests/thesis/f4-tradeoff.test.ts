@@ -41,14 +41,12 @@ describe("F4 trade-off is real (relevance-only vs revenue-weighted)", () => {
         // maxRevenue over this candidate set
         let maxRev = 0;
         const revById = new Map<string, number>();
-        const itemsBase: { id: string; affinity: number }[] = [];
         for (const id of cohortIds) {
           const m = meta.get(id)!;
           const affinity = Math.max(0, Math.min(1, cosineLike(medoid, e1.get(id)!)));
           const priceFit = Math.max(0, 1 - Math.abs(m.priceBand - budget) / 3);
           const rev = expectedRevenue({ affinity, priceFit, price_cents: m.price_cents, margin_pct: m.margin });
           revById.set(id, rev); maxRev = Math.max(maxRev, rev);
-          itemsBase.push({ id, affinity });
         }
         const ctx: ObjCtx = { modeMedoids: [medoid], budgetBand: budget, maxPopularity: maxPop, maxRevenue: maxRev };
         const items: ScorerItem[] = cohortIds.map((id) => {
