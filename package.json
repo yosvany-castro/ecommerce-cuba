@@ -27,6 +27,7 @@
     "thesis:f2-study": "tsx scripts/thesis/f2-study.ts",
     "thesis:backfill-cooccurrence": "tsx scripts/thesis/backfill-cooccurrence.ts",
     "thesis:f3-study": "tsx scripts/thesis/f3-study.ts",
+    "thesis:f4-study": "tsx scripts/thesis/f4-study.ts",
     "eval:personalization-3a": "tsx scripts/eval-personalization-3a.ts",
     "eval:personalization-3b": "tsx scripts/eval-personalization-3b.ts",
     "eval:personalization-3c": "tsx scripts/eval-personalization-3c.ts",

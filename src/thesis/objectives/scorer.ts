@@ -17,8 +17,14 @@ export type ObjectiveWeights = Record<ObjectiveName, number> & { diversity: numb
  * Greedy selection (MMR-style): at each step pick the unselected candidate with the
  * highest score, where diversityMarginal = 1 − max cosine to already-selected items.
  * Pure, deterministic (tie-break by id). Returns a full permutation; never mutates input.
+ *
+ * `limit` bounds the expensive greedy loop: only the top-`limit` prefix is computed via
+ * the O(pool²·dim) diversity-marginal greedy; the remaining scorable candidates are
+ * appended by POINTWISE score descending (tie-break by id), which is irrelevant to any
+ * metric@k with k ≤ limit. When `limit` is undefined the full greedy runs as before, so
+ * existing callers are unaffected. The result is always a full permutation.
  */
-export function multiObjectiveRanker(weights: ObjectiveWeights, items: ScorerItem[]): Ranker {
+export function multiObjectiveRanker(weights: ObjectiveWeights, items: ScorerItem[], limit?: number): Ranker {
   const byId = new Map(items.map((it) => [it.id, it]));
   const pointwise = (it: ScorerItem): number => {
     let s = 0;
@@ -29,9 +35,10 @@ export function multiObjectiveRanker(weights: ObjectiveWeights, items: ScorerIte
     name: "multi-objective",
     rank(_ctx: UserContext, candidates: RankItem[]): string[] {
       const remaining = candidates.map((c) => c.id).filter((id) => byId.has(id));
+      const greedyTarget = Math.min(limit ?? Infinity, remaining.length);
       const selected: string[] = [];
       const selVecs: number[][] = [];
-      while (remaining.length > 0) {
+      while (remaining.length > 0 && selected.length < greedyTarget) {
         let bestIdx = 0;
         let bestScore = -Infinity;
         for (let i = 0; i < remaining.length; i++) {
@@ -47,6 +54,13 @@ export function multiObjectiveRanker(weights: ObjectiveWeights, items: ScorerIte
         selected.push(chosen);
         selVecs.push(byId.get(chosen)!.vector);
       }
+      // Remaining scorable candidates: pointwise score desc, tie-break by id (deterministic).
+      const tail = remaining
+        .map((id) => ({ id, s: pointwise(byId.get(id)!) }))
+        .sort((a, b) => b.s - a.s || a.id.localeCompare(b.id))
+        .map((x) => x.id);
+      for (const id of tail) selected.push(id);
+      // Candidates with no features (not in `items`): input order, as today.
       const known = new Set(selected);
       for (const c of candidates) if (!known.has(c.id)) selected.push(c.id);
       return selected;

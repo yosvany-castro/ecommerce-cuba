@@ -43,6 +43,17 @@ describe("multiObjectiveRanker", () => {
     const r = multiObjectiveRanker(w, items);
     expect(r.rank({ userVector: [], cohort: null }, cands)).toEqual(r.rank({ userVector: [], cohort: null }, cands));
   });
+  test("limit produces the same top-limit ids as the unlimited call", () => {
+    const w = { relevance: 1, margin: 0.5, convProb: 0, novelty: 0, sellerFairness: 0, revenue: 0.3, diversity: 0.5 };
+    const full = multiObjectiveRanker(w, items).rank({ userVector: [], cohort: null }, cands);
+    const limited = multiObjectiveRanker(w, items, 2).rank({ userVector: [], cohort: null }, cands);
+    expect(limited.slice(0, 2)).toEqual(full.slice(0, 2));
+  });
+  test("with limit the result is still a full permutation of candidate ids", () => {
+    const w = { relevance: 1, margin: 0.5, convProb: 0, novelty: 0, sellerFairness: 0, revenue: 0.3, diversity: 0.5 };
+    const limited = multiObjectiveRanker(w, items, 2).rank({ userVector: [], cohort: null }, cands);
+    expect([...limited].sort()).toEqual(["A", "B", "C"]);
+  });
   test("does not mutate the input candidates array", () => {
     const w = { relevance: 1, margin: 0, convProb: 0, novelty: 0, sellerFairness: 0, revenue: 0, diversity: 0 };
     const before = cands.map((c) => c.id);
