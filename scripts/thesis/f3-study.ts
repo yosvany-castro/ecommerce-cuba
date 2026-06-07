@@ -409,10 +409,16 @@ async function main() {
       },
     });
 
-    // cross-encoder: clean, no tangled ternary.
+    // cross-encoder: query chunks MUST be in the SAME E4 (1024-dim) space as the
+    // doc chunks (F1 pattern). The query = the user's TRAIN items' E4 chunks,
+    // flattened and capped at 24 (mirrors F1's E4_QUERY_CAP). Feeding E1 medoids
+    // (64-dim) here is a cross-space bug. If a user has zero E4 train chunks the
+    // query is empty → maxSim scores 0 for every candidate → pool order is kept.
+    const E4_QUERY_CAP = 24;
     const ceRankerFor = (c: F3Case): Ranker => {
-      const medoids = poolByUid.get(caseKey(c))!.modes.map((m) => m.medoid);
-      return crossEncoderRanker(chunks, () => (medoids.length ? medoids : []));
+      const train = (trainByUser.get(c.uid) ?? []).filter((id) => commonSet.has(id));
+      const qChunks = train.flatMap((id) => chunks.get(id) ?? []).slice(0, E4_QUERY_CAP);
+      return crossEncoderRanker(chunks, () => qChunks);
     };
 
     // ltr: per-case feature map.
@@ -502,6 +508,8 @@ async function main() {
     rows.push(`| mmr | ${f1(evalMmr.ndcg[10])} | ${f1(evalMmr.recall[10])} | ${f1(evalMmr.mrr)} | ${f1(scMmr)} |`);
     rows.push(`| cross-encoder | ${f1(evalCe.ndcg[10])} | ${f1(evalCe.recall[10])} | ${f1(evalCe.mrr)} | ${f1(scCe)} |`);
     rows.push(`| ltr | ${f1(evalLtr.ndcg[10])} | ${f1(evalLtr.recall[10])} | ${f1(evalLtr.mrr)} | ${f1(scLtr)} |`, "");
+    rows.push("### Honest read", "");
+    rows.push(`On this synthetic dataset, **no non-learned or learned reranker beats baseline-RRF at nDCG@10** (${f1(evalBaseline.ndcg[10])}). MMR is the cleanest baseline-correct non-learned reranker (nDCG@10 ${f1(evalMmr.ndcg[10])}): it diversifies the top-10 (set-change@10 ${f1(scMmr)}) at a positional-accuracy cost. The cross-encoder MaxSim query is now in the SAME E4 (1024-dim) space as the doc chunks (the user's TRAIN items' E4 chunks, F1 pattern); its nDCG@10 ${f1(evalCe.ndcg[10])} / set-change@10 ${f1(scCe)} is a real measurement — earlier 0.027/0.952 was a cross-space bug (64-dim E1 medoids queried against 1024-dim E4 docs, silently truncated by cosineSim). The honest finding stands: aggressive reranking reshuffles the top-10 without improving recall of the held-out purchase on this data; RRF fusion is the strongest ranker here.`, "");
     rows.push("## Self/gift segments — ltr vs baseline-rrf (GT intent)", "");
     rows.push("| Segment | n | ranker | nDCG@10 | Recall@10 | MRR |", "|---|---|---|---|---|---|");
     for (const s of segRows) {

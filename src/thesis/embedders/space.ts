@@ -38,11 +38,11 @@ export function meanPool(vectors: number[][]): number[] {
 }
 
 export function cosineSim(a: number[], b: number[]): number {
+  if (a.length !== b.length) throw new Error(`cosineSim dim mismatch: ${a.length} vs ${b.length}`);
   let dot = 0;
   let na = 0;
   let nb = 0;
-  const m = Math.min(a.length, b.length);
-  for (let i = 0; i < m; i++) {
+  for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     na += a[i] * a[i];
     nb += b[i] * b[i];

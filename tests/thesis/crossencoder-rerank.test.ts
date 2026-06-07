@@ -7,7 +7,9 @@ describe("crossEncoderRanker", () => {
     const itemChunks = new Map<string, number[][]>([
       ["match", [[1, 0], [0, 1]]],
       ["partial", [[1, 0]]],
-      ["off", [[0, 0, 1]]],
+      // off-axis doc: anti-aligned to both query chunks → lowest MaxSim.
+      // Kept 2-dim to match the query space (cosineSim now rejects mismatches).
+      ["off", [[-1, -1]]],
     ]);
     const r = crossEncoderRanker(itemChunks, () => [[1, 0], [0, 1]]);
     const cands: RankItem[] = [

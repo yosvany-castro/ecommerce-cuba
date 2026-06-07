@@ -19,34 +19,38 @@ E4 late-interaction chunks loaded: 2000 products.
 |---|---|---|---|---|
 | baseline-rrf | 0.177 | 0.336 | 0.145 | 0.000 |
 | mmr | 0.125 | 0.204 | 0.119 | 0.527 |
-| cross-encoder | 0.027 | 0.056 | 0.033 | 0.952 |
-| ltr | 0.055 | 0.097 | 0.056 | 0.773 |
+| cross-encoder | 0.055 | 0.120 | 0.053 | 0.821 |
+| ltr | 0.121 | 0.250 | 0.100 | 0.578 |
+
+### Honest read
+
+On this synthetic dataset, **no non-learned or learned reranker beats baseline-RRF at nDCG@10** (0.177). MMR is the cleanest baseline-correct non-learned reranker (nDCG@10 0.125): it diversifies the top-10 (set-change@10 0.527) at a positional-accuracy cost. The cross-encoder MaxSim query is now in the SAME E4 (1024-dim) space as the doc chunks (the user's TRAIN items' E4 chunks, F1 pattern); its nDCG@10 0.055 / set-change@10 0.821 is a real measurement — earlier 0.027/0.952 was a cross-space bug (64-dim E1 medoids queried against 1024-dim E4 docs, silently truncated by cosineSim). The honest finding stands: aggressive reranking reshuffles the top-10 without improving recall of the held-out purchase on this data; RRF fusion is the strongest ranker here.
 
 ## Self/gift segments — ltr vs baseline-rrf (GT intent)
 
 | Segment | n | ranker | nDCG@10 | Recall@10 | MRR |
 |---|---|---|---|---|---|
 | self | 743 | baseline-rrf | 0.235 | 0.445 | 0.189 |
-| self | 743 | ltr | 0.069 | 0.121 | 0.068 |
+| self | 743 | ltr | 0.159 | 0.332 | 0.127 |
 | gift | 355 | baseline-rrf | 0.055 | 0.107 | 0.055 |
-| gift | 355 | ltr | 0.026 | 0.045 | 0.030 |
+| gift | 355 | ltr | 0.041 | 0.079 | 0.044 |
 
 ## LLM listwise (DeepSeek) on first 120 cases (pool top-30)
 
-- nDCG@10: 0.166
-- Recall@10: 0.333
-- set-change@10: 0.429
+- nDCG@10: 0.170
+- Recall@10: 0.350
+- set-change@10: 0.427
 - fallback rate: 0.000 (0/120)
 
 ## LTR feature weights (interpretability)
 
 | feature | weight |
 |---|---|
-| retrievalScore | 6.4368 |
-| npmiScore | -6.3192 |
-| priceFit | 2.0571 |
-| demoMatch | -0.2416 |
+| retrievalScore | 6.8185 |
+| npmiScore | 0.2878 |
+| priceFit | 1.8114 |
+| demoMatch | 0.0445 |
 | isGift | 0.0000 |
-| popularity | 2.3634 |
-| (bias) | -14.9547 |
+| popularity | 2.2423 |
+| (bias) | -15.6126 |
 

@@ -21,7 +21,9 @@ describe("maxSimRanker", () => {
     const itemChunks = new Map<string, number[][]>([
       ["doc1", [[1, 0], [0, 1]]],
       ["doc2", [[1, 0]]],
-      ["doc3", [[0, 0, 1]]],
+      // off-axis doc: anti-aligned to both query chunks → lowest MaxSim.
+      // Kept 2-dim to match the query space (cosineSim now rejects mismatches).
+      ["doc3", [[-1, -1]]],
     ]);
     const r = maxSimRanker(itemChunks, () => [[1, 0], [0, 1]]);
     const out = r.rank({ userVector: [], cohort: null }, [
