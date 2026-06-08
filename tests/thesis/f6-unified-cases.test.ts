@@ -1,0 +1,190 @@
+import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import { getPgClient } from "@/lib/db/pg";
+import { loadUnifiedCases, type UnifiedCasesResult } from "@/thesis/eval/unified-cases";
+import type { Client } from "pg";
+
+/**
+ * F6 W1 — REAL targeted tests for the canonical unified-cases loader.
+ *
+ * Runs against the INTACT n=2000 / seed-42 thesis dataset. NO mocks: real
+ * Postgres (getPgClient scope=thesis) + already-stored E1 vectors. Strong
+ * assertions only (no toBeDefined / not.toBeNull). Read-only — never truncates
+ * or regenerates. Determinism (spec §6) is asserted by a second load.
+ *
+ * SAFE to run in isolation (this file ONLY reads). Do NOT run the whole
+ * tests/thesis dir — harness-discrimination.test.ts TRUNCATEs thesis.products.
+ */
+describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
+  let pg: Client;
+  let loaded: UnifiedCasesResult;
+
+  beforeAll(async () => {
+    pg = await getPgClient({ scope: "thesis" });
+    // Full load (no limit): required to assert meta.n === 2000 and the holdout
+    // shape. One load shared across the structural tests below.
+    loaded = await loadUnifiedCases(pg);
+  }, 180_000);
+
+  afterAll(async () => {
+    if (pg) await pg.end();
+  });
+
+  test("loads a non-empty case set over the intact n=2000 universe", async () => {
+    expect(loaded.cases.length).toBeGreaterThan(0);
+    // meta.n = the E1 (prod2vec, 64d) universe = catalog representable in E1.
+    // The intact n=2000 catalog has exactly 1998 E1 vectors (2 products lack one);
+    // the spec's own comparison table cites "universo común ~1998".
+    expect(loaded.meta.n).toBe(1998);
+    expect(loaded.e1Item.size).toBe(1998);
+    // The PRODUCTS table is the n=2000 dataset, intact — the runner's sanity check.
+    const productCount = parseInt(
+      (await pg.query<{ c: string }>(`SELECT count(*)::text c FROM thesis.products`)).rows[0]!.c,
+      10,
+    );
+    expect(productCount).toBe(2000);
+
+    expect(loaded.meta.nCases).toBe(loaded.cases.length);
+    expect(loaded.meta.space).toBe("e1_prod2vec");
+    expect(loaded.meta.poolSize).toBe(200);
+    // The E1 universe map is the canonical 64d space; every vector must be 64d.
+    for (const v of loaded.e1Item.values()) {
+      expect(v.length).toBe(64);
+      break; // dim is uniform; one check + the cosineSim invariant guards the rest.
+    }
+  });
+
+  test("every case excludes the user's train items from its candidates", () => {
+    // Aggregate violation counters across all cases (cheap); assert on totals.
+    let emptyCandidates = 0;
+    let trainLeak = 0; // a train id appearing among candidates
+    let dupCandidates = 0; // candidate ids not unique
+    let wrongFrameSize = 0; // candidates.length !== universe - train
+    for (const c of loaded.cases) {
+      if (c.candidates.length === 0) emptyCandidates++;
+      const candIds = new Set(c.candidates.map((x) => x.id));
+      if (candIds.size !== c.candidates.length) dupCandidates++;
+      for (const t of c.trainIds) if (candIds.has(t)) trainLeak++;
+      // Full frame = E1 universe \ train (train is filtered to in-universe ids).
+      if (c.candidates.length !== loaded.meta.n - c.trainIds.length) wrongFrameSize++;
+    }
+    expect(emptyCandidates).toBe(0);
+    expect(trainLeak).toBe(0);
+    expect(dupCandidates).toBe(0);
+    expect(wrongFrameSize).toBe(0);
+  });
+
+  test("every case has a bounded non-empty pool and exactly one relevant id", () => {
+    let emptyPool = 0;
+    let overSizedPool = 0; // pool.length > 200
+    let wrongRelevant = 0; // relevant.size !== 1
+    let dupPool = 0; // pool ids not unique
+    let poolNotInCandidates = 0; // a pool id absent from candidates
+    for (const c of loaded.cases) {
+      if (c.pool.length === 0) emptyPool++;
+      if (c.pool.length > 200) overSizedPool++;
+      if (c.relevant.size !== 1) wrongRelevant++;
+      const poolIds = c.pool.map((p) => p.id);
+      const poolSet = new Set(poolIds);
+      if (poolSet.size !== poolIds.length) dupPool++;
+      const candIds = new Set(c.candidates.map((x) => x.id));
+      for (const id of poolIds) if (!candIds.has(id)) poolNotInCandidates++;
+    }
+    expect(emptyPool).toBe(0);
+    expect(overSizedPool).toBe(0);
+    expect(wrongRelevant).toBe(0);
+    expect(dupPool).toBe(0);
+    expect(poolNotInCandidates).toBe(0);
+  });
+
+  test("objById / revenueById / sellerById cover the pool; revenue is finite >= 0", () => {
+    // Iterate every pool id of every case imperatively (cheap) and COUNT
+    // violations; assert on the aggregated counters. This covers the full loaded
+    // data with strong assertions without ~200k per-item expect() calls.
+    const OBJ_NAMES = [
+      "relevance",
+      "margin",
+      "convProb",
+      "novelty",
+      "sellerFairness",
+      "revenue",
+    ] as const;
+    let totalPoolIds = 0;
+    let missingObj = 0;
+    let missingRevenue = 0;
+    let missingSeller = 0;
+    let badRevenue = 0; // not finite or < 0
+    let badSeller = 0; // empty / non-string
+    let badObj = 0; // any objective not finite-in-[0,1]
+
+    for (const c of loaded.cases) {
+      for (const p of c.pool) {
+        totalPoolIds++;
+        if (!c.objById.has(p.id)) missingObj++;
+        if (!c.revenueById.has(p.id)) missingRevenue++;
+        if (!c.sellerById.has(p.id)) missingSeller++;
+
+        const rev = c.revenueById.get(p.id);
+        if (rev === undefined || !Number.isFinite(rev) || rev < 0) badRevenue++;
+
+        const seller = c.sellerById.get(p.id);
+        if (typeof seller !== "string" || seller.length === 0) badSeller++;
+
+        const obj = c.objById.get(p.id);
+        if (obj === undefined) {
+          badObj++;
+        } else {
+          for (const name of OBJ_NAMES) {
+            const v = obj[name];
+            if (!Number.isFinite(v) || v < 0 || v > 1) {
+              badObj++;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    expect(totalPoolIds).toBeGreaterThan(0);
+    // Full coverage of pool ids by every per-id map.
+    expect(missingObj).toBe(0);
+    expect(missingRevenue).toBe(0);
+    expect(missingSeller).toBe(0);
+    // All values well-formed.
+    expect(badRevenue).toBe(0);
+    expect(badSeller).toBe(0);
+    expect(badObj).toBe(0);
+  });
+
+  test("DETERMINISM: a second limited load reproduces identical case + pool ids", async () => {
+    // A second INDEPENDENT load of the first 5 cases (deterministic ORDER BY in
+    // the loader). Compare its case ids + pool ids against the matching prefix of
+    // the full load. Deep equality on the ordered id sequences.
+    const LIMIT = 5;
+    const second = await loadUnifiedCases(pg, { limit: LIMIT });
+    expect(second.cases.length).toBe(LIMIT);
+
+    const firstPrefix = loaded.cases.slice(0, LIMIT);
+    expect(second.cases.length).toBe(firstPrefix.length);
+
+    const caseKeyOf = (c: { userId: string; relevant: Set<string> }) =>
+      `${c.userId}|${[...c.relevant][0] ?? ""}`;
+
+    // Identical case ids in identical order.
+    expect(second.cases.map(caseKeyOf)).toEqual(firstPrefix.map(caseKeyOf));
+
+    // Identical ordered pool ids for each sampled case.
+    for (let i = 0; i < LIMIT; i++) {
+      expect(second.cases[i].pool.map((p) => p.id)).toEqual(
+        firstPrefix[i].pool.map((p) => p.id),
+      );
+      // Identical ordered candidate ids too (the full frame must be stable).
+      expect(second.cases[i].candidates.map((x) => x.id)).toEqual(
+        firstPrefix[i].candidates.map((x) => x.id),
+      );
+      // Identical revenue values for the pool (numeric determinism).
+      expect(second.cases[i].pool.map((p) => second.cases[i].revenueById.get(p.id))).toEqual(
+        firstPrefix[i].pool.map((p) => firstPrefix[i].revenueById.get(p.id)),
+      );
+    }
+  }, 180_000);
+});
