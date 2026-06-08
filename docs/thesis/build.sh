@@ -14,6 +14,7 @@ pandoc \
   08-discusion.md \
   09-conclusion-trabajo-futuro.md \
   10-plan-piloto.md \
+  11-f6-validacion.md \
   -o tesis.pdf \
   --pdf-engine=xelatex \
   --toc --number-sections
