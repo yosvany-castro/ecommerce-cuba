@@ -155,6 +155,21 @@ describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
     expect(badObj).toBe(0);
   });
 
+  test("gift detector FIRES on a non-trivial set of cases (W8 regression)", () => {
+    // Before the W8 fix the detector ran on the user's TRAIN history, whose modal
+    // demographic always equals the buyer's own → cross-cohort impossible → gift
+    // fired on 0/N cases. The loader now runs the detector on the test item's
+    // ACTUAL session (excluding the test product). Assert it genuinely fires.
+    let fired = 0;
+    let giftIntent = 0;
+    for (const c of loaded.cases) {
+      if (c.giftSignal.isGift) fired++;
+      if (c.intentGT === "gift") giftIntent++;
+    }
+    expect(giftIntent).toBeGreaterThan(0);
+    expect(fired).toBeGreaterThan(0);
+  });
+
   test("DETERMINISM: a second limited load reproduces identical case + pool ids", async () => {
     // A second INDEPENDENT load of the first 5 cases (deterministic ORDER BY in
     // the loader). Compare its case ids + pool ids against the matching prefix of

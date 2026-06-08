@@ -23,9 +23,10 @@
  * No leakage (spec hazard #6): gift intent + recipient demographics come from the
  * F2 detector (case.giftSignal), never from sim_sessions GT. LTR is trained
  * TRAIN-SPLIT-ONLY (trainAssembledLtr). `intentGT` is used ONLY to segment
- * self/gift in the report; the recipient-fit measurement uses the DETECTOR's
- * predicted recipient (recipientGender/recipientAgeBand → age range), so no GT
- * recipient table is consulted.
+ * self/gift in the report; recipient-fit@10 is measured vs the GROUND-TRUTH
+ * recipient (case.recipientGT, from sim_user_recipients) — eval-only, exactly like
+ * the held-out purchase, never a ranker feature. This matches f2-study and measures
+ * TRUE recipient targeting (not a circular fit to the detector's own prediction).
  *
  * Determinism (spec §6): seeded RNG only (makeRng); no Math.random / Date.now in
  * ranking. The only Date.now is the report's generated_at stamp.
@@ -66,7 +67,6 @@ import {
   intraListDiversity,
   setChangeAtK,
   type ItemDemographics,
-  type RecipientProfile,
 } from "@/thesis/eval/metrics";
 import { hybridScoreFusionRanker } from "@/thesis/embedders/hybrid";
 import { multiModeRank } from "@/thesis/multivector/retrieve";
@@ -136,23 +136,6 @@ function parseCli(argv: string[]): Cli {
 // The detector's recipientAgeBand is one of {bebe,nino,joven,adulto,mayor} (the
 // midpoint buckets ageBandOf produces). Map each band back to its bucket range so
 // the recipient-fit metric can test age overlap against item age_target ranges.
-function bandToAgeRange(band: string | null): { min: number; max: number } {
-  switch (band) {
-    case "bebe":
-      return { min: 0, max: 3 };
-    case "nino":
-      return { min: 4, max: 11 };
-    case "joven":
-      return { min: 12, max: 25 };
-    case "adulto":
-      return { min: 26, max: 59 };
-    case "mayor":
-      return { min: 60, max: 130 };
-    default:
-      return { min: 0, max: 130 }; // unknown band → any age (degrades gracefully).
-  }
-}
-
 // ── Per-ranker business/quality metrics over a fixed candidate frame (spec @10). ─
 interface BizMetrics {
   /** revenue@10 (pool expectedRevenue; missing → 0). */
@@ -390,16 +373,13 @@ async function main() {
           .filter((v): v is number[] => v !== undefined);
         div += intraListDiversity(topVecs);
         sc += setChangeAtK(ranked, pcTop10ByKey.get(caseKeyOf(c)) ?? [], K_BUS);
-        // recipient-fit@10 ONLY on gift (intentGT) cases, vs the DETECTOR's recipient.
-        if (c.intentGT === "gift") {
+        // recipient-fit@10 on gift (intentGT) cases, vs the GROUND-TRUTH recipient
+        // (eval-only, like the held-out purchase — never a ranker feature). This
+        // matches f2-study and measures TRUE recipient targeting, not a circular
+        // fit to what the detector itself predicted.
+        if (c.intentGT === "gift" && c.recipientGT) {
           nGift++;
-          const ageR = bandToAgeRange(c.recipientAgeBand);
-          const recipient: RecipientProfile = {
-            gender: c.recipientGender ?? "unisex",
-            age_min: ageR.min,
-            age_max: ageR.max,
-          };
-          fitSum += recipientFitAtK(ranked, recipient, demoRecord, K_BUS);
+          fitSum += recipientFitAtK(ranked, c.recipientGT, demoRecord, K_BUS);
         }
       }
       const n = Math.max(1, cases.length);
@@ -717,7 +697,7 @@ function renderMarkdown(o: {
   rows.push(
     "Every ranker is evaluated over the SAME `UnifiedCase`s with the SAME candidates and the SAME holdout split. " +
       "Gift intent + recipient demographics come from the F2 detector (no GT). LTR is train-split-only. " +
-      "`intentGT` segments self/gift in the report ONLY; recipient-fit uses the DETECTOR's predicted recipient.",
+      "`intentGT` segments self/gift in the report ONLY; recipient-fit@10 is measured vs the GROUND-TRUTH recipient (sim_user_recipients), eval-only — like the held-out purchase, never a ranker feature.",
     "",
   );
 

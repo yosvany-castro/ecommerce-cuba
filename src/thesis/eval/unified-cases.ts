@@ -37,6 +37,7 @@
 import type { Client } from "pg";
 import { l2normalize, meanPool, cosineSim } from "../embedders/space";
 import type { EvalCase } from "./harness";
+import type { RecipientProfile } from "./metrics";
 import { buildCandidatePool, type PooledCandidate } from "../rerank/candidates";
 import { buildUserModes, type UserMode } from "../multivector/modes";
 import {
@@ -45,6 +46,7 @@ import {
   type SessionItem,
   type UserDemographic,
 } from "../multivector/gift-detect";
+import { buildRecipientVector } from "../multivector/gift-vector";
 import {
   extractObjectiveFeatures,
   type ObjCtx,
@@ -226,6 +228,10 @@ export interface UnifiedCase extends EvalCase {
   recipientGender: string | null;
   /** Recipient age band from the detector (null when not gift). */
   recipientAgeBand: string | null;
+  /** GROUND-TRUTH recipient profile from the test session (eval-only: used for
+   *  recipient-fit@k vs the TRUE recipient; NEVER a ranker feature). Null if the
+   *  session has no recipient (self) or it cannot be resolved. */
+  recipientGT: RecipientProfile | null;
   /** Title of the last-viewed product (for LLM prompts); null if none. */
   lastViewedTitle: string | null;
   /**
@@ -367,7 +373,43 @@ export async function loadUnifiedCases(
     `SELECT user_id::text uid, product_id::text pid FROM thesis.holdout WHERE split='test' ORDER BY user_id, product_id`,
   );
 
-  // ── Last session intent per user (GT — segments only). ──────────────────────
+  // ── Test item's ACTUAL session (GT intent + that session's browsed items). ───
+  // The gift detector MUST run on the session the held-out purchase belongs to
+  // (as f2-study does), NOT the user's whole train history — otherwise the
+  // session's modal demographic always equals the buyer's own and gift NEVER
+  // fires (the W8 degeneracy). `${uid}|${pid}` -> the session containing pid.
+  const testSession = new Map<string, { sid: string; intent: string; rid: string | null }>();
+  for (const r of await queryWithRetry<{ uid: string; pid: string; sid: string; intent: string; rid: string | null }>(
+    pg,
+    `SELECT DISTINCT h.user_id::text uid, h.product_id::text pid, e.session_id::text sid, s.intent, s.recipient_id::text rid
+       FROM thesis.holdout h
+       JOIN thesis.events e ON e.anonymous_id = h.user_id AND e.payload->>'product_id' = h.product_id::text
+       JOIN thesis.sim_sessions s ON s.session_id = e.session_id
+      WHERE h.split='test'`,
+  )) {
+    const k = `${r.uid}|${r.pid}`;
+    if (!testSession.has(k)) testSession.set(k, { sid: r.sid, intent: r.intent, rid: r.rid });
+  }
+  const sessionItems = new Map<string, string[]>();
+  for (const r of await queryWithRetry<{ sid: string; pid: string }>(
+    pg,
+    `SELECT e.session_id::text sid, e.payload->>'product_id' pid
+       FROM thesis.events e WHERE e.payload->>'product_id' IS NOT NULL GROUP BY 1, 2`,
+  )) {
+    const a = sessionItems.get(r.sid) ?? [];
+    a.push(r.pid);
+    sessionItems.set(r.sid, a);
+  }
+  // ── GT recipient profiles (eval-only, for recipient-fit vs the TRUE recipient;
+  //    NEVER a ranker feature — same status as the held-out purchase). ──────────
+  const recById = new Map<string, RecipientProfile>();
+  for (const r of await queryWithRetry<{ id: string; gender: string; age_min: number; age_max: number }>(
+    pg,
+    `SELECT id::text id, gender, age_min, age_max FROM thesis.sim_user_recipients`,
+  )) {
+    recById.set(r.id, { gender: r.gender, age_min: r.age_min, age_max: r.age_max });
+  }
+  // ── Last session intent per user (fallback when an item maps to no session). ─
   const lastSession = new Map<string, { intent: string }>();
   for (const r of await queryWithRetry<{ uid: string; intent: string }>(
     pg,
@@ -425,7 +467,33 @@ export async function loadUnifiedCases(
     if (train.length === 0 || !commonSet.has(t.pid)) continue;
     const trainSet = new Set(train);
     const history = train.map((id) => e1.get(id)!);
-    const modes = buildUserModes(history, MODE_OPTS);
+    const trainModes = buildUserModes(history, MODE_OPTS);
+
+    // ── Gift detection on the test item's ACTUAL session (DETECTOR, not GT). ──
+    // Exclude the held-out product itself (no leakage); buyer demographic comes
+    // from the TRAIN history so cross-cohort is measured vs the buyer's own taste.
+    const tsess = testSession.get(`${t.uid}|${t.pid}`);
+    const sessionProductIds = (tsess ? sessionItems.get(tsess.sid) ?? [] : []).filter(
+      (id) => commonSet.has(id) && id !== t.pid,
+    );
+    const session: SessionItem[] = sessionProductIds.map((id) => ({
+      product_id: id,
+      gender_target: meta.get(id)?.gender ?? null,
+      age_band: meta.get(id)?.ageBand ?? null,
+    }));
+    const buyerGender = modeOf(train.map((id) => meta.get(id)?.gender ?? null));
+    const buyerAgeBand = modeOf(train.map((id) => meta.get(id)?.ageBand ?? null));
+    const userDemographic: UserDemographic = { gender: buyerGender, ageBand: buyerAgeBand };
+    const giftSignal = detectGiftIntent(session, userDemographic, GIFT_OPTS);
+    const recipientGender = giftSignal.isGift ? giftSignal.targetGender : null;
+    const recipientAgeBand = giftSignal.isGift ? giftSignal.targetAgeBand : null;
+    // Effective modes: a gift routes to a single ephemeral recipient vector built
+    // from the session items (f2-study parity); otherwise the buyer's train modes.
+    const sessionVectors = sessionProductIds.map((id) => e1.get(id)!);
+    const modes =
+      giftSignal.isGift && sessionVectors.length
+        ? [{ medoid: buildRecipientVector(sessionVectors), weight: 1, size: sessionVectors.length }]
+        : trainModes;
     const modeMedoids = modes.map((m) => m.medoid);
 
     const allMinusTrain = commonIds.filter((id) => !trainSet.has(id));
@@ -476,19 +544,6 @@ export async function loadUnifiedCases(
     );
     if (pool.length === 0) continue;
     const poolOrder = pool.map((p) => p.id);
-
-    // ── Gift detection (DETECTOR, not GT). Session = the user's train items. ──
-    const session: SessionItem[] = train.map((id) => ({
-      product_id: id,
-      gender_target: meta.get(id)?.gender ?? null,
-      age_band: meta.get(id)?.ageBand ?? null,
-    }));
-    const buyerGender = modeOf(train.map((id) => meta.get(id)?.gender ?? null));
-    const buyerAgeBand = modeOf(train.map((id) => meta.get(id)?.ageBand ?? null));
-    const userDemographic: UserDemographic = { gender: buyerGender, ageBand: buyerAgeBand };
-    const giftSignal = detectGiftIntent(session, userDemographic, GIFT_OPTS);
-    const recipientGender = giftSignal.isGift ? giftSignal.targetGender : null;
-    const recipientAgeBand = giftSignal.isGift ? giftSignal.targetAgeBand : null;
 
     // ── Budget bands (f3 mode for features, f4 mean for objectives). ─────────
     const budgetBandMode = modeNum(train.map((id) => meta.get(id)?.priceBand ?? 0));
@@ -570,8 +625,8 @@ export async function loadUnifiedCases(
           }
         : undefined;
 
-    const sess = lastSession.get(t.uid);
-    const intentGT: "self" | "gift" = sess?.intent === "gift" ? "gift" : "self";
+    const intentGT: "self" | "gift" =
+      (tsess?.intent ?? lastSession.get(t.uid)?.intent) === "gift" ? "gift" : "self";
 
     cases.push({
       ctx,
@@ -595,6 +650,7 @@ export async function loadUnifiedCases(
       buyerAgeBand,
       recipientGender,
       recipientAgeBand,
+      recipientGT: tsess?.rid ? recById.get(tsess.rid) ?? null : null,
       lastViewedTitle: lv ? meta.get(lv)?.title ?? null : null,
       e2,
     });

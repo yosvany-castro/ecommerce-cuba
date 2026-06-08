@@ -209,6 +209,32 @@ export function buildPoolFeatures(
   return out;
 }
 
+/**
+ * Per-case TRAIN-POSITIVE feature map (train id → F3 feature vector), built EXACTLY
+ * as `trainAssembledLtr` builds positive samples: the detector-routed ctx with
+ * `lastViewedId=null` (mirroring f3-study's positive pass), `npmiToLastViewed` via
+ * the FULL last-viewed map (`case.lvNpmi`, NOT poolNpmi — positives are absent from
+ * the pool, so poolNpmi would force them to 0 and re-introduce a membership leak).
+ *
+ * Exported so the W5 revenue-LTR trainer builds positives with the IDENTICAL
+ * feature semantics as the relevance LTR — the two models differ ONLY in target,
+ * never in features (apples-to-apples). Train-split-only: only `c.trainIds` are
+ * featurized; the held-out test purchase is never included.
+ */
+export function buildPositiveFeatures(
+  c: UnifiedCase,
+  metaById: FeatureMetaById,
+): Map<string, number[]> {
+  const posCtx = featureCtxFor(c, null, metaById);
+  const out = new Map<string, number[]>();
+  for (const id of c.trainIds) {
+    const f = featuresForId(c, posCtx, id, metaById);
+    if (f.length === 0) continue;
+    out.set(id, f);
+  }
+  return out;
+}
+
 // ── Per-case LTR training (TRAIN-SPLIT-ONLY, verbatim from f3-study.ts) ───────
 
 export interface AssembledLtr {
