@@ -1,0 +1,629 @@
+{
+  "generated_at": "2026-06-08T05:46:33.770Z",
+  "item_space": "e1_prod2vec",
+  "e1_universe": 4999,
+  "pool_size": 200,
+  "eval_cases": 300,
+  "swept_cases": 300,
+  "k": 10,
+  "fusion": "rrf",
+  "baseline": {
+    "ndcg": 0.15313073972290436,
+    "recall": 0.2866666666666667,
+    "revenue": 31342.464039122966
+  },
+  "grid": {
+    "revenue": [
+      0,
+      0.5,
+      1
+    ],
+    "margin": [
+      0,
+      0.5
+    ],
+    "diversity": [
+      0,
+      0.5
+    ],
+    "sellerFairness": [
+      0,
+      0.5
+    ],
+    "relevance_fixed": 1
+  },
+  "configs": [
+    {
+      "id": "cfg0",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": true,
+      "single": {
+        "ndcg": 0.0706617748656538,
+        "recall": 0.15333333333333332,
+        "revenue": 34437.81037245643
+      },
+      "multi": {
+        "ndcg": 0.15466274994594353,
+        "recall": 0.29,
+        "revenue": 32304.00822508443
+      }
+    },
+    {
+      "id": "cfg1",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05449439798114184,
+        "recall": 0.11333333333333333,
+        "revenue": 31847.185710865353
+      },
+      "multi": {
+        "ndcg": 0.11785577214045084,
+        "recall": 0.20666666666666667,
+        "revenue": 30060.521744748716
+      }
+    },
+    {
+      "id": "cfg2",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05962258255339376,
+        "recall": 0.11666666666666667,
+        "revenue": 33542.95308723662
+      },
+      "multi": {
+        "ndcg": 0.1425641527429431,
+        "recall": 0.27666666666666667,
+        "revenue": 29662.677031703883
+      }
+    },
+    {
+      "id": "cfg3",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.054188674568698046,
+        "recall": 0.11333333333333333,
+        "revenue": 31118.617131074498
+      },
+      "multi": {
+        "ndcg": 0.10816438817972861,
+        "recall": 0.19333333333333333,
+        "revenue": 27258.816968343803
+      }
+    },
+    {
+      "id": "cfg4",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.044784114022073905,
+        "recall": 0.09666666666666666,
+        "revenue": 35693.79406843677
+      },
+      "multi": {
+        "ndcg": 0.148218877067361,
+        "recall": 0.2866666666666667,
+        "revenue": 30569.699424973645
+      }
+    },
+    {
+      "id": "cfg5",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.054388842683633656,
+        "recall": 0.11,
+        "revenue": 31105.790233193053
+      },
+      "multi": {
+        "ndcg": 0.11571478144702783,
+        "recall": 0.21333333333333335,
+        "revenue": 27530.243775512547
+      }
+    },
+    {
+      "id": "cfg6",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.041594924961305506,
+        "recall": 0.09333333333333334,
+        "revenue": 35886.85867452056
+      },
+      "multi": {
+        "ndcg": 0.1349277839585916,
+        "recall": 0.2733333333333333,
+        "revenue": 27068.01527838106
+      }
+    },
+    {
+      "id": "cfg7",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05416307741841626,
+        "recall": 0.10666666666666667,
+        "revenue": 30002.78396750955
+      },
+      "multi": {
+        "ndcg": 0.10633806120701796,
+        "recall": 0.19,
+        "revenue": 24515.12483705716
+      }
+    },
+    {
+      "id": "cfg8",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05848852236426829,
+        "recall": 0.11333333333333333,
+        "revenue": 55934.26987432635
+      },
+      "multi": {
+        "ndcg": 0.1531393073214485,
+        "recall": 0.3,
+        "revenue": 45070.852340130055
+      }
+    },
+    {
+      "id": "cfg9",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.0585845846471875,
+        "recall": 0.12,
+        "revenue": 41625.6177297893
+      },
+      "multi": {
+        "ndcg": 0.11971094259701553,
+        "recall": 0.22666666666666666,
+        "revenue": 42215.54713607577
+      }
+    },
+    {
+      "id": "cfg10",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.055555964845803454,
+        "recall": 0.10333333333333333,
+        "revenue": 56938.5331281895
+      },
+      "multi": {
+        "ndcg": 0.14189863024413618,
+        "recall": 0.2866666666666667,
+        "revenue": 44374.949293228936
+      }
+    },
+    {
+      "id": "cfg11",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05488219612890847,
+        "recall": 0.11333333333333333,
+        "revenue": 42133.112538325426
+      },
+      "multi": {
+        "ndcg": 0.11023079426245908,
+        "recall": 0.21333333333333335,
+        "revenue": 39989.25729615172
+      }
+    },
+    {
+      "id": "cfg12",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.055679429034754535,
+        "recall": 0.11666666666666667,
+        "revenue": 55855.81387472068
+      },
+      "multi": {
+        "ndcg": 0.14686452263348246,
+        "recall": 0.2966666666666667,
+        "revenue": 44606.42231842135
+      }
+    },
+    {
+      "id": "cfg13",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05755667481226657,
+        "recall": 0.11666666666666667,
+        "revenue": 42665.16309398958
+      },
+      "multi": {
+        "ndcg": 0.11716101589309234,
+        "recall": 0.22666666666666666,
+        "revenue": 41365.60176277067
+      }
+    },
+    {
+      "id": "cfg14",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.057594167236157824,
+        "recall": 0.11666666666666667,
+        "revenue": 56119.50201889114
+      },
+      "multi": {
+        "ndcg": 0.13807356165659865,
+        "recall": 0.28,
+        "revenue": 43326.6693095226
+      }
+    },
+    {
+      "id": "cfg15",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05898729699421658,
+        "recall": 0.12333333333333334,
+        "revenue": 42672.49553845438
+      },
+      "multi": {
+        "ndcg": 0.11238307371431162,
+        "recall": 0.22,
+        "revenue": 38189.759686461184
+      }
+    },
+    {
+      "id": "cfg16",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05360287537025805,
+        "recall": 0.11,
+        "revenue": 58499.06089627785
+      },
+      "multi": {
+        "ndcg": 0.12243826169741193,
+        "recall": 0.25,
+        "revenue": 53882.82898553112
+      }
+    },
+    {
+      "id": "cfg17",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.06212616582787511,
+        "recall": 0.12666666666666668,
+        "revenue": 51791.182199755465
+      },
+      "multi": {
+        "ndcg": 0.11013025263954676,
+        "recall": 0.21666666666666667,
+        "revenue": 50279.404436315956
+      }
+    },
+    {
+      "id": "cfg18",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.050748443425030564,
+        "recall": 0.10333333333333333,
+        "revenue": 59257.408479890924
+      },
+      "multi": {
+        "ndcg": 0.1156156904138472,
+        "recall": 0.24,
+        "revenue": 54258.54947108468
+      }
+    },
+    {
+      "id": "cfg19",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.059888231716431456,
+        "recall": 0.13,
+        "revenue": 52577.975311364324
+      },
+      "multi": {
+        "ndcg": 0.10160716626902425,
+        "recall": 0.19666666666666666,
+        "revenue": 50084.759177908956
+      }
+    },
+    {
+      "id": "cfg20",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05934561811995084,
+        "recall": 0.12333333333333334,
+        "revenue": 57601.760873754436
+      },
+      "multi": {
+        "ndcg": 0.12632219008988887,
+        "recall": 0.25333333333333335,
+        "revenue": 53369.63450991203
+      }
+    },
+    {
+      "id": "cfg21",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.062300446472153596,
+        "recall": 0.12666666666666668,
+        "revenue": 51314.94989414423
+      },
+      "multi": {
+        "ndcg": 0.11280472769191585,
+        "recall": 0.21666666666666667,
+        "revenue": 49906.168254263204
+      }
+    },
+    {
+      "id": "cfg22",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.05638258476184353,
+        "recall": 0.11333333333333333,
+        "revenue": 58368.001571638844
+      },
+      "multi": {
+        "ndcg": 0.12034241306867823,
+        "recall": 0.25,
+        "revenue": 53554.476884646654
+      }
+    },
+    {
+      "id": "cfg23",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "rel_only": false,
+      "single": {
+        "ndcg": 0.0590595746071497,
+        "recall": 0.12333333333333334,
+        "revenue": 52098.722789805564
+      },
+      "multi": {
+        "ndcg": 0.1082994650730246,
+        "recall": 0.21333333333333335,
+        "revenue": 49450.18282581847
+      }
+    }
+  ],
+  "decomposition": {
+    "rel_only_id": "cfg0",
+    "confound": {
+      "single_rel_only_ndcg": 0.0706617748656538,
+      "multi_rel_only_ndcg": 0.15466274994594353,
+      "gap_ndcg_abs": 0.08400097508028974,
+      "gap_ndcg_pct": 118.87753348963734,
+      "single_rel_only_vs_baseline_pct": -53.85526446648215,
+      "multi_rel_only_vs_baseline_pct": 1.0004589710801366,
+      "confound_closed_pct": 101.85768091753182
+    },
+    "true_tradeoff_multi": {
+      "rev_max_id": "cfg18",
+      "rev_max_weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "revenue_gain_pct": 67.96228224382477,
+      "ndcg_cost_pct": -25.246582998002907
+    },
+    "naive_tradeoff_single": {
+      "rev_max_id": "cfg18",
+      "rev_max_weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "revenue_gain_pct": 72.07077871386784,
+      "ndcg_cost_pct": -28.18119340829408
+    }
+  }
+}

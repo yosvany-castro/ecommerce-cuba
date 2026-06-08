@@ -83,20 +83,42 @@ const VARIANTS = ["full", "-retrieval", "-npmi", "-popular", "-exploration"] as 
 type VariantName = (typeof VARIANTS)[number];
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
-function parseLimit(argv: string[]): number {
-  let limit = 0;
+interface Cli {
+  limit: number;
+  n: number;
+  seed: number;
+  out: string | null;
+}
+function parseCli(argv: string[]): Cli {
+  const cli: Cli = { limit: 0, n: 2000, seed: 42, out: null };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === "--limit") {
+    const a = argv[i];
+    const next = (): string => {
       const v = argv[i + 1];
-      if (v === undefined) throw new Error("[f6-pool-ablation] --limit requires a value");
-      limit = parseInt(v, 10);
+      if (v === undefined) throw new Error(`[f6-pool-ablation] ${a} requires a value`);
       i++;
-    } else {
-      throw new Error(`[f6-pool-ablation] unknown flag: ${argv[i]}`);
+      return v;
+    };
+    switch (a) {
+      case "--limit":
+        cli.limit = parseInt(next(), 10);
+        break;
+      case "--n":
+        cli.n = parseInt(next(), 10);
+        break;
+      case "--seed":
+        cli.seed = parseInt(next(), 10);
+        break;
+      case "--out":
+        cli.out = next();
+        break;
+      default:
+        throw new Error(`[f6-pool-ablation] unknown flag: ${a}`);
     }
   }
-  if (!Number.isFinite(limit) || limit < 0) throw new Error("[f6-pool-ablation] --limit must be >= 0");
-  return limit;
+  if (!Number.isFinite(cli.limit) || cli.limit < 0)
+    throw new Error("[f6-pool-ablation] --limit must be >= 0");
+  return cli;
 }
 
 // ── DB retry (spec hazard #8 — one retry on connection-class failure only) ────
@@ -147,7 +169,8 @@ interface VariantAcc {
 }
 
 async function main() {
-  const limit = parseLimit(process.argv.slice(2));
+  const cli = parseCli(process.argv.slice(2));
+  const limit = cli.limit;
   const pg = await getPgClient({ scope: "thesis" });
   try {
     // ── E1 vectors (canonical 64d space). ──────────────────────────────────────
@@ -530,10 +553,12 @@ async function main() {
     };
 
     // ── Write. ─────────────────────────────────────────────────────────────────
-    const base = resolve(
-      process.cwd(),
-      "docs/superpowers/reports/2026-06-08-thesis-f6-pool-ablation-n2000-seed42",
-    );
+    const base = cli.out
+      ? resolve(process.cwd(), cli.out)
+      : resolve(
+          process.cwd(),
+          `docs/superpowers/reports/2026-06-08-thesis-f6-pool-ablation-n${cli.n}-seed${cli.seed}`,
+        );
     const outMd = `${base}.md`;
     const outJson = `${base}.json`;
     writeFileSync(outMd, md);

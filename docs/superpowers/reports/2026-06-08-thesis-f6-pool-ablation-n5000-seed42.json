@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-06-08T05:45:38.884Z",
+  "workstream": "W9",
+  "item_space": "e1_prod2vec",
+  "seed": 42,
+  "e1_universe": 4999,
+  "eval_cases": 2893,
+  "limit": null,
+  "pool_size": 200,
+  "rrf_k0": 60,
+  "quotas": {
+    "retrieval": 80,
+    "npmi": 50,
+    "popular": 40,
+    "exploration": 30
+  },
+  "variants": {
+    "full": {
+      "pool_recall": 0.7964051157967508,
+      "pool_recall_hits": 2304,
+      "ndcg10": 0.12309498821489155,
+      "recall_drop_vs_full": 0,
+      "ndcg10_drop_vs_full": 0,
+      "avg_pool_size": 166.79433114414104
+    },
+    "-retrieval": {
+      "pool_recall": 0.7075699965433806,
+      "pool_recall_hits": 2047,
+      "ndcg10": 0.1046852932312065,
+      "recall_drop_vs_full": -0.08883511925337018,
+      "ndcg10_drop_vs_full": -0.018409694983685054,
+      "avg_pool_size": 104.17283097131006
+    },
+    "-npmi": {
+      "pool_recall": 0.45523677843069477,
+      "pool_recall_hits": 1317,
+      "ndcg10": 0.05335738319267155,
+      "recall_drop_vs_full": -0.341168337366056,
+      "ndcg10_drop_vs_full": -0.06973760502222001,
+      "avg_pool_size": 138.44071897684066
+    },
+    "-popular": {
+      "pool_recall": 0.7805046664362254,
+      "pool_recall_hits": 2258,
+      "ndcg10": 0.12369273191715763,
+      "recall_drop_vs_full": -0.01590044936052537,
+      "ndcg10_drop_vs_full": 0.0005977437022660764,
+      "avg_pool_size": 138.83269961977186
+    },
+    "-exploration": {
+      "pool_recall": 0.7946768060836502,
+      "pool_recall_hits": 2299,
+      "ndcg10": 0.12872098534401957,
+      "recall_drop_vs_full": -0.001728309713100562,
+      "ndcg10_drop_vs_full": 0.005625997129128021,
+      "avg_pool_size": 137.61838921534738
+    }
+  },
+  "source_only_recall": {
+    "retrieval": {
+      "recall": 0.4109920497753197,
+      "hits": 1189
+    },
+    "npmi": {
+      "recall": 0.6360179744210163,
+      "hits": 1840
+    },
+    "popular": {
+      "recall": 0.19253370203940545,
+      "hits": 557
+    },
+    "exploration": {
+      "recall": 0.00414794331144141,
+      "hits": 12
+    }
+  },
+  "npmi_orthogonality": {
+    "cases_with_last_viewed": 2893,
+    "test_in_npmi": 1840,
+    "test_in_retrieval": 1189,
+    "test_in_npmi_not_retrieval": 1064,
+    "npmi_recall_drop_vs_full": -0.341168337366056,
+    "npmi_adds_recall": true,
+    "npmi_reaches_unique": true,
+    "npmi_orthogonal": true
+  },
+  "most_costly_source": "npmi"
+}
