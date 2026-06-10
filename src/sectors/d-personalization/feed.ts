@@ -11,6 +11,8 @@ import type { CohortId } from "./cohorts/definitions";
 import { getOrInitProfileMode } from "./profile-mode";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
 import { mmrSelect } from "./retrieve/mmr";
+import { applyEpsilonExploration } from "./explore/epsilon";
+import { randomUUID } from "crypto";
 import { rerankWithLLM } from "./reranker/rerank";
 import { buildProfileSummary } from "./reranker/profile-summary";
 import { buildRerankCacheKey } from "./reranker/cache-key";
@@ -142,6 +144,59 @@ async function fetchRerankerCandidates(
     brand: string;
     category: string;
   }>;
+}
+
+/**
+ * Per-slot exploration probability. ε=0.1 ⇒ ~1 of 10 slots serves a uniform
+ * draw from the retrieved-but-not-served candidates. This is what makes the
+ * "store that learns from its own interactions" measurable: without exploration
+ * the retrain loop only ever sees its own choices (degenerate feedback,
+ * Jiang et al. AIES'19) and the logs carry no propensities for off-policy
+ * evaluation (src/thesis/eval/ope.ts). Set EXPLORATION_EPSILON=0 to disable.
+ */
+const EXPLORATION_EPSILON = (() => {
+  const raw = parseFloat(process.env.EXPLORATION_EPSILON ?? "0.1");
+  return Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0.1;
+})();
+
+/**
+ * Apply ε-greedy exploration to the final slate and log one impression per slot
+ * (product, source exploit|explore, serving propensity) to `feed_impressions`.
+ * Logging is fire-and-forget: a logging failure NEVER fails the feed request.
+ */
+async function serveWithExploration(
+  items: CachedRerankItem[],
+  explorePoolIds: string[],
+  ctx: { profile_id: string | null; session_id: string | null },
+  pg: Client,
+): Promise<CachedRerankItem[]> {
+  const explored = applyEpsilonExploration(items, explorePoolIds, {
+    epsilon: EXPLORATION_EPSILON,
+  });
+  try {
+    if (explored.length > 0) {
+      const requestId = randomUUID();
+      await pg.query(
+        `INSERT INTO feed_impressions
+           (feed_request_id, user_profile_id, session_id, position, product_id, source, propensity)
+         SELECT $1, $2, $3, u.position, u.product_id::uuid, u.source, u.propensity
+         FROM unnest($4::smallint[], $5::text[], $6::text[], $7::float8[])
+           AS u(position, product_id, source, propensity)`,
+        [
+          requestId,
+          ctx.profile_id,
+          ctx.session_id,
+          explored.map((x) => x.rank),
+          explored.map((x) => x.product_id),
+          explored.map((x) => x.source),
+          explored.map((x) => x.propensity),
+        ],
+      );
+    }
+  } catch (e) {
+    console.warn("[feed] impression logging failed (feed unaffected):", e);
+  }
+  return explored.map((x) => ({ product_id: x.product_id, rank: x.rank, reason: x.reason }));
 }
 
 async function resolveWithReasons(
@@ -283,7 +338,15 @@ export async function generateFeed(
       rank: i + 1,
       reason: "",
     }));
-    return resolveWithReasons(items, pg);
+    const servedSet = new Set(items.map((x) => x.product_id));
+    const explorePool = fused.map((f) => f.id).filter((id) => !servedSet.has(id));
+    const served = await serveWithExploration(
+      items,
+      explorePool,
+      { profile_id, session_id: opts.session_id ?? null },
+      pg,
+    );
+    return resolveWithReasons(served, pg);
   }
 
   const top30Ids = top30.map((t) => t.id);
@@ -320,5 +383,14 @@ export async function generateFeed(
     }
   }
 
-  return resolveWithReasons(cached.slice(0, limit), pg);
+  const finalItems = cached.slice(0, limit);
+  const servedSet = new Set(finalItems.map((x) => x.product_id));
+  const explorePool = fused.map((f) => f.id).filter((id) => !servedSet.has(id));
+  const served = await serveWithExploration(
+    finalItems,
+    explorePool,
+    { profile_id, session_id: opts.session_id ?? null },
+    pg,
+  );
+  return resolveWithReasons(served, pg);
 }
