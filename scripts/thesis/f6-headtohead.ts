@@ -440,17 +440,19 @@ async function main() {
     // SESSION views ×3 (the honest serve-time signal), popularity quotas
     // (headSize 10) and the next-10 popularity tail → a 20-item list. This is
     // exp-K's `pcSess(blend(3), 4)` head, the winning ensemble component.
-    const sessCategoriesList = (c: UnifiedCase, ids: string[]): string[] => {
+    const sessCategoriesOf = (c: UnifiedCase) => {
       const sessSubs = c.sessionViewIds.map((id) => cohortById.get(id) ?? null);
       const blended = [...viewSubsOf(c), ...sessSubs, ...sessSubs, ...sessSubs];
-      return rankByViewedCategoriesQuota({
-        topSubcategories: predictTopSubcategories(blended, 4),
+      return predictTopSubcategories(blended, 4);
+    };
+    const sessCategoriesList = (c: UnifiedCase, ids: string[]): string[] =>
+      rankByViewedCategoriesQuota({
+        topSubcategories: sessCategoriesOf(c),
         candidates: ids,
         subcategoryOf: (id) => cohortById.get(id) ?? null,
         popOf: popOfFor(c),
         headSize: 10,
       }).slice(0, 20);
-    };
     const popGlobalHead = (c: UnifiedCase, ids: string[]): string[] =>
       [...ids]
         .sort((a, b) => (c.popById.get(b) ?? 0) - (c.popById.get(a) ?? 0) || a.localeCompare(b))
@@ -484,24 +486,29 @@ async function main() {
       },
     });
 
-    // feed-pop: the FULL production serving shape (feed.ts after the fix) —
-    // RRF(modes-views-pop top50, NPMI-to-last-viewed top30, sess-categories
-    // top20, popular top20), popularity tail.
+    // feed-pop: the production serving shape (feed.ts after the fix) —
+    // RRF(sess-categories ×2, popular ×2, NPMI cross-sell ×2), popularity
+    // tail; the mode (vector) lists join ONLY when there is no category
+    // signal (exp-K seed-7 ablation: modes dilute the slate, feed-w2 0.0482
+    // vs feed-w2-noModes 0.0517 vs slim 0.0527).
     const feedPopFor = (c: UnifiedCase): Ranker => ({
       name: "feed-pop",
       rank: (_ctx, cands) => {
         const ids = cands.map((x) => x.id);
-        const lists: RankedList[] = [toList("modes", e1ViewsPopRank(c, cands).slice(0, 50))];
+        const hasCategorySignal = sessCategoriesOf(c).length > 0;
+        const lists: RankedList[] = [];
+        if (!hasCategorySignal) {
+          lists.push(toList("modes", e1ViewsPopRank(c, cands).slice(0, 50)));
+        }
         const npmiList = ids
           .map((id) => ({ id, s: c.lvNpmi.get(id) ?? 0 }))
           .filter((x) => x.s > 0)
           .sort((a, b) => b.s - a.s || a.id.localeCompare(b.id))
           .slice(0, 30)
           .map((x) => x.id);
-        // weight 2 = production parity (feed.ts protects cross-sell from dilution)
         if (npmiList.length > 0) lists.push({ ...toList("cooccurrence", npmiList), weight: 2 });
-        lists.push(toList("sess-categories", sessCategoriesList(c, ids)));
-        lists.push(toList("popular", popGlobalHead(c, ids)));
+        lists.push({ ...toList("sess-categories", sessCategoriesList(c, ids)), weight: 2 });
+        lists.push({ ...toList("popular", popGlobalHead(c, ids)), weight: 2 });
         return fuseWithPopTail(c, ids, lists);
       },
     });

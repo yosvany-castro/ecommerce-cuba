@@ -384,9 +384,24 @@ export async function generateFeed(
     ),
   };
 
-  const all: RankedList[] = [...listsA, listB, listD, listC, listE].filter(
-    (l) => l.items.length > 0,
-  );
+  // Home fusion (exp-K ablation, 3 seeds + seed-7 ablation): the winning shape
+  // is ensemble(views-categories ×2, popular-global ×2) + cross-sell(×2). The
+  // mode (vector) lists DILUTE the slate when category signal exists
+  // (feed-w2-noModes 0.0517 ≈ slim champion 0.0527 vs feed-w2 0.0482 on the
+  // failing seed) — so they only join as the cold fallback when the user has
+  // no categorized views. Caveat (documented): the simulator's vector space is
+  // synthetic prod2vec; real Voyage-text modes are unmeasured offline — the
+  // A/B pilot is where this call gets revisited with real data.
+  listD.weight = 2;
+  listE.weight = 2;
+  const hasCategorySignal = listD.items.length > 0;
+  const all: RankedList[] = [
+    ...(hasCategorySignal ? [] : listsA),
+    listB,
+    listD,
+    listC,
+    listE,
+  ].filter((l) => l.items.length > 0);
   if (all.length === 0) return [];
 
   const fused = rrfFuse(all).slice(0, 100);

@@ -202,6 +202,9 @@ for (const SEED of SEEDS) {
     "pc-sess5h1-k3",
     "pc-sess3h1rec-k4",
     "rrf-sess-pop",
+    "feed-w2",
+    "feed-w2-noNpmi",
+    "feed-w2-noModes",
   ] as const;
   const ndcg: Record<string, number[]> = Object.fromEntries(NAMES.map((n) => [n, []]));
   const hit: Record<string, number> = Object.fromEntries(NAMES.map((n) => [n, 0]));
@@ -339,6 +342,56 @@ for (const SEED of SEEDS) {
         [...blend(3), ...viewedSubs.slice(-30)],
         4,
       ),
+      // feed-w2: the FULL production list set but with per-list weights —
+      // ensemble lists ×2 (sess-categories, popular), cross-sell ×2 (product
+      // guarantee), modes ×1. Question: do the weights recover the slim
+      // ensemble's performance while keeping every surface alive?
+      "feed-w2": (() => {
+        const sessHead = pcSess(blend(3), 4).slice(0, 20);
+        const popHead = globalPop.filter((id) => !trainSet.has(id)).slice(0, 20);
+        const fused = rrfFuse([
+          { source: "sess", items: sessHead.map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "pop", items: popHead.map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "npmi", items: knnRank.slice(0, 30).map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "modes", items: e1vpList.map((id, i) => ({ id, rank: i + 1 })), weight: 1 },
+        ])
+          .sort((a, b) => b.rrf_score - a.rrf_score || a.id.localeCompare(b.id))
+          .map((x) => x.id);
+        const inFused = new Set(fused);
+        const tail = cands
+          .filter((id) => !inFused.has(id))
+          .sort((a, b) => popOf(b) - popOf(a) || a.localeCompare(b));
+        return [...fused, ...tail];
+      })(),
+      // ablation of feed-w2 on the failing seed: which list costs the edge?
+      "feed-w2-noNpmi": (() => {
+        const sessHead = pcSess(blend(3), 4).slice(0, 20);
+        const popHead = globalPop.filter((id) => !trainSet.has(id)).slice(0, 20);
+        const fused = rrfFuse([
+          { source: "sess", items: sessHead.map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "pop", items: popHead.map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "modes", items: e1vpList.map((id, i) => ({ id, rank: i + 1 })), weight: 1 },
+        ])
+          .sort((a, b) => b.rrf_score - a.rrf_score || a.id.localeCompare(b.id))
+          .map((x) => x.id);
+        const inFused = new Set(fused);
+        const tail = cands.filter((id) => !inFused.has(id)).sort((a, b) => popOf(b) - popOf(a) || a.localeCompare(b));
+        return [...fused, ...tail];
+      })(),
+      "feed-w2-noModes": (() => {
+        const sessHead = pcSess(blend(3), 4).slice(0, 20);
+        const popHead = globalPop.filter((id) => !trainSet.has(id)).slice(0, 20);
+        const fused = rrfFuse([
+          { source: "sess", items: sessHead.map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "pop", items: popHead.map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+          { source: "npmi", items: knnRank.slice(0, 30).map((id, i) => ({ id, rank: i + 1 })), weight: 2 },
+        ])
+          .sort((a, b) => b.rrf_score - a.rrf_score || a.id.localeCompare(b.id))
+          .map((x) => x.id);
+        const inFused = new Set(fused);
+        const tail = cands.filter((id) => !inFused.has(id)).sort((a, b) => popOf(b) - popOf(a) || a.localeCompare(b));
+        return [...fused, ...tail];
+      })(),
       // ensemble: RRF of the session champion's head with the global-popular
       // head — when the subcategory prediction misses, popularity rescues slots.
       "rrf-sess-pop": (() => {
@@ -378,6 +431,9 @@ for (const SEED of SEEDS) {
     "pc-sess3h1-k4",
     "pc-sess3h1rec-k4",
     "rrf-sess-pop",
+    "feed-w2",
+    "feed-w2-noNpmi",
+    "feed-w2-noModes",
   ]) {
     for (const base of ["pop-global", "pc-real"]) {
       const bs = pairedBootstrap(ndcg[champ], ndcg[base], 10000, 7);

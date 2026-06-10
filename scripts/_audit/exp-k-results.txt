@@ -1,85 +1,8 @@
-# EXP-K — pop-aware personalization vs plain popularity (official eta=0.7 v2 world, leak-free)
-# Protocol: TUNE on seed 123 only; CONFIRM untouched on seeds 42 and 7 (no further tuning).
-# Champion: rrf-sess-pop — RRF(sess-categories(hist x1 + session x3, k=4, quota head 10 + pop tail 10), popular-global top-20) + popularity tail.
 
-## TUNE — seed 123 (round 3, all rankers, 2172 cases)
-
-━━━ exp-K world: n=5000 users=2000 eta=0.7 seed=123 ━━━ t=0s
-  generado: events=85859 t=13s
-  artefactos limpios: npmi=4879 e1=4919 t=35s
-  casos=2172 t=269s
-  RANKER              ndcg@10  hit@10  realizedRev@10(¢)
-  pc-oracle          0.2712   0.445   1302
-  pop-global         0.0407   0.069   272
-  pc-real            0.0157   0.029   102
-  knn                0.0010   0.003   4
-  pc-views-multi-k2  0.0339   0.059   242
-  pc-views-multi-k3  0.0364   0.066   282
-  pc-views-multi-k4  0.0378   0.070   296
-  e1-views-pop-s05   0.0254   0.035   121
-  e1-views-pop-s1    0.0323   0.054   155
-  e1-views-pop-s2    0.0373   0.068   192
-  feed-rrf           0.0313   0.058   192
-  feed-rrf-lite      0.0351   0.064   210
-  pc-sess-k3         0.0268   0.054   196
-  pc-sess3h1-k3      0.0375   0.068   264
-  pc-sess3h1-k4      0.0384   0.070   279
-  pc-sess5h1-k3      0.0350   0.067   250
-  pc-sess3h1rec-k4   0.0413   0.076   297
-  rrf-sess-pop       0.0455   0.075   298
-  Δndcg10 pc-views-multi-k3 vs pop-global: rel=-10.6% CI95=[-27.3%, 9.4%] pFlip=0.1420
-  Δndcg10 pc-views-multi-k3 vs pc-real: rel=131.4% CI95=[81.1%, 204.1%] pFlip=0.0000
-  Δndcg10 pc-sess3h1-k3 vs pop-global: rel=-7.8% CI95=[-25.5%, 13.4%] pFlip=0.2218
-  Δndcg10 pc-sess3h1-k3 vs pc-real: rel=138.6% CI95=[84.5%, 217.8%] pFlip=0.0000
-  Δndcg10 pc-sess3h1-k4 vs pop-global: rel=-5.7% CI95=[-23.5%, 15.8%] pFlip=0.2869
-  Δndcg10 pc-sess3h1-k4 vs pc-real: rel=144.0% CI95=[90.3%, 224.5%] pFlip=0.0000
-  Δndcg10 pc-sess3h1rec-k4 vs pop-global: rel=1.5% CI95=[-16.5%, 23.1%] pFlip=0.4445
-  Δndcg10 pc-sess3h1rec-k4 vs pc-real: rel=162.6% CI95=[106.5%, 245.9%] pFlip=0.0000
-  Δndcg10 rrf-sess-pop vs pop-global: rel=11.8% CI95=[4.6%, 20.1%] pFlip=0.0006
-  Δndcg10 rrf-sess-pop vs pc-real: rel=189.4% CI95=[120.2%, 291.9%] pFlip=0.0000
-
-[k] DONE t=273s
-
-## CONFIRM — seeds 42 and 7 (untouched)
-
-━━━ exp-K world: n=5000 users=2000 eta=0.7 seed=42 ━━━ t=0s
-  generado: events=84395 t=19s
-  artefactos limpios: npmi=4859 e1=4913 t=41s
-  casos=2196 t=317s
-  RANKER              ndcg@10  hit@10  realizedRev@10(¢)
-  pc-oracle          0.2701   0.423   1327
-  pop-global         0.0523   0.096   283
-  pc-real            0.0136   0.024   77
-  knn                0.0006   0.002   3
-  pc-views-multi-k2  0.0413   0.072   225
-  pc-views-multi-k3  0.0430   0.077   244
-  pc-views-multi-k4  0.0426   0.075   226
-  e1-views-pop-s05   0.0324   0.044   116
-  e1-views-pop-s1    0.0364   0.054   133
-  e1-views-pop-s2    0.0441   0.075   190
-  feed-rrf           0.0430   0.071   204
-  feed-rrf-lite      0.0471   0.079   257
-  pc-sess-k3         0.0269   0.050   163
-  pc-sess3h1-k3      0.0381   0.073   237
-  pc-sess3h1-k4      0.0380   0.071   226
-  pc-sess5h1-k3      0.0356   0.066   214
-  pc-sess3h1rec-k4   0.0416   0.078   228
-  rrf-sess-pop       0.0575   0.103   311
-  Δndcg10 pc-views-multi-k3 vs pop-global: rel=-17.7% CI95=[-31.7%, -1.4%] pFlip=0.0171
-  Δndcg10 pc-views-multi-k3 vs pc-real: rel=216.6% CI95=[143.7%, 333.9%] pFlip=0.0000
-  Δndcg10 pc-sess3h1-k3 vs pop-global: rel=-27.1% CI95=[-39.7%, -12.6%] pFlip=0.0004
-  Δndcg10 pc-sess3h1-k3 vs pc-real: rel=180.3% CI95=[114.0%, 288.5%] pFlip=0.0000
-  Δndcg10 pc-sess3h1-k4 vs pop-global: rel=-27.3% CI95=[-39.7%, -12.8%] pFlip=0.0002
-  Δndcg10 pc-sess3h1-k4 vs pc-real: rel=179.8% CI95=[113.1%, 289.7%] pFlip=0.0000
-  Δndcg10 pc-sess3h1rec-k4 vs pop-global: rel=-20.5% CI95=[-33.8%, -5.1%] pFlip=0.0042
-  Δndcg10 pc-sess3h1rec-k4 vs pc-real: rel=206.0% CI95=[134.6%, 325.7%] pFlip=0.0000
-  Δndcg10 rrf-sess-pop vs pop-global: rel=10.1% CI95=[3.9%, 17.1%] pFlip=0.0003
-  Δndcg10 rrf-sess-pop vs pc-real: rel=323.6% CI95=[217.8%, 499.1%] pFlip=0.0000
-
-━━━ exp-K world: n=5000 users=2000 eta=0.7 seed=7 ━━━ t=319s
-  generado: events=87026 t=339s
-  artefactos limpios: npmi=4888 e1=4930 t=366s
-  casos=2240 t=593s
+━━━ exp-K world: n=5000 users=2000 eta=0.7 seed=7 ━━━ t=0s
+  generado: events=87026 t=13s
+  artefactos limpios: npmi=4888 e1=4930 t=31s
+  casos=2240 t=264s
   RANKER              ndcg@10  hit@10  realizedRev@10(¢)
   pc-oracle          0.2775   0.440   1194
   pop-global         0.0493   0.088   177
@@ -99,6 +22,9 @@
   pc-sess5h1-k3      0.0368   0.063   144
   pc-sess3h1rec-k4   0.0446   0.075   176
   rrf-sess-pop       0.0527   0.087   174
+  feed-w2            0.0482   0.087   170
+  feed-w2-noNpmi     0.0489   0.087   173
+  feed-w2-noModes    0.0517   0.087   173
   Δndcg10 pc-views-multi-k3 vs pop-global: rel=-4.2% CI95=[-19.8%, 14.5%] pFlip=0.3209
   Δndcg10 pc-views-multi-k3 vs pc-real: rel=130.2% CI95=[82.9%, 197.6%] pFlip=0.0000
   Δndcg10 pc-sess3h1-k3 vs pop-global: rel=-16.6% CI95=[-31.4%, 1.6%] pFlip=0.0332
@@ -109,5 +35,43 @@
   Δndcg10 pc-sess3h1rec-k4 vs pc-real: rel=117.4% CI95=[70.2%, 183.1%] pFlip=0.0000
   Δndcg10 rrf-sess-pop vs pop-global: rel=6.8% CI95=[0.1%, 14.3%] pFlip=0.0229
   Δndcg10 rrf-sess-pop vs pc-real: rel=156.8% CI95=[98.5%, 238.9%] pFlip=0.0000
+  Δndcg10 feed-w2 vs pop-global: rel=-2.3% CI95=[-9.3%, 5.3%] pFlip=0.2732
+  Δndcg10 feed-w2 vs pc-real: rel=135.0% CI95=[81.8%, 210.6%] pFlip=0.0000
+  Δndcg10 feed-w2-noNpmi vs pop-global: rel=-0.8% CI95=[-7.8%, 6.7%] pFlip=0.4118
+  Δndcg10 feed-w2-noNpmi vs pc-real: rel=138.4% CI95=[84.4%, 215.5%] pFlip=0.0000
+  Δndcg10 feed-w2-noModes vs pop-global: rel=4.9% CI95=[-1.9%, 12.4%] pFlip=0.0840
+  Δndcg10 feed-w2-noModes vs pc-real: rel=152.1% CI95=[94.9%, 232.7%] pFlip=0.0000
 
-[k] DONE t=595s
+## ABLATION — seed 7 (the failing seed for feed-w2): which list dilutes?
+# feed-w2 (all lists, w 2/2/2/1) = -2.3%; noNpmi = -0.8%; noModes = +4.9% (~slim +6.8%).
+# Verdict: the MODE (vector) lists dilute; npmi cross-sell costs little. Production: modes only as cold fallback.
+  e1-views-pop-s2    0.0414   0.075   147
+  feed-rrf           0.0415   0.074   161
+  feed-rrf-lite      0.0452   0.082   179
+  pc-sess-k3         0.0267   0.049   118
+  pc-sess3h1-k3      0.0411   0.067   163
+  pc-sess3h1-k4      0.0418   0.069   163
+  pc-sess5h1-k3      0.0368   0.063   144
+  pc-sess3h1rec-k4   0.0446   0.075   176
+  rrf-sess-pop       0.0527   0.087   174
+  feed-w2            0.0482   0.087   170
+  feed-w2-noNpmi     0.0489   0.087   173
+  feed-w2-noModes    0.0517   0.087   173
+  Δndcg10 pc-views-multi-k3 vs pop-global: rel=-4.2% CI95=[-19.8%, 14.5%] pFlip=0.3209
+  Δndcg10 pc-views-multi-k3 vs pc-real: rel=130.2% CI95=[82.9%, 197.6%] pFlip=0.0000
+  Δndcg10 pc-sess3h1-k3 vs pop-global: rel=-16.6% CI95=[-31.4%, 1.6%] pFlip=0.0332
+  Δndcg10 pc-sess3h1-k3 vs pc-real: rel=100.5% CI95=[55.5%, 161.6%] pFlip=0.0000
+  Δndcg10 pc-sess3h1-k4 vs pop-global: rel=-15.2% CI95=[-29.6%, 2.3%] pFlip=0.0432
+  Δndcg10 pc-sess3h1-k4 vs pc-real: rel=103.9% CI95=[58.5%, 166.6%] pFlip=0.0000
+  Δndcg10 pc-sess3h1rec-k4 vs pop-global: rel=-9.6% CI95=[-24.5%, 8.3%] pFlip=0.1394
+  Δndcg10 pc-sess3h1rec-k4 vs pc-real: rel=117.4% CI95=[70.2%, 183.1%] pFlip=0.0000
+  Δndcg10 rrf-sess-pop vs pop-global: rel=6.8% CI95=[0.1%, 14.3%] pFlip=0.0229
+  Δndcg10 rrf-sess-pop vs pc-real: rel=156.8% CI95=[98.5%, 238.9%] pFlip=0.0000
+  Δndcg10 feed-w2 vs pop-global: rel=-2.3% CI95=[-9.3%, 5.3%] pFlip=0.2732
+  Δndcg10 feed-w2 vs pc-real: rel=135.0% CI95=[81.8%, 210.6%] pFlip=0.0000
+  Δndcg10 feed-w2-noNpmi vs pop-global: rel=-0.8% CI95=[-7.8%, 6.7%] pFlip=0.4118
+  Δndcg10 feed-w2-noNpmi vs pc-real: rel=138.4% CI95=[84.4%, 215.5%] pFlip=0.0000
+  Δndcg10 feed-w2-noModes vs pop-global: rel=4.9% CI95=[-1.9%, 12.4%] pFlip=0.0840
+  Δndcg10 feed-w2-noModes vs pc-real: rel=152.1% CI95=[94.9%, 232.7%] pFlip=0.0000
+
+[k] DONE t=268s
