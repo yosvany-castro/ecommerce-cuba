@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth0 } from "@/lib/auth";
+import { auth0, requireAdmin } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 import { getUserDebugInfo } from "@/sectors/d-personalization/admin/user-debug";
 import { UserDebugView } from "@/components/UserDebugView";
@@ -13,6 +13,7 @@ export default async function UserDebugPage({
 }) {
   const session = await auth0.getSession().catch(() => null);
   if (!session?.user?.sub) redirect("/auth/login?returnTo=/admin/users");
+  if (!(await requireAdmin())) redirect("/");
 
   const { id } = await params;
   const info = await withPg((pg) => getUserDebugInfo(id, pg));
