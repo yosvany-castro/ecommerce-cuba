@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { eventInputSchema } from "@/sectors/a-tracking/events/schema";
 import { insertEvent } from "@/sectors/a-tracking/events/insert";
 import { ensureIdentityRows } from "@/sectors/a-tracking/identity";
+import { dbHealth } from "@/lib/db/health";
 import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { processEventForPersonalization } from "@/sectors/d-personalization/track-hook";
@@ -11,6 +12,12 @@ import { handleDismissAutoExclude } from "@/sectors/d-personalization/exclusion/
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: NextRequest) {
+  // F4 circuit breaker: with the DB down, answer 503 IMMEDIATELY so the
+  // client event queue backs off and retries later — without this, every
+  // queued event would burn the 2s connect timeout exactly during recovery.
+  if (dbHealth() === "down") {
+    return NextResponse.json({ error: "db_unavailable" }, { status: 503, headers: { "retry-after": "15" } });
+  }
   const anonymous_id = req.cookies.get("anonymous_id")?.value;
   const session_id = req.cookies.get("session_id")?.value;
   if (!anonymous_id || !UUID_REGEX.test(anonymous_id) || !session_id || !UUID_REGEX.test(session_id)) {

@@ -1,5 +1,6 @@
 import { Client } from "pg";
 import { getPgClient, getPooledPg } from "./pg";
+import { reportDbFailure, reportDbSuccess } from "./health";
 import type { Scope } from "./supabase";
 
 /**
@@ -21,12 +22,22 @@ export async function withPg<T>(
   // In test environments (Vitest), route handlers called directly should also
   // resolve against test_schema so seeds from withTestDb are visible.
   const defaultScope: Scope = process.env.VITEST ? "test" : "public";
-  const client = await getPooledPg(opts.scope ?? defaultScope);
+  let client;
+  try {
+    client = await getPooledPg(opts.scope ?? defaultScope);
+  } catch (e) {
+    reportDbFailure(e); // acquisition failures are the breaker's main signal
+    throw e;
+  }
   let ok = false;
   try {
     const result = await fn(client as unknown as Client);
     ok = true;
+    reportDbSuccess();
     return result;
+  } catch (e) {
+    reportDbFailure(e); // only connection-class errors count (see health.ts)
+    throw e;
   } finally {
     // release(true) destroys the socket (error path); release() returns it.
     client.release(ok ? undefined : true);
