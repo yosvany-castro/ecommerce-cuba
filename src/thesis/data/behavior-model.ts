@@ -57,7 +57,7 @@
  * a draw that could collide on the same instant.
  */
 
-import { makeRng } from "./rng";
+import { makeRng, type Rng } from "./rng";
 import type { SynthProduct } from "./catalog-model";
 
 // ─── Fixed epoch — all timestamps are offsets from this date ─────────────────
@@ -154,6 +154,29 @@ const P_COMPLEMENT_SEED = 0.5;
 /** Min/max number of GT complements injected into a seeded session. */
 const COMPLEMENTS_PER_SESSION_MIN = 1;
 const COMPLEMENTS_PER_SESSION_MAX = 2;
+
+// ─── Recommender-mediated exposure (roadmap #6) ───────────────────────────────
+// Motivation (auditoría destructiva 2026-06-09, hallazgo 6 "usuarios-oráculo,
+// cero loop"): in v1/v2 every session shows the user the top of their OWN
+// latent affinity over the full catalog — a perfect personal search engine.
+// The recommender never influences exposure, so feedback-loop dynamics
+// (position bias, degeneration, exploration value) are unmeasurable. The
+// exposurePolicy knob closes the loop RecSim-style: "the store" picks the
+// slate, the user examines it with a cascade and converts according to how
+// much they actually like what they were shown.
+
+/** Default cascade continuation probability when exposurePolicy is active. */
+const CASCADE_LAMBDA_DEFAULT = 0.85;
+
+/**
+ * Floor/ceiling of the satisfaction multiplier s_i = score_i/AFFINITY_IN_TASTE
+ * applied to the conversion funnel in the exposure regime. The 0.05 floor
+ * mirrors the price-fit floor in scoreProduct: even a fully off-taste,
+ * wrong-price exposed item converts at 5 % of the base funnel rate
+ * (serendipity), never at exactly 0.
+ */
+const SATISFACTION_MIN = 0.05;
+const SATISFACTION_MAX = 1;
 
 // ─── Recipient profile pool ───────────────────────────────────────────────────
 
@@ -282,6 +305,46 @@ export interface BehaviorOpts {
    * deterministic top-k. Uses a SEPARATE rng stream so v1 runs are untouched.
    */
   stochasticChoice?: boolean;
+  /**
+   * Recommender-mediated exposure (roadmap #6 — closes the feedback loop):
+   * returns the RANKED slate of source_product_ids "the store" shows for this
+   * session. When present, the basket is NOT chosen by argmax/Plackett–Luce
+   * over the catalog; the user examines the slate via a cascade (see
+   * cascadeLambda) and converts through the existing funnel gated by a
+   * satisfaction term — a bad slate converts poorly, which IS the feedback
+   * signal a closed loop learns from. All new draws (cascade continuation and
+   * whatever the policy draws via ctx.rng) come from the EXISTING rngV2
+   * stream, preserving the guarantee that omitting every v2 knob yields
+   * BIT-IDENTICAL v1 output. An empty or unresolvable slate makes the session
+   * fall back to organic (catalog-scored) behaviour.
+   */
+  exposurePolicy?: (ctx: ExposureContext) => string[];
+  /**
+   * Cascade continuation probability (cascade click model): slot 0 is always
+   * examined; after examining slot j the user moves to slot j+1 with this
+   * probability (one rngV2 draw per transition). Default 0.85 ⇒ E[examined]
+   * ≈ 6.2 on a 20-slot slate — comparable to the organic VIEW_WINDOW of 4–8.
+   * Only consulted when exposurePolicy is present (no-op otherwise).
+   */
+  cascadeLambda?: number;
+}
+
+/**
+ * Context handed to an exposurePolicy at the START of each session — only
+ * information "the store" could plausibly have plus the simulation handles the
+ * policy needs to stay deterministic. NOTE: `user` includes latent_state;
+ * honest policies must not read it (it is ground truth) — oracle policies in
+ * tests/experiments may, explicitly labelled as such.
+ */
+export interface ExposureContext {
+  user: SimUser;
+  /** 0-based index of this session within the user's session sequence. */
+  sessionIndex: number;
+  isGift: boolean;
+  /** Demographics of the gift recipient (gift sessions only), else null. */
+  recipient: { gender: string; age_min: number; age_max: number } | null;
+  /** The shared rngV2 stream — the ONLY randomness a policy may use. */
+  rng: Rng;
 }
 
 /**
@@ -541,46 +604,125 @@ export function sampleBehavior(
       };
       sessions.push(session);
 
-      // Score catalog and pick top-k products to show
-      const viewWindow = VIEW_WINDOW_MIN + rng.int(VIEW_WINDOW_MAX - VIEW_WINDOW_MIN + 1);
-      const scored = catalog.map((p) => ({
-        p,
-        score: scoreProduct(
-          p,
-          tasteSubsSet,
-          user.latent_state.budgetBand,
-          user.price_sensitivity,
+      // Recipient profile reused by organic scoring, exposure satisfaction
+      // and the policy context (identical shape to the previous inline object).
+      const recipientProfile: RecipientProfile | null = recipient
+        ? { relation: recipient.relation, gender: recipient.gender, age_min: recipient.age_min, age_max: recipient.age_max }
+        : null;
+      const attOf = (p: SynthProduct): number =>
+        attFactorById.size > 0 ? (attFactorById.get(p.source_product_id) ?? 1) : 1;
+
+      // ── Basket selection: exposure-mediated OR organic ───────────────────────
+      // Exposure regime (roadmap #6): "the store" decides what the user sees;
+      // the user examines the slate via a cascade. Organic regime (default):
+      // the user scores the whole catalog and picks top-k / Plackett–Luce —
+      // bit-identical to v1/v2 when exposurePolicy is absent.
+      let basket: SynthProduct[] | null = null;
+      /**
+       * Per-item conversion gate (exposure regime only): satisfaction
+       * s_i = score_i/AFFINITY_IN_TASTE ∈ [SATISFACTION_MIN, SATISFACTION_MAX]
+       * multiplies P_CART and P_BUY so a slate the user dislikes converts
+       * poorly — that low conversion IS the closed-loop feedback. null in the
+       * organic regime; items absent from the map (seeded complements) convert
+       * at the plain funnel rate (sat = 1) because the user pulled them in.
+       */
+      let satisfactionById: Map<string, number> | null = null;
+
+      if (opts.exposurePolicy) {
+        const slate = opts.exposurePolicy({
+          user,
+          sessionIndex: si,
           isGift,
-          recipient
-            ? { relation: recipient.relation, gender: recipient.gender, age_min: recipient.age_min, age_max: recipient.age_max }
+          recipient: recipientProfile
+            ? { gender: recipientProfile.gender, age_min: recipientProfile.age_min, age_max: recipientProfile.age_max }
             : null,
-          rng.gaussian() * SCORE_NOISE_STD,
-          attFactorById.size > 0 ? (attFactorById.get(p.source_product_id) ?? 1) : 1,
-        ),
-      }));
-      let basket: SynthProduct[];
-      if (opts.stochasticChoice) {
-        // Plackett–Luce / sequential-MNL sampling WITHOUT replacement ∝ score:
-        // popularity emerges across users instead of every same-taste user
-        // seeing the identical deterministic top-k. Draws come from rngV2.
-        const pool = scored.map((s) => ({ p: s.p, w: Math.max(s.score, 1e-6) }));
-        basket = [];
-        for (let pick = 0; pick < viewWindow && pool.length > 0; pick++) {
-          let total = 0;
-          for (const x of pool) total += x.w;
-          let r = rngV2.next() * total;
-          let idx = 0;
-          for (; idx < pool.length - 1; idx++) {
-            r -= pool[idx].w;
-            if (r <= 0) break;
+          rng: rngV2,
+        });
+        // Resolve ids → products, dropping unknown ids and duplicates while
+        // preserving the policy's ranking order.
+        const resolved: SynthProduct[] = [];
+        const seenSlate = new Set<string>();
+        for (const id of slate) {
+          const p = productById.get(id);
+          if (p !== undefined && !seenSlate.has(id)) {
+            seenSlate.add(id);
+            resolved.push(p);
           }
-          basket.push(pool[idx].p);
-          pool.splice(idx, 1);
         }
-      } else {
-        // v1: deterministic top-k (ties broken by insertion order).
-        scored.sort((a, b) => b.score - a.score);
-        basket = scored.slice(0, viewWindow).map((s) => s.p);
+        if (resolved.length > 0) {
+          // Cascade examination (cascade click model): slot 0 is ALWAYS
+          // examined; after slot j the user continues to slot j+1 with
+          // probability cascadeLambda. Every draw comes from rngV2 so the
+          // no-knob output stays bit-identical to v1.
+          const lambda = opts.cascadeLambda ?? CASCADE_LAMBDA_DEFAULT;
+          basket = [resolved[0]];
+          for (let j = 1; j < resolved.length; j++) {
+            if (rngV2.next() >= lambda) break;
+            basket.push(resolved[j]);
+          }
+          // Satisfaction from the NOISELESS click-model score (noise = 0, with
+          // the item's attFactor) — the same latent utility that drives organic
+          // choice, so both regimes share one ground truth.
+          satisfactionById = new Map<string, number>();
+          for (const p of basket) {
+            const s = scoreProduct(
+              p,
+              tasteSubsSet,
+              user.latent_state.budgetBand,
+              user.price_sensitivity,
+              isGift,
+              recipientProfile,
+              0,
+              attOf(p),
+            );
+            satisfactionById.set(
+              p.source_product_id,
+              Math.min(SATISFACTION_MAX, Math.max(SATISFACTION_MIN, s / AFFINITY_IN_TASTE)),
+            );
+          }
+        }
+        // Empty/unresolvable slate ⇒ basket stays null ⇒ organic fallback below.
+      }
+
+      if (basket === null) {
+        // Score catalog and pick top-k products to show
+        const viewWindow = VIEW_WINDOW_MIN + rng.int(VIEW_WINDOW_MAX - VIEW_WINDOW_MIN + 1);
+        const scored = catalog.map((p) => ({
+          p,
+          score: scoreProduct(
+            p,
+            tasteSubsSet,
+            user.latent_state.budgetBand,
+            user.price_sensitivity,
+            isGift,
+            recipientProfile,
+            rng.gaussian() * SCORE_NOISE_STD,
+            attOf(p),
+          ),
+        }));
+        if (opts.stochasticChoice) {
+          // Plackett–Luce / sequential-MNL sampling WITHOUT replacement ∝ score:
+          // popularity emerges across users instead of every same-taste user
+          // seeing the identical deterministic top-k. Draws come from rngV2.
+          const pool = scored.map((s) => ({ p: s.p, w: Math.max(s.score, 1e-6) }));
+          basket = [];
+          for (let pick = 0; pick < viewWindow && pool.length > 0; pick++) {
+            let total = 0;
+            for (const x of pool) total += x.w;
+            let r = rngV2.next() * total;
+            let idx = 0;
+            for (; idx < pool.length - 1; idx++) {
+              r -= pool[idx].w;
+              if (r <= 0) break;
+            }
+            basket.push(pool[idx].p);
+            pool.splice(idx, 1);
+          }
+        } else {
+          // v1: deterministic top-k (ties broken by insertion order).
+          scored.sort((a, b) => b.score - a.score);
+          basket = scored.slice(0, viewWindow).map((s) => s.p);
+        }
       }
 
       // ── Complement co-occurrence seeding (F0 spec §4.4) ────────────────────
@@ -653,7 +795,12 @@ export function sampleBehavior(
         // v2 price elasticity: expensive items (relative to the buyer's
         // sensitivity) convert less. ef = 1 when the knob is off (v1).
         const ef = elasticity(p.attrs.priceBand, user.price_sensitivity);
-        if (rng.next() < P_CART * ef) {
+        // Exposure-regime satisfaction gate; sat = 1 in the organic regime and
+        // for seeded complements. Multiplying by exactly 1 is an IEEE no-op,
+        // so the no-knob output stays bit-identical.
+        const sat =
+          satisfactionById === null ? 1 : (satisfactionById.get(p.source_product_id) ?? 1);
+        if (rng.next() < P_CART * ef * sat) {
           events.push({
             user_id: user.user_id,
             session_id: session.session_id,
@@ -662,7 +809,7 @@ export function sampleBehavior(
             occurred_at: eventTs(),
           });
 
-          if (rng.next() < P_BUY * ef) {
+          if (rng.next() < P_BUY * ef * sat) {
             events.push({
               user_id: user.user_id,
               session_id: session.session_id,

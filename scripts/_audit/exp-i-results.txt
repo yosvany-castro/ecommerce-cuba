@@ -1,0 +1,11 @@
+
+eta=0.3: top20%ventas=55% | compras-test in-taste=32% | casos=800 | t=87s
+  pc-oracle  ndcg@10=0.122 hit@10=0.217
+  pop-global ndcg@10=0.011 hit@10=0.025
+  pc-real    ndcg@10=0.007 hit@10=0.014
+  pc-views   ndcg@10=0.014 hit@10=0.028
+  pc-views-multi ndcg@10=0.016 hit@10=0.033
+  e1-modes   ndcg@10=0.000 hit@10=0.001
+  e1-views   ndcg@10=0.003 hit@10=0.005
+  e1-views-pop ndcg@10=0.011 hit@10=0.019
+  knn        ndcg@10=0.001 hit@10=0.003

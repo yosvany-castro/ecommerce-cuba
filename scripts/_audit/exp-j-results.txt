@@ -1,0 +1,18 @@
+EXP J — loop cerrado (n=2000, users=800, days=90, v2 zipfEta=0.3, slate=20, λ=0.85, panel seed=42)
+
+━━━ época 0 (orgánica, compartida por ambos brazos) t=0s
+  época 0 orgánica   rev/sesión=2384¢  cobertura=1396 ítems  gini=0.545  in-taste=29.4%  (compras=3044, sesiones=3604)
+
+━━━ brazo ε=0 t=2s
+  época 1            rev/sesión=1089¢  cobertura= 309 ítems  gini=0.913  in-taste=92.5%  (compras=1369, sesiones=3650)
+  época 2            rev/sesión=1113¢  cobertura= 340 ítems  gini=0.907  in-taste=92.3%  (compras=1365, sesiones=3589)
+
+━━━ brazo ε=0.1 t=3s
+  época 1            rev/sesión=992¢  cobertura= 307 ítems  gini=0.916  in-taste=87.4%  (compras=1243, sesiones=3559)
+  época 2            rev/sesión=1023¢  cobertura= 336 ítems  gini=0.909  in-taste=90.5%  (compras=1309, sesiones=3622)
+
+━━━ comparación entre brazos (época 2, la más alejada del log orgánico)
+  cobertura:   ε=0 340 vs ε=0.1 336  (ε=0.1 -1.2%)
+  rev/sesión:  ε=0 1113¢ vs ε=0.1 1023¢  (ε=0.1 -8.1%)
+  gini ventas: ε=0 0.907 vs ε=0.1 0.909
+  in-taste:    ε=0 92.3% vs ε=0.1 90.5%
