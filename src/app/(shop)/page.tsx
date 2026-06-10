@@ -1,29 +1,39 @@
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { generateFeed } from "@/sectors/d-personalization/feed";
 import { ProductCard } from "@/components/ProductCard";
+import { RequestTiming } from "@/lib/timing";
 
 export const dynamic = "force-dynamic";
 
+/** F5: sampled structured-log persistence (Server Components can't set headers). */
+const TIMING_SAMPLE_RATE = 0.2;
+
 export default async function HomePage() {
+  const timing = new RequestTiming();
   const ck = await cookies();
   const anonymous_id = ck.get("anonymous_id")?.value ?? null;
   const session_id = ck.get("session_id")?.value ?? null;
 
-  const session = await auth0.getSession().catch(() => null);
+  const session = await timing.time("auth", () => auth0.getSession().catch(() => null));
   let user_id: string | null = null;
   if (session?.user?.sub) {
     const sub = session.user.sub as string;
     const email = (session.user.email as string) ?? `${sub}@noemail.local`;
-    user_id = await withPg(async (pg) =>
-      (await getOrCreateUserByAuth0Sub(pg, sub, email)).id,
+    user_id = await timing.time("auth_upsert", () =>
+      withPg(async (pg) => (await getOrCreateUserByAuth0Sub(pg, sub, email)).id),
     );
   }
 
   const feed = await withPg((pg) =>
-    generateFeed({ user_id, anonymous_id, session_id, limit: 20 }, pg),
+    generateFeed({ user_id, anonymous_id, session_id, limit: 20, timing }, pg),
   );
+
+  after(() => {
+    if (Math.random() < TIMING_SAMPLE_RATE) console.log(timing.toLogLine("home"));
+  });
 
   if (feed.length === 0) {
     return (

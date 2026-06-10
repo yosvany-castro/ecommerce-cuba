@@ -1,4 +1,5 @@
 import type { Client } from "pg";
+import type { RequestTiming } from "@/lib/timing";
 import { normalize } from "@/lib/math";
 import { effectiveUserVector } from "./vector/effective";
 import { retrieveTopKByVector, type FeedItem } from "./retrieve";
@@ -41,6 +42,8 @@ export interface GenerateFeedOpts {
   anonymous_id: string | null;
   session_id: string | null;
   limit?: number;
+  /** Optional per-request phase timing (F5 instrumentation). */
+  timing?: RequestTiming;
 }
 
 /**
@@ -237,11 +240,14 @@ export async function generateFeed(
   pg: Client,
 ): Promise<FeedItem[]> {
   const limit = opts.limit ?? 20;
-  const profile_id = await getProfileIdForFeed(
+  // F5: phase timing (no-op without opts.timing — zero cost in untimed paths)
+  const timed = <T,>(name: string, fn: () => Promise<T>): Promise<T> =>
+    opts.timing ? opts.timing.time(name, fn) : fn();
+  const profile_id = await timed("profile", () => getProfileIdForFeed(
     opts.user_id,
     opts.anonymous_id,
     pg,
-  );
+  ));
 
   let cohortId: CohortId = "unisex_indeterminado";
   let recipientId: string | null = null;
@@ -249,14 +255,14 @@ export async function generateFeed(
   let sessionUnnorm: number[] | null = null;
 
   if (opts.session_id) {
-    const s = await readSessionState(opts.session_id, pg);
+    const s = await timed("session_state", () => readSessionState(opts.session_id!, pg));
     if (s.current_cohort_id) cohortId = s.current_cohort_id;
     recipientId = s.current_recipient_id;
     nEventsSession = s.signal_window_size;
-    sessionUnnorm = await fetchSessionVectorUnnorm(opts.session_id, pg);
+    sessionUnnorm = await timed("session_vector", () => fetchSessionVectorUnnorm(opts.session_id!, pg));
   }
 
-  const excluded = await fetchExcludedIds(opts.user_id, opts.anonymous_id, pg);
+  const excluded = await timed("excluded", () => fetchExcludedIds(opts.user_id, opts.anonymous_id, pg));
 
   const listsA: RankedList[] = [];
   if (profile_id) {
@@ -296,7 +302,7 @@ export async function generateFeed(
       const sessionNorm = sessionUnnorm ? normalize(sessionUnnorm) : null;
       const eff = effectiveUserVector(u, sessionNorm, nEventsSession);
       const wideK = FEED_POP_PRIOR_STRENGTH > 0 ? 150 : 50;
-      const items = await retrieveTopKByVector(eff, excluded, wideK, pg);
+      const items = await timed("retrieve_modes", () => retrieveTopKByVector(eff, excluded, wideK, pg));
       retrievedByMode.push({
         mode_index: m.mode_index,
         items: items.map((it) => ({ id: it.product.id, score: it.similarity })),
@@ -304,10 +310,10 @@ export async function generateFeed(
     }
     const popCounts =
       FEED_POP_PRIOR_STRENGTH > 0
-        ? await fetchEventCounts7d(
+        ? await timed("pop_counts", () => fetchEventCounts7d(
             [...new Set(retrievedByMode.flatMap((l) => l.items.map((x) => x.id)))],
             pg,
-          )
+          ))
         : new Map<string, number>();
     for (const l of retrievedByMode) {
       const ordered =
@@ -331,7 +337,7 @@ export async function generateFeed(
   const listB: RankedList = { source: "cooccurrence", items: [], weight: 2 };
   let lastViewedTitle: string | null = null;
   if (opts.session_id) {
-    const lastViewed = await fetchLastViewedProduct(opts.session_id, pg);
+    const lastViewed = await timed("cooccurrence", () => fetchLastViewedProduct(opts.session_id!, pg));
     if (lastViewed) {
       const tR = await pg.query(`SELECT title FROM products WHERE id = $1`, [
         lastViewed,
@@ -355,18 +361,18 @@ export async function generateFeed(
   // Cohort popularity when the demographic cohort is known; GLOBAL popularity
   // as the ensemble's rescue half (and the unisex_indeterminado fallback —
   // before this fix that cohort had NO popularity list at all).
-  const popularItems = await fetchPopularByCohort(cohortId, excluded, 20, pg);
+  const popularItems = await timed("popular_cohort", () => fetchPopularByCohort(cohortId, excluded, 20, pg));
   const listC: RankedList = { source: "popular", items: popularItems };
   const listE: RankedList = {
     source: "popular-global",
-    items: await fetchPopularGlobal(excluded, 20, pg),
+    items: await timed("popular_global", () => fetchPopularGlobal(excluded, 20, pg)),
   };
 
   // Views-categories source (exp-K champion family): categories predicted from
   // the user's recent views (current session ×3) × popularity quotas inside.
   const listD: RankedList = {
     source: "views-categories",
-    items: await fetchViewsCategoriesList(
+    items: await timed("views_categories", () => fetchViewsCategoriesList(
       {
         user_id: opts.user_id,
         anonymous_id: opts.anonymous_id,
@@ -375,7 +381,7 @@ export async function generateFeed(
         limit: 20,
       },
       pg,
-    ),
+    )),
   };
 
   // Home fusion (exp-K ablation, 3 seeds + seed-7 ablation): the winning shape
