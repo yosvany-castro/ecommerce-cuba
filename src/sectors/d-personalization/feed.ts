@@ -332,7 +332,14 @@ export async function generateFeed(
   const top30 = mmrSelect({ candidates: fused, embeddings, k: 30 });
   if (top30.length === 0) return [];
 
-  if (!profile_id || top30.length < 10) {
+  // LLM reranker OFF by default (docs/decision-llm-reranker-2026-06-10.md):
+  // in the clean F6 head-to-head it never beat RRF+MMR on relevance, its
+  // latency (~8-10 s/call) violates the Fase-3c p99<1.5 s gate by ~6x, and it
+  // costs ~$0.48 per 1000 feeds. Re-enable with LLM_RERANK_ENABLED=true only
+  // for gated special-case experiments (explicit gift, conversational search,
+  // argued upsell), each with its own evaluation before production.
+  const llmEnabled = process.env.LLM_RERANK_ENABLED === "true";
+  if (!llmEnabled || !profile_id || top30.length < 10) {
     const items: CachedRerankItem[] = top30.slice(0, limit).map((t, i) => ({
       product_id: t.id,
       rank: i + 1,
