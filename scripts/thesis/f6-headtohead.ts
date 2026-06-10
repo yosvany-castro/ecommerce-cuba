@@ -89,10 +89,14 @@ interface Cli {
   limit: number;
   llm: boolean;
   out: string | null;
+  /** LEAK-FREE evaluation: loadUnifiedCases({clean:true}) — popularity train-only,
+   *  serve context = pre-purchase prefix. Requires co_occurrence_top and
+   *  item_vectors rebuilt with --train-only (see auditoría 2026-06-09). */
+  clean: boolean;
 }
 
 function parseCli(argv: string[]): Cli {
-  const cli: Cli = { n: 2000, seed: 42, frame: "full", limit: 0, llm: false, out: null };
+  const cli: Cli = { n: 2000, seed: 42, frame: "full", limit: 0, llm: false, out: null, clean: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = (): string => {
@@ -120,6 +124,9 @@ function parseCli(argv: string[]): Cli {
       case "--llm":
         cli.llm = true;
         break;
+      case "--clean":
+        cli.clean = true;
+        break;
       case "--out":
         cli.out = next();
         break;
@@ -140,6 +147,14 @@ function parseCli(argv: string[]): Cli {
 interface BizMetrics {
   /** revenue@10 (pool expectedRevenue; missing → 0). */
   revenue10: number;
+  /**
+   * REALIZED revenue@10: price×margin of the HELD-OUT purchase when it appears
+   * in the top-10, averaged over cases. Unlike `revenue10` (an expectation under
+   * a model whose affinity is the pipeline's own cosine-to-modes — gameable by a
+   * price×margin sort with nDCG≈0; auditoría 2026-06-09), a ranker can only
+   * "earn" realized revenue by surfacing what the user actually bought.
+   */
+  realizedRevenue10: number;
   /** seller-gini@10 over pool-derived seller ids. */
   sellerGini10: number;
   /** intra-list diversity@10 (1 − mean pairwise cosine of E1 top-10 vectors). */
@@ -170,7 +185,10 @@ async function main() {
   const pg = await getPgClient({ scope: "thesis" });
   try {
     // ── Load canonical cases (E1 64d). Loader reads the holdout intact. ─────────
-    const loaded = await loadUnifiedCases(pg, cli.limit > 0 ? { limit: cli.limit } : undefined);
+    const loaded = await loadUnifiedCases(pg, {
+      ...(cli.limit > 0 ? { limit: cli.limit } : {}),
+      ...(cli.clean ? { clean: true } : {}),
+    });
     const allCases = loaded.cases;
     const e1Item = loaded.e1Item;
 
@@ -192,9 +210,11 @@ async function main() {
     //    and FeatureMeta for the assembled-LTR. One read, shared across rankers. ─
     const demoRecord: Record<string, ItemDemographics> = {};
     const metaById: FeatureMetaById = new Map<string, FeatureMeta>();
+    const cohortById = new Map<string, string | null>(); // subcategory (popular-cohort-real)
+    const gtRevenueById = new Map<string, number>(); // price×margin (realized revenue)
     for (const r of (
-      await pg.query<{ id: string; metadata: Record<string, unknown> }>(
-        `SELECT id::text id, metadata FROM thesis.products`,
+      await pg.query<{ id: string; metadata: Record<string, unknown>; price_cents: number }>(
+        `SELECT id::text id, metadata, price_cents FROM thesis.products`,
       )
     ).rows) {
       const m = r.metadata ?? {};
@@ -203,6 +223,9 @@ async function main() {
       const ageMin = at?.min ?? 0;
       const ageMax = at?.max ?? 130;
       demoRecord[r.id] = { gender_target: genderTarget, age_min: ageMin, age_max: ageMax };
+      cohortById.set(r.id, (m.subcategory as string | null) ?? null);
+      const marginPct = typeof m.margin_pct === "number" ? (m.margin_pct as number) : 0;
+      gtRevenueById.set(r.id, (r.price_cents ?? 0) * marginPct);
       const vec = e1Item.get(r.id);
       if (vec !== undefined) {
         metaById.set(r.id, {
@@ -254,6 +277,34 @@ async function main() {
     const popGlobalFor = (): Ranker => popularGlobalRanker();
     const popCohortFor = (): Ranker => popularCohortRanker();
     const cosineE1For = (): Ranker => cosineSingleVectorRanker();
+
+    // popular-cohort-real: the ORACLE-FREE rival. The stock popular-cohort reads
+    // ctx.cohort = the TEST item's subcategory (an oracle no real home page has:
+    // it is the subcategory of the not-yet-made purchase). Here the cohort is
+    // the modal subcategory of the user's TRAIN history — what a real naive
+    // store can actually compute (auditoría 2026-06-09: 0.088 → 0.032 at
+    // n=5000 without the oracle).
+    const popCohortRealFor = (c: UnifiedCase): Ranker => {
+      const counts = new Map<string, number>();
+      for (const id of c.trainIds) {
+        const coh = cohortById.get(id) ?? null;
+        if (coh === null) continue;
+        counts.set(coh, (counts.get(coh) ?? 0) + 1);
+      }
+      let modal: string | null = null;
+      let best = 0;
+      for (const [coh, n] of [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+        if (n > best) {
+          modal = coh;
+          best = n;
+        }
+      }
+      return {
+        name: "popular-cohort-real",
+        rank: (ctx: UserContext, cands: RankItem[]) =>
+          popularCohortRanker().rank({ ...ctx, cohort: modal }, cands),
+      };
+    };
 
     // e2_hybrid: score-level fusion using the case's E0/E1 maps (dim-safe). When a
     // case lacks E0 text (e2 undefined) the ranker degrades to behaviour-only via
@@ -334,6 +385,7 @@ async function main() {
       { name: "random", factory: randomFor },
       { name: "popular-global", factory: popGlobalFor },
       { name: "popular-cohort", factory: popCohortFor },
+      { name: "popular-cohort-real", factory: popCohortRealFor },
       { name: "cosine-e1", factory: cosineE1For },
       { name: "e2_hybrid", factory: e2HybridFor },
       { name: "f2-multimode", factory: f2MultiFor },
@@ -357,6 +409,7 @@ async function main() {
     // ── Business + gift metrics for one ranker factory over `cases`. ───────────
     const bizFor = (factory: (c: UnifiedCase) => Ranker): { biz: BizMetrics; giftFit: GiftMetrics } => {
       let rev = 0,
+        realized = 0,
         gini = 0,
         div = 0,
         sc = 0;
@@ -365,6 +418,11 @@ async function main() {
       for (const c of cases) {
         const ranked = factory(c).rank(c.ctx, c.candidates);
         rev += revenueAtK(ranked, c.revenueById, K_BUS);
+        // realized revenue: the held-out purchase's price×margin iff it made top-10.
+        const top10 = new Set(ranked.slice(0, K_BUS));
+        for (const pid of c.relevant) {
+          if (top10.has(pid)) realized += gtRevenueById.get(pid) ?? 0;
+        }
         gini += sellerExposureGini(ranked, c.sellerById, K_BUS);
         // diversity@10: E1 vectors of the top-10 (canonical 64d space).
         const topVecs = ranked
@@ -386,6 +444,7 @@ async function main() {
       return {
         biz: {
           revenue10: rev / n,
+          realizedRevenue10: realized / n,
           sellerGini10: gini / n,
           diversity10: div / n,
           setChangeVsPc10: sc / n,
@@ -516,7 +575,7 @@ async function main() {
     // result, so we report the champion PER objective.
     const assembled = reports.find((r) => r.name === "assembled-ltr-f4")!;
     const pc = reports.find((r) => r.name === "popular-cohort")!;
-    const NAIVE = new Set(["random", "popular-global", "popular-cohort"]);
+    const NAIVE = new Set(["random", "popular-global", "popular-cohort", "popular-cohort-real"]);
     const pipeline = reports.filter((r) => !NAIVE.has(r.name));
     const relChamp = pipeline.reduce((a, b) => (b.overall.ndcg[10] > a.overall.ndcg[10] ? b : a));
     const revChamp = pipeline.reduce((a, b) => (b.biz.revenue10 > a.biz.revenue10 ? b : a));
@@ -580,6 +639,7 @@ async function main() {
         self: { ndcg: r.self.ndcg, recall: r.self.recall, mrr: r.self.mrr, n: r.self.n },
         gift: { ndcg: r.gift.ndcg, recall: r.gift.recall, mrr: r.gift.mrr, n: r.gift.n },
         revenue10: r.biz.revenue10,
+        realized_revenue10: r.biz.realizedRevenue10,
         recipient_fit10: r.giftFit.recipientFit10,
         recipient_fit_n: r.giftFit.nGift,
         seller_gini10: r.biz.sellerGini10,
@@ -617,7 +677,7 @@ async function main() {
       cli.out ??
       resolve(
         process.cwd(),
-        `docs/superpowers/reports/2026-06-08-thesis-f6-headtohead-n${cli.n}-seed${cli.seed}-${cli.frame}`,
+        `docs/superpowers/reports/2026-06-08-thesis-f6-headtohead-n${cli.n}-seed${cli.seed}-${cli.frame}${cli.clean ? "-clean" : ""}`,
       );
     const outMd = base.endsWith(".md") ? base : `${base}.md`;
     const outJson = base.endsWith(".md") ? base.replace(/\.md$/, ".json") : `${base}.json`;
@@ -704,22 +764,28 @@ function renderMarkdown(o: {
   // ── Main table: rankers × IR + business metrics (overall). ─────────────────
   rows.push("## Overall (all cases) — IR + business metrics", "");
   rows.push(
-    "| Ranker | nDCG@5 | nDCG@10 | nDCG@20 | Recall@10 | MRR | MAP@10 | Hit@10 | revenue@10 | seller-gini@10 | diversity@10 | set-change@10 (vs PC) |",
-    "|---|---|---|---|---|---|---|---|---|---|---|---|",
+    "| Ranker | nDCG@5 | nDCG@10 | nDCG@20 | Recall@10 | MRR | MAP@10 | Hit@10 | revenue@10 | realizedRev@10 | seller-gini@10 | diversity@10 | set-change@10 (vs PC) |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   );
   for (const r of reports) {
     rows.push(
       `| ${r.name} | ${f3(r.overall.ndcg[5])} | ${f3(r.overall.ndcg[10])} | ${f3(r.overall.ndcg[20])} | ` +
         `${f3(r.overall.recall[10])} | ${f3(r.overall.mrr)} | ${f3(r.overall.map[10])} | ${f3(r.overall.hit[10])} | ` +
-        `${f4(r.biz.revenue10)} | ${f3(r.biz.sellerGini10)} | ${f3(r.biz.diversity10)} | ${f3(r.biz.setChangeVsPc10)} |`,
+        `${f4(r.biz.revenue10)} | ${f4(r.biz.realizedRevenue10)} | ${f3(r.biz.sellerGini10)} | ${f3(r.biz.diversity10)} | ${f3(r.biz.setChangeVsPc10)} |`,
     );
   }
   if (llmReport) {
     rows.push(
       `| f3-llm | — | ${f3(llmReport.ndcg[10])} | — | ${f3(llmReport.recall[10])} | ${f3(llmReport.mrr)} | — | — | ` +
-        `— | — | — | ${f3(llmReport.setChangeVsPc10)} |`,
+        `— | — | — | — | ${f3(llmReport.setChangeVsPc10)} |`,
     );
   }
+  rows.push(
+    "",
+    "`realizedRev@10` = price×margin of the HELD-OUT purchase when captured in the top-10 " +
+      "(averaged over cases). Unlike `revenue@10` (model-expected, gameable by a blind " +
+      "price×margin sort), realized revenue can only be earned by surfacing what the user actually bought.",
+  );
   rows.push("");
   if (llmReport) {
     rows.push(

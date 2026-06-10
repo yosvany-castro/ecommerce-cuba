@@ -281,11 +281,45 @@ export interface UnifiedCasesResult {
  *                    rows are read ORDER BY (user_id, product_id) — the natural
  *                    unique key — so the first `limit` kept are stable across
  *                    runs regardless of plan/VACUUM/replica).
+ * @param opts.clean  LEAK-FREE evaluation mode (auditoría destructiva
+ *                    2026-06-09; cf. Ji et al., TOIS 2023 — global-timeline
+ *                    discipline). Changes vs the default loader:
+ *                      (a) popularity (popById) counts TRAIN-session events
+ *                          only — the default counts the test sessions too,
+ *                          boosting the held-out item's own popularity;
+ *                      (b) the serve-time context (lastViewed anchor + the
+ *                          gift-detector session) is the PRE-PURCHASE PREFIX
+ *                          of the test session (views strictly before the
+ *                          held-out purchase, excluding the held-out product),
+ *                          falling back to the last train-session view — the
+ *                          default uses the FULL test session including
+ *                          post-purchase views.
+ *                    NOTE: co_occurrence_top and item_vectors come from DB
+ *                    tables — for a fully leak-free run they must be rebuilt
+ *                    with `--train-only` (backfill-cooccurrence,
+ *                    train-prod2vec) BEFORE loading; this loader cannot fix
+ *                    them retroactively and only logs a reminder.
  */
 export async function loadUnifiedCases(
   pg: Client,
-  opts?: { limit?: number },
+  opts?: { limit?: number; clean?: boolean },
 ): Promise<UnifiedCasesResult> {
+  const clean = opts?.clean === true;
+  if (clean) {
+    console.warn(
+      "[unified-cases] CLEAN mode: popularity=train-only, serve context=pre-purchase prefix. " +
+        "Remember: thesis.co_occurrence_top and thesis.item_vectors must have been rebuilt with --train-only.",
+    );
+  }
+  /** SQL fragment: sessions containing a held-out test purchase. */
+  const TEST_SESSIONS_SQL = `
+    SELECT DISTINCT e2.session_id
+    FROM thesis.holdout h2
+    JOIN thesis.events e2
+      ON e2.anonymous_id = h2.user_id
+     AND e2.payload->>'product_id' = h2.product_id::text
+     AND e2.event_type = 'purchase'
+    WHERE h2.split = 'test'`;
   // ── E1 vectors (canonical 64d space) ───────────────────────────────────────
   const e1 = new Map<string, number[]>();
   for (const r of await queryWithRetry<{ id: string; vector: number[] }>(
@@ -334,10 +368,18 @@ export async function loadUnifiedCases(
   }
 
   // ── Popularity (event count per product). ───────────────────────────────────
+  // CLEAN mode: train sessions only — the default count includes the test
+  // sessions, which boosts the held-out item's own popularity (its view/cart/
+  // purchase events) and inflates every popularity-driven ranker.
   const popById = new Map<string, number>();
   for (const r of await queryWithRetry<{ pid: string; c: number }>(
     pg,
-    `SELECT payload->>'product_id' pid, count(*)::int c FROM thesis.events WHERE payload->>'product_id' IS NOT NULL GROUP BY 1`,
+    clean
+      ? `SELECT payload->>'product_id' pid, count(*)::int c FROM thesis.events
+         WHERE payload->>'product_id' IS NOT NULL
+           AND session_id NOT IN (${TEST_SESSIONS_SQL})
+         GROUP BY 1`
+      : `SELECT payload->>'product_id' pid, count(*)::int c FROM thesis.events WHERE payload->>'product_id' IS NOT NULL GROUP BY 1`,
   )) {
     popById.set(r.pid, r.c);
   }
@@ -419,15 +461,59 @@ export async function loadUnifiedCases(
   }
 
   // ── Last-viewed product per user (most recent product_view). ────────────────
+  // CLEAN mode: most recent view in a NON-test session (train fallback for the
+  // per-case pre-purchase prefix anchor computed below).
   const lastViewed = new Map<string, string>();
   for (const r of await queryWithRetry<{ uid: string; pid: string }>(
     pg,
-    `SELECT DISTINCT ON (anonymous_id) anonymous_id::text uid, payload->>'product_id' pid
-       FROM thesis.events
-       WHERE event_type='product_view' AND payload->>'product_id' IS NOT NULL
-       ORDER BY anonymous_id, occurred_at DESC`,
+    clean
+      ? `SELECT DISTINCT ON (anonymous_id) anonymous_id::text uid, payload->>'product_id' pid
+           FROM thesis.events
+           WHERE event_type='product_view' AND payload->>'product_id' IS NOT NULL
+             AND session_id NOT IN (${TEST_SESSIONS_SQL})
+           ORDER BY anonymous_id, occurred_at DESC`
+      : `SELECT DISTINCT ON (anonymous_id) anonymous_id::text uid, payload->>'product_id' pid
+           FROM thesis.events
+           WHERE event_type='product_view' AND payload->>'product_id' IS NOT NULL
+           ORDER BY anonymous_id, occurred_at DESC`,
   )) {
     lastViewed.set(r.uid, r.pid);
+  }
+
+  // ── CLEAN mode: pre-purchase prefix context per test row. ────────────────────
+  // For each (uid, pid): the views of the test item's session STRICTLY BEFORE
+  // the held-out purchase, excluding the held-out product itself (its own view
+  // immediately precedes its purchase; using it as the anchor would ask NPMI to
+  // predict an item from itself). Ordered by occurred_at.
+  const prefixViews = new Map<string, string[]>(); // `${uid}|${pid}` -> ordered view pids
+  if (clean) {
+    for (const r of await queryWithRetry<{ uid: string; pid: string; vpid: string }>(
+      pg,
+      `WITH test_purchase AS (
+         SELECT h.user_id uid, h.product_id::text pid, e.session_id sid, MAX(e.occurred_at) pts
+         FROM thesis.holdout h
+         JOIN thesis.events e
+           ON e.anonymous_id = h.user_id
+          AND e.payload->>'product_id' = h.product_id::text
+          AND e.event_type = 'purchase'
+         WHERE h.split = 'test'
+         GROUP BY 1, 2, e.session_id
+       )
+       SELECT tp.uid::text uid, tp.pid, v.payload->>'product_id' vpid
+       FROM test_purchase tp
+       JOIN thesis.events v
+         ON v.session_id = tp.sid
+        AND v.event_type = 'product_view'
+        AND v.payload->>'product_id' IS NOT NULL
+        AND v.occurred_at < tp.pts
+        AND v.payload->>'product_id' <> tp.pid
+       ORDER BY tp.uid, tp.pid, v.occurred_at`,
+    )) {
+      const k = `${r.uid}|${r.pid}`;
+      const a = prefixViews.get(k) ?? [];
+      a.push(r.vpid);
+      prefixViews.set(k, a);
+    }
   }
 
   // ── Cohort → ids sorted by popularity (popular source). ─────────────────────
@@ -472,8 +558,14 @@ export async function loadUnifiedCases(
     // ── Gift detection on the test item's ACTUAL session (DETECTOR, not GT). ──
     // Exclude the held-out product itself (no leakage); buyer demographic comes
     // from the TRAIN history so cross-cohort is measured vs the buyer's own taste.
+    // CLEAN mode: only the PRE-PURCHASE PREFIX of that session — the default
+    // full-session context includes views that happen AFTER the held-out
+    // purchase, which no production server could have at serve time.
     const tsess = testSession.get(`${t.uid}|${t.pid}`);
-    const sessionProductIds = (tsess ? sessionItems.get(tsess.sid) ?? [] : []).filter(
+    const rawSessionIds = clean
+      ? (prefixViews.get(`${t.uid}|${t.pid}`) ?? [])
+      : (tsess ? sessionItems.get(tsess.sid) ?? [] : []);
+    const sessionProductIds = [...new Set(rawSessionIds)].filter(
       (id) => commonSet.has(id) && id !== t.pid,
     );
     const session: SessionItem[] = sessionProductIds.map((id) => ({
@@ -509,7 +601,13 @@ export async function loadUnifiedCases(
       .map((x) => x.id);
 
     // ── SOURCE 2: npmi — neighbours of last-viewed (<=50, minus train). ──────
-    const lv = lastViewed.get(t.uid) ?? null;
+    // CLEAN mode: the anchor is the last PRE-PURCHASE view of the test session
+    // (falling back to the last train-session view, which is what the train-only
+    // `lastViewed` map holds in clean mode).
+    const cleanPrefix = clean ? (prefixViews.get(`${t.uid}|${t.pid}`) ?? []) : null;
+    const lv = cleanPrefix && cleanPrefix.length > 0
+      ? cleanPrefix[cleanPrefix.length - 1]
+      : (lastViewed.get(t.uid) ?? null);
     const npmi = (lv ? (npmiNeighbours.get(lv) ?? []) : [])
       .map((n) => n.id)
       .filter((id) => commonSet.has(id) && !trainSet.has(id))

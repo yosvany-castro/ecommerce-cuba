@@ -2,7 +2,15 @@
 /**
  * Train E1 Prod2Vec on thesis.events session sequences; persist item vectors to
  * thesis.item_vectors (space='e1_prod2vec').
- * Usage: pnpm thesis:train-prod2vec --dim 64 --epochs 30 --window 3 --negatives 5 --seed 42
+ *
+ * --train-only (LEAK-FREE mode): excludes every event of a HOLDOUT-TEST session
+ * (the session containing a held-out test purchase). Without it, the embedding
+ * space is TRANSDUCTIVE — skip-gram saw the exact basket that contains each
+ * held-out purchase, pulling the test item's vector toward its session mates
+ * (auditoría destructiva 2026-06-09). Production trains on the past only, so
+ * --train-only is the production-faithful build for offline evaluation.
+ *
+ * Usage: pnpm thesis:train-prod2vec --dim 64 --epochs 30 --window 3 --negatives 5 --seed 42 [--train-only]
  */
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -23,12 +31,26 @@ async function main() {
   const window = arg("window", 3);
   const negatives = arg("negatives", 5);
   const seed = arg("seed", 42);
+  const trainOnly = process.argv.includes("--train-only");
   const pg = await getPgClient({ scope: "thesis" });
   try {
+    const trainOnlyClause = trainOnly
+      ? `AND session_id NOT IN (
+           SELECT DISTINCT e2.session_id
+           FROM thesis.holdout h
+           JOIN thesis.events e2
+             ON e2.anonymous_id = h.user_id
+            AND e2.payload->>'product_id' = h.product_id::text
+            AND e2.event_type = 'purchase'
+           WHERE h.split = 'test'
+         )`
+      : "";
+    console.log(`[e1] mode=${trainOnly ? "TRAIN-ONLY (leak-free)" : "all-events (transductive — NOT valid for offline eval)"}`);
     const r = await pg.query(
       `SELECT session_id::text session_id, payload->>'product_id' AS product_id, occurred_at
        FROM thesis.events
        WHERE event_type IN ('product_view','add_to_cart','purchase') AND payload->>'product_id' IS NOT NULL
+       ${trainOnlyClause}
        ORDER BY session_id, occurred_at`,
     );
     const rows: EventRow[] = (r.rows as { session_id: string; product_id: string; occurred_at: string | Date }[]).map((x) => ({
