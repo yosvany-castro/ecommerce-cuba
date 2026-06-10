@@ -1,0 +1,20 @@
+[d] loaded: events=88232 testRows=2801 e1=4999
+[d] train-only NPMI built (4991 productos con vecinos) t=1s
+[d] retraining prod2vec on 7278 train-only sessions (dim=64 epochs=30 w=3 neg=5 seed=42) …
+[d] e1-clean: 4995 items (shipped: 4999) t=17s
+[d] universo intersección: 4995
+[d] V0-shipped   n=2801 gift=839 | PC ndcg10=0.088 recall10=0.179 | f3-rrf ndcg10=0.153 recall10=0.287 | ventaja=+73.8% | t=43s
+[d] V1-npmi      n=2801 gift=839 | PC ndcg10=0.088 recall10=0.179 | f3-rrf ndcg10=0.053 recall10=0.110 | ventaja=-39.7% | t=66s
+[d] V2-pop       n=2801 gift=839 | PC ndcg10=0.053 recall10=0.102 | f3-rrf ndcg10=0.129 recall10=0.256 | ventaja=+146.0% | t=104s
+[d] V4-serve     n=2801 gift=839 | PC ndcg10=0.088 recall10=0.179 | f3-rrf ndcg10=0.189 recall10=0.354 | ventaja=+114.6% | t=148s
+[d] V0∩-shipped  n=2800 gift=839 | PC ndcg10=0.088 recall10=0.179 | f3-rrf ndcg10=0.153 recall10=0.287 | ventaja=+73.9% | t=193s
+[d] V3-e1        n=2800 gift=839 | PC ndcg10=0.088 recall10=0.179 | f3-rrf ndcg10=0.140 recall10=0.263 | ventaja=+58.4% | t=237s
+[d] V5-ALL-clean n=2800 gift=839 | PC ndcg10=0.053 recall10=0.102 | f3-rrf ndcg10=0.040 recall10=0.086 | ventaja=-23.9% | t=281s
+[d] bootstrap V0-shipped: Δndcg10(f3−pc)=0.0650 CI95=[0.0527,0.0776] rel=73.8% relCI95=[56.4%,94.3%] pFlip=0.0000
+[d] bootstrap V0∩-shipped: Δndcg10(f3−pc)=0.0651 CI95=[0.0524,0.0779] rel=73.9% relCI95=[56.2%,94.5%] pFlip=0.0000
+[d] bootstrap V5-ALL-clean: Δndcg10(f3−pc)=-0.0126 CI95=[-0.0206,-0.0045] rel=-23.9% relCI95=[-36.0%,-9.4%] pFlip=0.0005
+[d] RIVALES (frame shipped, n=2801):
+[d]   price-cynic (precio×margen, 0 personalización): ndcg10=0.002 revenue10=77782 (vs PC rev=18174, f3-rrf rev=31667; reporte f4-revenue rev=59955 ndcg=0.039)
+[d]   item-kNN co-ocurrencia (CF 2003): ndcg10=0.095 recall10=0.197 mrr=0.084 vs f3-rrf ndcg10=0.153 | Δ(knn−f3)=-0.0576 CI95=[-0.0684,-0.0465]
+[d]   popular-cohort REALISTA (cohorte del TRAIN, sin oráculo): ndcg10=0.032 recall10=0.071 (n=2801)
+[d]   item-kNN LIMPIO vs f3-rrf LIMPIO (n=2800): knn=0.040 f3=0.040
