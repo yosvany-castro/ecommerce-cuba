@@ -262,12 +262,23 @@ describe("F6 unified-cases loader (real DB, dataset-agnostic consistency)", () =
 
     let withAnchor = 0; // lastViewedId non-null AND resolvable in the catalog
     let trainLeak = 0;
+    let withViews = 0; // viewIds populated (the pop-aware rankers' input)
     for (const c of cleanLoaded.cases) {
       if (c.lastViewedId !== null && typeof c.lastViewedTitle === "string") withAnchor++;
       const candIds = new Set(c.candidates.map((x) => x.id));
       for (const t of c.trainIds) if (candIds.has(t)) trainLeak++;
+      // viewIds: in-universe, deduped, and present for most users (views are
+      // ~10× denser than purchases — an all-empty field means broken plumbing).
+      expect(new Set(c.viewIds).size).toBe(c.viewIds.length);
+      for (const v of c.viewIds) expect(cleanLoaded.e1Item.has(v)).toBe(true);
+      if (c.viewIds.length > 0) withViews++;
+      // NOTE deliberately NOT asserted: viewIds MAY contain the held-out
+      // purchase — a user can view a product in an earlier train session and
+      // buy it later (legitimate serve-time history / retargeting signal).
+      // CLEAN only excludes the TEST session's events from history and models.
     }
     expect(withAnchor).toBeGreaterThanOrEqual(1);
     expect(trainLeak).toBe(0);
+    expect(withViews).toBeGreaterThanOrEqual(Math.floor(cleanLoaded.cases.length * 0.8));
   }, 180_000);
 });

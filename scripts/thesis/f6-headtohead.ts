@@ -70,7 +70,15 @@ import {
 } from "@/thesis/eval/metrics";
 import { hybridScoreFusionRanker } from "@/thesis/embedders/hybrid";
 import { multiModeRank } from "@/thesis/multivector/retrieve";
+import { buildUserModes } from "@/thesis/multivector/modes";
+import { cosineSim } from "@/thesis/embedders/space";
 import { buildRecipientVector } from "@/thesis/multivector/gift-vector";
+import { rrfFuse, type RankedList } from "@/sectors/d-personalization/retrieve/rrf";
+import { applyPopularityPrior } from "@/sectors/d-personalization/ranking/pop-prior";
+import {
+  predictTopSubcategories,
+  rankByViewedCategoriesQuota,
+} from "@/sectors/d-personalization/ranking/views-categories";
 import { llmRerank, type LlmCandidate } from "@/thesis/rerank/llm-reranker";
 import type { Ranker, RankItem, UserContext } from "@/thesis/types";
 
@@ -380,12 +388,134 @@ async function main() {
       return { name: "assembled-ltr-f4", rank: inner.rank };
     };
 
+    // ── Pop-aware rankers (auditoría 2026-06-09 → exp-I/exp-K fixes), built on
+    //    the SHARED PRODUCTION MODULE (src/sectors/d-personalization/ranking/)
+    //    so the harness validates the exact logic feed.ts ships (closes the
+    //    "validated system ≠ deployed system" finding, S2-H7). All three use
+    //    VIEWS (production-faithful history) and train-only popularity. ────────
+    const viewSubsOf = (c: UnifiedCase): (string | null)[] =>
+      c.viewIds.map((id) => cohortById.get(id) ?? null);
+    const popOfFor = (c: UnifiedCase) => (id: string) => c.popById.get(id) ?? 0;
+
+    // pc-views-multi: predicted top-3 viewed subcategories, popularity quotas.
+    const pcViewsMultiFor = (c: UnifiedCase): Ranker => ({
+      name: "pc-views-multi",
+      rank: (_ctx, cands) =>
+        rankByViewedCategoriesQuota({
+          topSubcategories: predictTopSubcategories(viewSubsOf(c), 3),
+          candidates: cands.map((x) => x.id),
+          subcategoryOf: (id) => cohortById.get(id) ?? null,
+          popOf: popOfFor(c),
+          headSize: 10,
+        }),
+    });
+
+    // e1-views-pop: modes over VIEWS + multiplicative popularity prior on the
+    // cosine — the minimal fix for the popularity-blind vector path.
+    const viewModesOf = (c: UnifiedCase): number[][] => {
+      const vecs = c.viewIds
+        .map((id) => e1Item.get(id))
+        .filter((v): v is number[] => v !== undefined && v.length > 0);
+      if (vecs.length === 0) return [];
+      return buildUserModes(vecs, { distanceThreshold: 0.5, maxModes: 5 }).map((m) => m.medoid);
+    };
+    const e1ViewsPopRank = (c: UnifiedCase, cands: RankItem[]): string[] => {
+      const vModes = viewModesOf(c);
+      const scored = cands.map((x) => {
+        let best = 0;
+        for (const m of vModes) {
+          const s = cosineSim(m, x.vector);
+          if (s > best) best = s;
+        }
+        return { id: x.id, score: best };
+      });
+      return applyPopularityPrior(scored, popOfFor(c), 1).map((x) => x.id);
+    };
+    const e1ViewsPopFor = (c: UnifiedCase): Ranker => ({
+      name: "e1-views-pop",
+      rank: (_ctx, cands) => e1ViewsPopRank(c, cands),
+    });
+
+    // sess-categories list: categories predicted from history ×1 + CURRENT
+    // SESSION views ×3 (the honest serve-time signal), popularity quotas
+    // (headSize 10) and the next-10 popularity tail → a 20-item list. This is
+    // exp-K's `pcSess(blend(3), 4)` head, the winning ensemble component.
+    const sessCategoriesList = (c: UnifiedCase, ids: string[]): string[] => {
+      const sessSubs = c.sessionViewIds.map((id) => cohortById.get(id) ?? null);
+      const blended = [...viewSubsOf(c), ...sessSubs, ...sessSubs, ...sessSubs];
+      return rankByViewedCategoriesQuota({
+        topSubcategories: predictTopSubcategories(blended, 4),
+        candidates: ids,
+        subcategoryOf: (id) => cohortById.get(id) ?? null,
+        popOf: popOfFor(c),
+        headSize: 10,
+      }).slice(0, 20);
+    };
+    const popGlobalHead = (c: UnifiedCase, ids: string[]): string[] =>
+      [...ids]
+        .sort((a, b) => (c.popById.get(b) ?? 0) - (c.popById.get(a) ?? 0) || a.localeCompare(b))
+        .slice(0, 20);
+    const fuseWithPopTail = (c: UnifiedCase, ids: string[], lists: RankedList[]): string[] => {
+      const popOf = popOfFor(c);
+      const fused = rrfFuse(lists.filter((l) => l.items.length > 0))
+        .sort((a, b) => b.rrf_score - a.rrf_score || a.id.localeCompare(b.id))
+        .map((x) => x.id);
+      const inFused = new Set(fused);
+      const tail = ids
+        .filter((id) => !inFused.has(id))
+        .sort((a, b) => popOf(b) - popOf(a) || a.localeCompare(b));
+      return [...fused, ...tail];
+    };
+    const toList = (source: string, listIds: string[]): RankedList => ({
+      source,
+      items: listIds.map((id, i) => ({ id, rank: i + 1 })),
+    });
+
+    // rrf-sess-pop: the exp-K champion — RRF(sess-categories 20, popular 20),
+    // popularity tail. Personalization ON TOP of popularity, nothing else.
+    const rrfSessPopFor = (c: UnifiedCase): Ranker => ({
+      name: "rrf-sess-pop",
+      rank: (_ctx, cands) => {
+        const ids = cands.map((x) => x.id);
+        return fuseWithPopTail(c, ids, [
+          toList("sess-categories", sessCategoriesList(c, ids)),
+          toList("popular", popGlobalHead(c, ids)),
+        ]);
+      },
+    });
+
+    // feed-pop: the FULL production serving shape (feed.ts after the fix) —
+    // RRF(modes-views-pop top50, NPMI-to-last-viewed top30, sess-categories
+    // top20, popular top20), popularity tail.
+    const feedPopFor = (c: UnifiedCase): Ranker => ({
+      name: "feed-pop",
+      rank: (_ctx, cands) => {
+        const ids = cands.map((x) => x.id);
+        const lists: RankedList[] = [toList("modes", e1ViewsPopRank(c, cands).slice(0, 50))];
+        const npmiList = ids
+          .map((id) => ({ id, s: c.lvNpmi.get(id) ?? 0 }))
+          .filter((x) => x.s > 0)
+          .sort((a, b) => b.s - a.s || a.id.localeCompare(b.id))
+          .slice(0, 30)
+          .map((x) => x.id);
+        // weight 2 = production parity (feed.ts protects cross-sell from dilution)
+        if (npmiList.length > 0) lists.push({ ...toList("cooccurrence", npmiList), weight: 2 });
+        lists.push(toList("sess-categories", sessCategoriesList(c, ids)));
+        lists.push(toList("popular", popGlobalHead(c, ids)));
+        return fuseWithPopTail(c, ids, lists);
+      },
+    });
+
     // ── Ranker registry (ordered for the report). ──────────────────────────────
     const registry: { name: string; factory: (c: UnifiedCase) => Ranker }[] = [
       { name: "random", factory: randomFor },
       { name: "popular-global", factory: popGlobalFor },
       { name: "popular-cohort", factory: popCohortFor },
       { name: "popular-cohort-real", factory: popCohortRealFor },
+      { name: "pc-views-multi", factory: pcViewsMultiFor },
+      { name: "e1-views-pop", factory: e1ViewsPopFor },
+      { name: "rrf-sess-pop", factory: rrfSessPopFor },
+      { name: "feed-pop", factory: feedPopFor },
       { name: "cosine-e1", factory: cosineE1For },
       { name: "e2_hybrid", factory: e2HybridFor },
       { name: "f2-multimode", factory: f2MultiFor },

@@ -196,6 +196,21 @@ export interface UnifiedCase extends EvalCase {
   userId: string;
   /** The user's train item ids (filtered to the E1 universe). */
   trainIds: string[];
+  /**
+   * Distinct product_views of the user (first-seen order, filtered to the E1
+   * universe). CLEAN mode: train-session views only. Views are the production-
+   * faithful history (track-hook updates profiles on EVERY event): ~10× denser
+   * than purchases, and the input the pop-aware rankers
+   * (src/sectors/d-personalization/ranking/) were validated on (exp-I/exp-K).
+   */
+  viewIds: string[];
+  /**
+   * The serving-session view context (deduped, in-universe, excludes the
+   * held-out product). CLEAN mode: the PRE-PURCHASE prefix of the test session
+   * — the honest "user is browsing right now" signal (exp-K champion input).
+   * Default mode: the full test session (legacy, includes post-purchase).
+   */
+  sessionViewIds: string[];
   /** Most recent product_view of the user (NPMI source); null if none in-universe. */
   lastViewedId: string | null;
   /** Gift signal from the F2 detector on the TRAIN session (NOT GT). */
@@ -480,6 +495,27 @@ export async function loadUnifiedCases(
     lastViewed.set(r.uid, r.pid);
   }
 
+  // ── Distinct viewed products per user (first-seen order). ───────────────────
+  // CLEAN mode: train-session views only (same discipline as popularity).
+  const viewsByUser = new Map<string, string[]>();
+  for (const r of await queryWithRetry<{ uid: string; pid: string }>(
+    pg,
+    clean
+      ? `SELECT anonymous_id::text uid, payload->>'product_id' pid, MIN(occurred_at) ts
+           FROM thesis.events
+           WHERE event_type='product_view' AND payload->>'product_id' IS NOT NULL
+             AND session_id NOT IN (${TEST_SESSIONS_SQL})
+           GROUP BY 1, 2 ORDER BY 1, 3`
+      : `SELECT anonymous_id::text uid, payload->>'product_id' pid, MIN(occurred_at) ts
+           FROM thesis.events
+           WHERE event_type='product_view' AND payload->>'product_id' IS NOT NULL
+           GROUP BY 1, 2 ORDER BY 1, 3`,
+  )) {
+    const a = viewsByUser.get(r.uid) ?? [];
+    a.push(r.pid);
+    viewsByUser.set(r.uid, a);
+  }
+
   // ── CLEAN mode: pre-purchase prefix context per test row. ────────────────────
   // For each (uid, pid): the views of the test item's session STRICTLY BEFORE
   // the held-out purchase, excluding the held-out product itself (its own view
@@ -732,6 +768,8 @@ export async function loadUnifiedCases(
       relevant: new Set([t.pid]),
       userId: t.uid,
       trainIds: train,
+      viewIds: (viewsByUser.get(t.uid) ?? []).filter((id) => e1.has(id)),
+      sessionViewIds: sessionProductIds,
       lastViewedId: lv,
       giftSignal,
       intentGT,
