@@ -2,7 +2,7 @@ import type { Client } from "pg";
 import { embed } from "@/lib/embeddings/voyage";
 import { hashQuery } from "./cache/hash";
 import { lookupExact, writeExact, EXACT_CACHE_TTL_SECONDS } from "./cache/exact";
-import { lookupSemantic, DEFAULT_THETA } from "./cache/semantic";
+import { lookupSemantic, getSemanticCacheTheta } from "./cache/semantic";
 import { normalizeQueryWithLLM } from "./normalizer/normalize";
 import type { NormalizedQuery } from "./normalizer/prompt";
 import { bm25Search, type SearchFilters } from "./retrieve/bm25";
@@ -149,7 +149,7 @@ export async function hybridSearch(
 
   // 3. Semantic cache
   tracer.start("semantic_cache_lookup");
-  const semantic = await lookupSemantic(queryEmbedding, DEFAULT_THETA, pg);
+  const semantic = await lookupSemantic(queryEmbedding, getSemanticCacheTheta(), pg);
   tracer.end("semantic_cache_lookup");
 
   if (semantic) {
