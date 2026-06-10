@@ -9,7 +9,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
-import { withPg } from "@/lib/db/helpers";
+import { withPgDirect } from "@/lib/db/helpers";
 import { hybridSearch } from "@/sectors/c-search/search";
 
 function fmtMs(ms: number | undefined): string {
@@ -32,7 +32,7 @@ async function main() {
     process.exit(1);
   }
 
-  const result = await withPg((pg) =>
+  const result = await withPgDirect((pg) =>
     hybridSearch(query, { pg, anonymous_id: null, user_id: null }, { trace: true }),
   );
   const t = result.trace;

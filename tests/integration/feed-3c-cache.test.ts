@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import { randomUUID } from "node:crypto";
 import { withTestDb, truncateTestTables } from "../helpers/db";
 import { seedProductWithEmbedding } from "../helpers/seed";
@@ -20,6 +20,15 @@ beforeEach(async () => {
     "products",
     "anonymous_sessions",
   ]);
+});
+
+// The LLM reranker is OFF by default since 18c3204 (decision-llm-reranker
+// 2026-06-10): these tests exercise the GATED path, so they opt in explicitly.
+beforeAll(() => {
+  process.env.LLM_RERANK_ENABLED = "true";
+});
+afterAll(() => {
+  delete process.env.LLM_RERANK_ENABLED;
 });
 
 describe("generateFeed cache hit (F3c)", () => {
