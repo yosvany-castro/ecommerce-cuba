@@ -237,6 +237,51 @@ export interface BehaviorOpts {
   days: number;
   seed: number;
   pGiftOverride?: number;
+
+  // ── v2 realism knobs (all optional; omitted ⇒ output BIT-IDENTICAL to v1) ──
+  // Motivation (auditoría destructiva 2026-06-09): the v1 world has quasi-flat
+  // item popularity (purchase Gini ≈ 0.41, top-10 % of items ≈ 26 % of sales),
+  // which dooms popularity baselines BY CONSTRUCTION and manufactures the
+  // "edge grows with catalog size" narrative. Real online retail is heavy-
+  // tailed: ≈ 72/28 (top 20 % of SKUs ≈ 72 % of sales; Brynjolfsson, Hu &
+  // Simester 2011, Management Science). v1 also has NO price elasticity
+  // (P(buy|view) constant), which lets revenue-tilted rankers push expensive
+  // items at zero conversion cost, and a gift prevalence of ~30 % of sessions
+  // (real stores: 5–10 %).
+
+  /**
+   * Zipf exponent `s` for INTRINSIC item attractiveness. When set, each item
+   * gets attractiveness ∝ rank^(−s) over a seed-shuffled rank assignment
+   * (mean-normalized to 1), multiplied into the view-choice score. s = 0.8
+   * reproduces ≈ 72/28 attractiveness mass on a 5000-item catalog
+   * (Σ k^−0.8 ≈ x^0.2/0.2 ⇒ top-20 % share ≈ 0.2^0.2 ≈ 0.72).
+   * Undefined ⇒ off (v1: popularity is emergent taste noise only).
+   */
+  zipfS?: number;
+  /**
+   * Exponent applied to the normalized attractiveness inside the score
+   * (score = affinity · priceFit · att^eta + noise). Dampens how much
+   * bestsellers transcend personal taste. Default 1 when zipfS is set.
+   */
+  zipfEta?: number;
+  /**
+   * Price elasticity γ of CONVERSION (MNL-style price term in the utility):
+   * P(cart) and P(buy) are multiplied by exp(−γ · price_sensitivity ·
+   * priceBand/3). 0/undefined ⇒ off (v1: conversion independent of price).
+   * γ ≈ 0.8 ⇒ a max-band item converts ≈ 45–79 % as often, per sensitivity.
+   */
+  priceGamma?: number;
+  /**
+   * Upper bound of the natural p_gift draw (p_gift ~ U[0, pGiftMax]).
+   * Default 0.6 (v1, mean ≈ 30 % gift sessions). Realistic: 0.16 ⇒ mean ≈ 8 %.
+   */
+  pGiftMax?: number;
+  /**
+   * Stochastic basket choice: sample the view window WITHOUT replacement with
+   * probability ∝ score (Plackett–Luce / sequential MNL) instead of the v1
+   * deterministic top-k. Uses a SEPARATE rng stream so v1 runs are untouched.
+   */
+  stochasticChoice?: boolean;
 }
 
 /**
@@ -341,6 +386,7 @@ function scoreProduct(
   isGift: boolean,
   recipient: RecipientProfile | null,
   noise: number,
+  attFactor = 1,
 ): number {
   let affinity: number;
 
@@ -360,7 +406,9 @@ function scoreProduct(
   // invert the affinity ranking) and never goes negative.
   const priceFit = Math.max(0.05, Math.exp(-PRICE_PENALTY_COEFF * priceSensitivity * priceDelta));
 
-  return affinity * priceFit + noise;
+  // attFactor = att^eta (v2 Zipf attractiveness; 1 when the knob is off) —
+  // multiplicative so bestsellers can transcend taste, as in real demand.
+  return affinity * priceFit * attFactor + noise;
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
@@ -380,6 +428,40 @@ export function sampleBehavior(
   complementsBySource: ComplementsBySource = new Map(),
 ): BehaviorOutput {
   const rng = makeRng(opts.seed);
+
+  // ── v2 knobs — every v2-only draw comes from a SEPARATE rng stream so that
+  // default opts leave the main stream untouched (bit-identical v1 output). ──
+  const rngV2 = makeRng((opts.seed ^ 0x9e3779b9) >>> 0);
+  const zipfEta = opts.zipfEta ?? 1;
+
+  /** Intrinsic attractiveness^eta per product (mean-normalized Zipf); empty when off. */
+  const attFactorById = new Map<string, number>();
+  if (opts.zipfS !== undefined && opts.zipfS > 0) {
+    // Seed-shuffled rank assignment: which product is the bestseller is random,
+    // but the SHAPE of demand is Zipf(s) — heavy-tailed like real retail.
+    const ids = catalog.map((p) => p.source_product_id).sort((a, b) => a.localeCompare(b));
+    for (let i = ids.length - 1; i > 0; i--) {
+      const j = rngV2.int(i + 1);
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+    }
+    let sum = 0;
+    const raw: number[] = [];
+    for (let r = 0; r < ids.length; r++) {
+      const a = Math.pow(r + 1, -opts.zipfS);
+      raw.push(a);
+      sum += a;
+    }
+    const meanAtt = sum / ids.length;
+    for (let r = 0; r < ids.length; r++) {
+      attFactorById.set(ids[r], Math.pow(raw[r] / meanAtt, zipfEta));
+    }
+  }
+
+  /** Conversion elasticity factor exp(−γ·sens·band/3) ∈ (0,1]; 1 when off. */
+  const elasticity = (priceBand: number, priceSensitivity: number): number =>
+    opts.priceGamma !== undefined && opts.priceGamma > 0
+      ? Math.exp(-opts.priceGamma * priceSensitivity * (priceBand / BUDGET_BAND_MAX))
+      : 1;
 
   const allSubs = distinctSubcategories(catalog);
 
@@ -403,7 +485,7 @@ export function sampleBehavior(
     const p_gift =
       opts.pGiftOverride !== undefined
         ? opts.pGiftOverride
-        : rng.next() * P_GIFT_NATURAL_MAX;
+        : rng.next() * (opts.pGiftMax ?? P_GIFT_NATURAL_MAX);
     const price_sensitivity = PRICE_SENS_MIN + rng.next() * PRICE_SENS_RANGE;
 
     // 1–3 recipients drawn from the fixed pool (allow repeats for small pools)
@@ -473,11 +555,33 @@ export function sampleBehavior(
             ? { relation: recipient.relation, gender: recipient.gender, age_min: recipient.age_min, age_max: recipient.age_max }
             : null,
           rng.gaussian() * SCORE_NOISE_STD,
+          attFactorById.size > 0 ? (attFactorById.get(p.source_product_id) ?? 1) : 1,
         ),
       }));
-      // Sort descending by score (stable enough; ties broken by insertion order)
-      scored.sort((a, b) => b.score - a.score);
-      const basket: SynthProduct[] = scored.slice(0, viewWindow).map((s) => s.p);
+      let basket: SynthProduct[];
+      if (opts.stochasticChoice) {
+        // Plackett–Luce / sequential-MNL sampling WITHOUT replacement ∝ score:
+        // popularity emerges across users instead of every same-taste user
+        // seeing the identical deterministic top-k. Draws come from rngV2.
+        const pool = scored.map((s) => ({ p: s.p, w: Math.max(s.score, 1e-6) }));
+        basket = [];
+        for (let pick = 0; pick < viewWindow && pool.length > 0; pick++) {
+          let total = 0;
+          for (const x of pool) total += x.w;
+          let r = rngV2.next() * total;
+          let idx = 0;
+          for (; idx < pool.length - 1; idx++) {
+            r -= pool[idx].w;
+            if (r <= 0) break;
+          }
+          basket.push(pool[idx].p);
+          pool.splice(idx, 1);
+        }
+      } else {
+        // v1: deterministic top-k (ties broken by insertion order).
+        scored.sort((a, b) => b.score - a.score);
+        basket = scored.slice(0, viewWindow).map((s) => s.p);
+      }
 
       // ── Complement co-occurrence seeding (F0 spec §4.4) ────────────────────
       // For SELF sessions only (gift sessions pivot to demographic match, so a
@@ -546,7 +650,10 @@ export function sampleBehavior(
           occurred_at: eventTs(),
         });
 
-        if (rng.next() < P_CART) {
+        // v2 price elasticity: expensive items (relative to the buyer's
+        // sensitivity) convert less. ef = 1 when the knob is off (v1).
+        const ef = elasticity(p.attrs.priceBand, user.price_sensitivity);
+        if (rng.next() < P_CART * ef) {
           events.push({
             user_id: user.user_id,
             session_id: session.session_id,
@@ -555,7 +662,7 @@ export function sampleBehavior(
             occurred_at: eventTs(),
           });
 
-          if (rng.next() < P_BUY) {
+          if (rng.next() < P_BUY * ef) {
             events.push({
               user_id: user.user_id,
               session_id: session.session_id,

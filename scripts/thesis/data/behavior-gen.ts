@@ -37,12 +37,23 @@ const { values } = parseArgs({
     users: { type: "string", default: "500" },
     days:  { type: "string", default: "60" },
     seed:  { type: "string", default: "42" },
+    // v2 realism knobs (see BehaviorOpts docs) — omitted ⇒ v1 bit-identical.
+    "zipf-s":      { type: "string" }, // e.g. 0.8 → ≈72/28 online-retail shape
+    "zipf-eta":    { type: "string" }, // attractiveness damping, default 1
+    "price-gamma": { type: "string" }, // conversion price elasticity, e.g. 0.8
+    "p-gift-max":  { type: "string" }, // e.g. 0.16 → mean ≈8 % gift sessions
+    stochastic:    { type: "boolean", default: false }, // Plackett–Luce choice
   },
 });
 
 const USERS = parseInt(values.users!, 10);
 const DAYS  = parseInt(values.days!,  10);
 const SEED  = parseInt(values.seed!,  10);
+const ZIPF_S      = values["zipf-s"]      !== undefined ? parseFloat(values["zipf-s"]!)      : undefined;
+const ZIPF_ETA    = values["zipf-eta"]    !== undefined ? parseFloat(values["zipf-eta"]!)    : undefined;
+const PRICE_GAMMA = values["price-gamma"] !== undefined ? parseFloat(values["price-gamma"]!) : undefined;
+const P_GIFT_MAX  = values["p-gift-max"]  !== undefined ? parseFloat(values["p-gift-max"]!)  : undefined;
+const STOCHASTIC  = values.stochastic === true;
 
 // ─── Age-band helper ──────────────────────────────────────────────────────────
 
@@ -141,7 +152,20 @@ async function main(): Promise<void> {
 
     // ── 2. Run behavior model ────────────────────────────────────────────────
     console.log("[behavior] Generating synthetic behavior …");
-    const out = sampleBehavior(catalog, { users: USERS, days: DAYS, seed: SEED }, complementsBySource);
+    const out = sampleBehavior(
+      catalog,
+      {
+        users: USERS,
+        days: DAYS,
+        seed: SEED,
+        zipfS: ZIPF_S,
+        zipfEta: ZIPF_ETA,
+        priceGamma: PRICE_GAMMA,
+        pGiftMax: P_GIFT_MAX,
+        stochasticChoice: STOCHASTIC,
+      },
+      complementsBySource,
+    );
     console.log(
       `[behavior] Generated: users=${out.users.length} sessions=${out.sessions.length} ` +
       `events=${out.events.length} holdout=${out.holdout.length}`,
