@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import type { RankedItem } from "./rrf";
+import { isPopularityTableReady } from "../popularity/recompute";
 import {
   topSubcategoriesFromCounts,
   rankByViewedCategoriesQuota,
@@ -56,9 +57,23 @@ export async function fetchViewsCategoriesList(
   const topCats = topSubcategoriesFromCounts(counts, opts.maxCategories ?? 4);
   if (topCats.length === 0) return [];
 
-  // 2. Popular products inside those categories (7-day raw event count).
-  const candRows = await pg.query(
-    `WITH product_events AS (
+  // 2. Popular products inside those categories. Fast path (0027): the
+  //    cron-materialized table by index; fallback: live 7-day aggregation.
+  const candRows = (await isPopularityTableReady(pg))
+    ? await pg.query(
+        `SELECT p.id::text AS id, p.metadata->>'category' AS cat,
+                COALESCE(pop.events_7d, 0)::int AS c
+         FROM products p
+         LEFT JOIN product_popularity_7d pop ON pop.product_id = p.id
+         WHERE p.is_active = true
+           AND p.metadata->>'category' = ANY($1::text[])
+           AND NOT (p.id = ANY($2::uuid[]))
+         ORDER BY COALESCE(pop.events_7d, 0) DESC, p.id ASC
+         LIMIT $3`,
+        [topCats.map((t) => t.subcategory), opts.excludedIds, Math.max(60, limit * 3)],
+      )
+    : await pg.query(
+        `WITH product_events AS (
        SELECT (payload->>'product_id')::uuid AS product_id
        FROM events
        WHERE occurred_at > now() - interval '7 days'
@@ -82,8 +97,8 @@ export async function fetchViewsCategoriesList(
        AND NOT (p.id = ANY($2::uuid[]))
      ORDER BY COALESCE(pop.c, 0) DESC, p.id ASC
      LIMIT $3`,
-    [topCats.map((t) => t.subcategory), opts.excludedIds, Math.max(60, limit * 3)],
-  );
+        [topCats.map((t) => t.subcategory), opts.excludedIds, Math.max(60, limit * 3)],
+      );
   const rows = candRows.rows as { id: string; cat: string; c: number }[];
   if (rows.length === 0) return [];
   const catOf = new Map(rows.map((r) => [r.id, r.cat]));

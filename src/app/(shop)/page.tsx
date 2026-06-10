@@ -11,6 +11,10 @@ export const dynamic = "force-dynamic";
 /** F5: sampled structured-log persistence (Server Components can't set headers). */
 const TIMING_SAMPLE_RATE = 0.2;
 
+function logTimingSampled(timing: RequestTiming): void {
+  if (Math.random() < TIMING_SAMPLE_RATE) console.log(timing.toLogLine("home"));
+}
+
 export default async function HomePage() {
   const timing = new RequestTiming();
   const ck = await cookies();
@@ -31,9 +35,7 @@ export default async function HomePage() {
     generateFeed({ user_id, anonymous_id, session_id, limit: 20, timing }, pg),
   );
 
-  after(() => {
-    if (Math.random() < TIMING_SAMPLE_RATE) console.log(timing.toLogLine("home"));
-  });
+  after(() => logTimingSampled(timing));
 
   if (feed.length === 0) {
     return (

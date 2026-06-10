@@ -193,7 +193,8 @@ async function serveWithExploration(
            (feed_request_id, user_profile_id, session_id, position, product_id, source, propensity)
          SELECT $1, $2, $3, u.position, u.product_id::uuid, u.source, u.propensity
          FROM unnest($4::smallint[], $5::text[], $6::text[], $7::float8[])
-           AS u(position, product_id, source, propensity)`,
+           AS u(position, product_id, source, propensity)
+         ON CONFLICT (feed_request_id, position) DO NOTHING`,
         [
           requestId,
           ctx.profile_id,

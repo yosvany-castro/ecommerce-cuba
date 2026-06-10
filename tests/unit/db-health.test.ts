@@ -25,7 +25,7 @@ describe("isConnectionError", () => {
 
 describe("breaker state machine", () => {
   it("opens after 2 consecutive connection failures, not after 1", () => {
-    let t = 1000;
+    const t = 1000;
     const now = () => t;
     reportDbFailure(connErr(), now);
     expect(dbHealth(now)).toBe("ok");

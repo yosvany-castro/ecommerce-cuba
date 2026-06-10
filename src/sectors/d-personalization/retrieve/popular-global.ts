@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import type { RankedItem } from "./rrf";
+import { isPopularityTableReady } from "../popularity/recompute";
 
 /**
  * Global popularity source (7-day raw event count: views + carts + purchase
@@ -15,6 +16,20 @@ export async function fetchPopularGlobal(
   limit: number,
   pg: Client,
 ): Promise<RankedItem[]> {
+  // Fast path (0027): cron-materialized popularity, read by index.
+  if (await isPopularityTableReady(pg)) {
+    const r = await pg.query(
+      `SELECT p.id::text AS id
+       FROM product_popularity_7d pop
+       JOIN products p ON p.id = pop.product_id
+       WHERE p.is_active = true
+         AND NOT (p.id = ANY($1::uuid[]))
+       ORDER BY pop.events_7d DESC, p.id ASC
+       LIMIT $2`,
+      [excludedIds, limit],
+    );
+    return (r.rows as { id: string }[]).map((row, idx) => ({ id: row.id, rank: idx + 1 }));
+  }
   const r = await pg.query(
     `WITH product_events AS (
        SELECT (payload->>'product_id')::uuid AS product_id
