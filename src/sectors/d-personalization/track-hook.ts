@@ -27,33 +27,35 @@ interface TrackInput {
   occurred_at: string;
 }
 
+/**
+ * Race-safe profile bootstrap (the ONLY place profiles are born since F2 —
+ * the feed reads but never creates). Two concurrent first events used to
+ * violate user_profiles_anon_uniq/user_uniq with SELECT-then-INSERT; the
+ * ON CONFLICT DO NOTHING + re-SELECT pattern makes both writers converge on
+ * the same row. (The partial unique indexes require the WHERE clause in the
+ * conflict target.)
+ */
 async function getOrCreateProfile(
   anonymous_id: string,
   user_id: string | null,
   pg: Client,
 ): Promise<string> {
   if (user_id) {
-    const r = await pg.query(
-      `SELECT id::text FROM user_profiles WHERE user_id = $1`,
+    await pg.query(
+      `INSERT INTO user_profiles (user_id, n_events) VALUES ($1, 0)
+       ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING`,
       [user_id],
     );
-    if (r.rows.length > 0) return r.rows[0].id;
-    const ins = await pg.query(
-      `INSERT INTO user_profiles (user_id, n_events) VALUES ($1, 0) RETURNING id::text`,
-      [user_id],
-    );
-    return ins.rows[0].id;
+    const r = await pg.query(`SELECT id::text FROM user_profiles WHERE user_id = $1`, [user_id]);
+    return r.rows[0].id;
   }
-  const r = await pg.query(
-    `SELECT id::text FROM user_profiles WHERE anonymous_id = $1`,
+  await pg.query(
+    `INSERT INTO user_profiles (anonymous_id, n_events) VALUES ($1, 0)
+     ON CONFLICT (anonymous_id) WHERE anonymous_id IS NOT NULL DO NOTHING`,
     [anonymous_id],
   );
-  if (r.rows.length > 0) return r.rows[0].id;
-  const ins = await pg.query(
-    `INSERT INTO user_profiles (anonymous_id, n_events) VALUES ($1, 0) RETURNING id::text`,
-    [anonymous_id],
-  );
-  return ins.rows[0].id;
+  const r = await pg.query(`SELECT id::text FROM user_profiles WHERE anonymous_id = $1`, [anonymous_id]);
+  return r.rows[0].id;
 }
 
 async function fetchProductInfo(

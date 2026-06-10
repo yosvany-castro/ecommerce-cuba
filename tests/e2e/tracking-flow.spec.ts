@@ -10,7 +10,7 @@ async function pg() {
 }
 
 test.describe("tracking-flow", () => {
-  test("anonymous visit sets cookies and persists session_start in events", async ({ page }) => {
+  test("anonymous visit sets cookies; session_start lands with the FIRST tracked event", async ({ page }) => {
     await page.context().clearCookies();
     await page.goto("/");
 
@@ -19,6 +19,23 @@ test.describe("tracking-flow", () => {
     const sess = cookies.find((c) => c.name === "session_id");
     expect(anon?.value).toMatch(/^[0-9a-f-]{36}$/);
     expect(sess?.value).toMatch(/^[0-9a-f-]{36}$/);
+
+    // F2: the proxy is cookie-only — a pure pageview writes NOTHING. Identity
+    // rows (anonymous_sessions + the synthesized session_start) are born with
+    // the first tracked event, so fire one through the real endpoint.
+    const trackStatus = await page.evaluate(async () => {
+      const r = await fetch("/api/track", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          event_type: "search",
+          occurred_at: new Date().toISOString(),
+          payload: { query: "e2e session start probe" },
+        }),
+      });
+      return r.status;
+    });
+    expect(trackStatus).toBe(200);
 
     const c = await pg();
     try {

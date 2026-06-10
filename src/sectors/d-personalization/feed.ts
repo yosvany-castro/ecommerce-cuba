@@ -43,34 +43,28 @@ export interface GenerateFeedOpts {
   limit?: number;
 }
 
-async function getOrCreateProfileForFeed(
+/**
+ * READ-ONLY profile lookup (F2): the feed never creates profiles anymore —
+ * profile birth belongs to the first tracked event (track-hook), so a
+ * bouncing visitor costs zero writes and the home request path stays
+ * read-only. A brand-new visitor gets profile_id=null → the deterministic
+ * cold slate (popular-global / views-categories carry the feed).
+ */
+async function getProfileIdForFeed(
   user_id: string | null,
   anonymous_id: string | null,
   pg: Client,
 ): Promise<string | null> {
   if (user_id) {
-    const r = await pg.query(
-      `SELECT id::text FROM user_profiles WHERE user_id = $1`,
-      [user_id],
-    );
-    if (r.rows.length > 0) return r.rows[0].id;
-    const ins = await pg.query(
-      `INSERT INTO user_profiles (user_id, n_events) VALUES ($1, 0) RETURNING id::text`,
-      [user_id],
-    );
-    return ins.rows[0].id;
+    const r = await pg.query(`SELECT id::text FROM user_profiles WHERE user_id = $1`, [user_id]);
+    return r.rows[0]?.id ?? null;
   }
   if (anonymous_id) {
     const r = await pg.query(
       `SELECT id::text FROM user_profiles WHERE anonymous_id = $1`,
       [anonymous_id],
     );
-    if (r.rows.length > 0) return r.rows[0].id;
-    const ins = await pg.query(
-      `INSERT INTO user_profiles (anonymous_id, n_events) VALUES ($1, 0) RETURNING id::text`,
-      [anonymous_id],
-    );
-    return ins.rows[0].id;
+    return r.rows[0]?.id ?? null;
   }
   return null;
 }
@@ -243,7 +237,7 @@ export async function generateFeed(
   pg: Client,
 ): Promise<FeedItem[]> {
   const limit = opts.limit ?? 20;
-  const profile_id = await getOrCreateProfileForFeed(
+  const profile_id = await getProfileIdForFeed(
     opts.user_id,
     opts.anonymous_id,
     pg,
@@ -402,7 +396,33 @@ export async function generateFeed(
     listC,
     listE,
   ].filter((l) => l.items.length > 0);
-  if (all.length === 0) return [];
+  // Deterministic catalog fallback (F2 cold start): a brand-new visitor in a
+  // store with no usable signal yet (no profile, no views, no events for the
+  // popularity sources) still gets a real slate — newest active products —
+  // instead of an empty home. Replaces the pre-F2 behaviour where the feed
+  // CREATED a profile and ranked by cosine against a zero vector (arbitrary).
+  if (all.length === 0) {
+    const r = await pg.query(
+      `SELECT id::text FROM products
+       WHERE is_active = true AND NOT (id = ANY($1::uuid[]))
+       ORDER BY created_at DESC, id ASC
+       LIMIT $2`,
+      [excluded, limit],
+    );
+    const items: CachedRerankItem[] = (r.rows as { id: string }[]).map((row, i) => ({
+      product_id: row.id,
+      rank: i + 1,
+      reason: "",
+    }));
+    if (items.length === 0) return [];
+    const served = await serveWithExploration(
+      items,
+      [],
+      { profile_id, session_id: opts.session_id ?? null },
+      pg,
+    );
+    return resolveWithReasons(served, pg);
+  }
 
   const fused = rrfFuse(all).slice(0, 100);
   if (fused.length === 0) return [];
