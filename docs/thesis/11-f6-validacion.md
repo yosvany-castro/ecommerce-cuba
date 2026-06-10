@@ -1,146 +1,181 @@
-# Validación holística y stress-testing (F6)
+# Validación holística, auditoría destructiva y re-evaluación limpia (F6)
 
-## Motivación: la comparación que faltaba
+> **Nota de versión.** Este capítulo sustituye íntegramente a la versión anterior de
+> F6. Una auditoría destructiva (2026-06-09, `docs/auditoria-destructiva-f6-2026-06-09.md`)
+> demostró que los resultados originales del head-to-head estaban inflados por fugas de
+> información y que el capítulo citaba cifras que no existían en los artefactos
+> committeados. Las cifras vigentes son las de los reportes *clean*
+> (`...n5000-seed123-full-clean.json` y `...v2-full-clean.json`); todo número de la
+> versión anterior queda retirado.
 
-Las fases F0–F4 evaluaron cada contribución de forma aislada, y por una razón
-metodológica sus cifras **no son directamente comparables entre sí**: cada estudio
-construyó su propio conjunto de casos sobre un universo de candidatos distinto
-(catálogo completo con vectores-factor en F0; intersección de espacios en F1; pool de
-200 en F3/F4). En consecuencia, una pregunta central nunca se respondió de forma justa:
-**¿el sistema completo, ensamblado de punta a punta, le gana a un e-commerce normal
-sobre exactamente los mismos casos?**
+## 1. La comparación original — y por qué sus números eran fuga
 
-El rival natural es `popular-cohort` —ordenar por popularidad dentro de la subcategoría
-del ítem—, que es precisamente lo que un e-commerce sin personalización ya implementa.
-A escala n=2000, `popular-cohort` alcanzaba `nDCG@10` 0.486 en F0, una cifra que
-*aplastaba* a todo el pipeline (F3-RRF 0.177, F4 0.202); pero esa comparación confundía
-peras con manzanas, pues se medía sobre casos y candidatos diferentes. F6 elimina ese
-confound.
+F6 nació para responder la pregunta que las fases F0–F4 nunca contestaron de forma
+justa: **¿el pipeline ensamblado le gana a un e-commerce normal sobre exactamente los
+mismos casos?** El arnés unificado (`unified-cases.ts`) sigue siendo válido como
+infraestructura: un solo conjunto de casos, candidatos idénticos para todos los
+rankers, marcos *full* (catálogo completo) y *pool* (diagnóstico). El problema no fue
+el arnés sino los **datos que se le dieron** y la **métrica con que se juzgó**.
 
-## El arnés head-to-head unificado
+La versión publicada reportaba una ventaja de `f3-rrf` sobre `popular-cohort` que
+crecía con la escala del catálogo, con titulares de +13 % (n=2000) a +71 % (n=10000).
+La auditoría falsó esa cadena completa con cinco hallazgos:
 
-F6 introduce un **cargador canónico de casos** (`unified-cases.ts`) que produce, una
-sola vez, un conjunto de casos de evaluación con candidatos idénticos para todos los
-rankers, y un **ranker ensamblado** (`assembled.ts`) que encadena F1→F2→F3→F4 como un
-único `Ranker`. Sobre estos casos se comparan, en igualdad estricta de condiciones,
-desde los baselines ingenuos (`random`, `popular-global`, `popular-cohort`) hasta el
-pipeline completo, en dos marcos:
+1. **Fuga transductiva en los tres modelos globales (S1).** El split por sesión
+   protegía el historial del usuario, pero prod2vec, el grafo NPMI y la popularidad se
+   construían sobre `thesis.events` **completo, sesiones de test incluidas**. El grafo
+   vio la cesta exacta que contiene la compra a predecir, y el anchor del source NPMI
+   era un ítem de la propia sesión de test (en el 12.7 % de los casos, *el propio ítem
+   de test*). Cuantificado: el hit-rate del source NPMI cae de 64.3 % (shipped) a
+   16.2 % con serving honesto — **~75 % del poder aparente de NPMI era fuga**. Peor: la
+   cuota de fuga **crece con la escala** (63.7 % → 80.4 % → 87.9 % a n=2000/5000/10000),
+   de modo que la curva insignia "la ventaja crece con el catálogo" era la curva de la
+   fuga, no del sistema.
 
-- **Marco *full*** (feed de producción): los candidatos son el catálogo menos el
-  historial de entrenamiento del usuario. Responde la pregunta titular.
-- **Marco *pool*** (diagnóstico): los candidatos son el pool de 200; aísla el valor del
-  reordenado *dado* el retrieval.
+2. **Métrica de negocio circular (S1).** `revenue@10` no era revenue realizado sino
+   `Σ P̂(buy)·precio·margen`, donde la affinity de P̂ es el coseno del candidato a los
+   mode-medoids del usuario — exactamente la señal que el pipeline maximiza. Falsación:
+   un ranker cínico `precio×margen desc`, con nDCG@10 = 0.002 (cero personalización),
+   obtiene revenue@10 = 77,782 — un 30 % más que el "campeón de revenue" f4-revenue
+   (59,955). Todos los titulares de revenue de la versión anterior quedan invalidados.
 
-El pipeline no es un único ranker sino una **familia de configuraciones**: la
-configuración relevancia-óptima (`f3-rrf`, el pool fusionado por RRF) y la
-revenue-óptima (`f4-revenue`) difieren, de modo que el reporte honesto compara el
-campeón *por objetivo*, no una sola variante.
+3. **Mundo sintético de popularidad plana, construido a favor (S1).** Las compras por
+   ítem tenían Gini 0.41 con el top-10 % de ítems concentrando solo el 26 % de las
+   ventas (el retail real es ~80/20): la "popularidad" era ruido casi uniforme y el
+   baseline estaba condenado por diseño — su decay con la escala era aritmética de
+   cobertura de ventana, fabricada por el generador. Además los complementos se
+   sembraban explícitamente para que NPMI los recuperara (el comentario del propio
+   `behavior-model.ts` lo admitía), y aun así solo ~3 % de las compras de test eran
+   complementos sembrados; el segmento regalo estaba inflado 3-6× (p_gift ~30 % vs
+   5-10 % real); y no existía elasticidad-precio.
 
-## ¿Le gana el pipeline al baseline ingenuo?
+4. **Oráculo en el baseline (S2).** `popular-cohort` recibía como cohorte la
+   subcategoría **del ítem de test** — información que ninguna home page tiene. Con
+   cohorte realista, el baseline cae de 0.088 a 0.032 (n=5000/seed123). Es decir, la
+   comparación publicada era *fuga contra fuga*: la fuga de NPMI inflaba al pipeline y
+   la del oráculo+popularidad inflaba al baseline. Ninguno de los dos números existía
+   en un sistema desplegable.
 
-A n=2000 (marco *full*, 1107 casos), la configuración relevancia-óptima del pipeline
-obtiene `nDCG@10` **0.200 frente a 0.177** de `popular-cohort` (**+13.0 %**), y a la vez
-`revenue@10` +162 %. La configuración revenue-óptima eleva `revenue@10` +363 % a costa
-de −67 % de relevancia: la palanca multi-objetivo hecha decisión explícita.
+5. **Documentos desincronizados de los artefactos (S2).** Este capítulo citaba
+   +13.0 % (0.200 vs 0.177) a n=2000, pero el reporte committeado vigente decía
+   +33.2 % (0.236); la tabla insignia "+13→+63→+71 %" mezclaba filas del harness
+   pre-fix y post-fix, no comparables entre sí. El presente capítulo se regeneró desde
+   los JSON committeados y no cita ninguna cifra que no exista en ellos.
 
-Un matiz obligatorio: **ningún reranker aprendido bate al RRF** en relevancia pura
-(consistente con el hallazgo honesto de F3). El mérito no está en el reordenado final
-sino en **cómo se arma el surtido**: el pool multi-fuente. En el marco *pool*,
-`popular-cohort` sigue ganando en relevancia dentro del pool (−36 % para `f3-rrf`), lo
-que confirma que la ventaja del pipeline proviene del *retrieval sobre el catálogo
-completo*, no del reordenado de un pool ya bueno.
+La cadena central de la auditoría (experimento D, mismo dataset n=5000/seed123, misma
+lógica de ranking) resume el colapso: la ventaja publicada **+73.8 %**
+(CI95 [+56 %, +94 %]) se convierte, al retirar todas las fugas, en **−23.9 %**
+(CI95 [−36 %, −9 %], p=0.0005) — significativa *en contra*. Y un item-kNN por
+co-ocurrencia (el "customers who bought X also bought Y" de 2003) empata exactamente
+con `f3-rrf` en el mundo limpio: la maquinaria aprendida no superaba a lo trivial una
+vez retirada la fuga.
 
-## Validez a escala: el límite declarado #1
+**Lo que la auditoría destruyó es la evidencia, no necesariamente el sistema**: la
+réplica reprodujo nuestros números al tercer decimal y el grafo NPMI con overlap
+1.000 — el determinismo del harness es precisamente lo que hizo posible auditarlo.
 
-La tesis declaraba la escala (n=2000) como su limitación principal. F6 regeneró el
-mercado a n=5000 y n=10000 (con usuarios y eventos proporcionales) y re-midió el
-head-to-head. El resultado es inequívoco:
+## 2. La re-evaluación limpia (mundo v1): el número defendible
 
-| $n$ | `popular-cohort` | `f3-rrf` | ventaja | `revenue` (f3-rrf) |
-|---|---|---|---|---|
-| 2.000 | 0.177 | 0.200 | +13.0 % | +162 % |
-| 5.000 | 0.092 | 0.149 | +62.6 % | +185 % |
-| 10.000 | 0.065 | 0.111 | +71.4 % | +226 % |
+Tras la auditoría se implementó la evaluación sin fugas: artefactos `--train-only`
+(co-ocurrencia, prod2vec y popularidad construidos solo con eventos de train), modo
+`--clean` en el harness (contexto pre-compra) y el baseline obligatorio
+`popular-cohort-real` (cohorte inferida del train del usuario, sin oráculo). El
+reporte oficial (`2026-06-08-thesis-f6-headtohead-n5000-seed123-full-clean.json`,
+n=5000/seed=123, 2800 casos, marco *full*):
 
-`popular-cohort` **decae monótonamente** al crecer el catálogo: la señal
-cohorte=subcategoría se diluye cuando hay miles de ítems por subcategoría. El pipeline
-se sostiene mucho mejor, de modo que **su ventaja relativa crece de +13 % a +71 %**.
-Este es exactamente el régimen de un revendedor que opera sobre el catálogo de
-Amazon/AliExpress: cuanto más grande el catálogo, más se despega el sistema
-inteligente. La limitación de escala no solo se resuelve: se resuelve *a favor* de la
-tesis. (Las corridas a n=10000 emplean una submuestra de 2000 casos por costo de
-memoria —O(casos×catálogo)—; la señal de escala proviene del tamaño del universo de
-candidatos, no del conteo de casos.)
+| Ranker | nDCG@10 | Lectura |
+|---|---|---|
+| `popular-cohort` (oráculo) | **0.053** | techo navegacional: conoce la subcategoría del ítem comprado |
+| `f3-rrf` (campeón del pipeline) | **0.041** | **−21.2 %** vs el oráculo |
+| `e2_hybrid` | 0.041 | empata como campeón limpio |
+| `assembled-ltr-f4` (pipeline integrado) | 0.034 | −35.6 % vs el oráculo |
+| `popular-cohort-real` (tienda normal honesta) | **0.016** | el baseline desplegable |
 
-## Robustez por semilla
+De aquí salen las dos afirmaciones vigentes, y solo estas:
 
-Para descartar que las conclusiones sean un artefacto de la semilla 42, se replicó el
-experimento a n=5000 con semillas distintas. La ventaja del pipeline y la señal de NPMI
-se mantienen en dirección y magnitud:
+- **Contra el oráculo de categoría, el pipeline pierde** (−21.2 %); el propio harness
+  lo imprime: *"even the relevance-optimal pipeline config does NOT beat
+  popular-cohort"*. La navegación es un rival serio: si el usuario ya está en la
+  categoría correcta, ordenar por popularidad ahí es muy difícil de batir.
+- **Contra lo que una tienda normal puede hacer de verdad** (sin bola de cristal),
+  `f3-rrf` 0.041 vs `popular-cohort-real` 0.016 → **+156 % (×2.6)** (delta exacto
+  sobre el JSON sin redondear: 0.0414/0.0160 = +159.6 %). Esta es la única
+  afirmación defendible del head-to-head, y es mejor argumento que el "+74 %"
+  retirado, porque sobrevive a la auditoría.
 
-| semilla | `popular-cohort` | `f3-rrf` | ventaja | caída de recall sin NPMI |
-|---|---|---|---|---|
-| 42 | 0.092 | 0.149 | +62.6 % | −0.341 |
-| 7 | 0.096 | 0.149 | +55.3 % | −0.336 |
-| 123 | 0.088 | 0.154 | +74.7 % | −0.331 |
+Hallazgos secundarios del mundo limpio: el retrieval por texto E0 fracasa
+(0.011–0.013, ≈ `popular-cohort-real`; la señal robusta es conductual, no textual);
+el segmento regalo colapsa a ~0.005 para todos los métodos personalizados (la
+maquinaria de regalo no aporta valor medible); y la personalización conductual
+multi-modo limpia (0.046) empata estadísticamente con el oráculo de categoría
+(0.052, CI95 [−34 %, +15 %]) en el estudio exp-F.
 
-Las tres semillas coinciden en dirección y magnitud (ventaja +55 % a +75 %; caída de
-recall sin NPMI −0.33 a −0.34): las conclusiones son robustas y no dependen de la
-semilla.
+## 3. El mundo v2: la ceguera a la popularidad
 
-## Stress-tests dirigidos
+El mundo v1, aun limpio de fugas, seguía siendo irreal (popularidad plana). El
+simulador v2 corrige el generador con mecanismos de la literatura: atractivo
+intrínseco **Zipf** calibrado (s=1.0, η=0.7 → top-20 % de ítems = 70 % de las ventas,
+Gini 0.71, vs 44 %/0.41 en v1), **elasticidad-precio** en P(cart/buy), prevalencia de
+regalo realista (~8 %) y **elección estocástica** Plackett–Luce en lugar del argmax
+oráculo. El reporte oficial sobre el dataset v2
+(`2026-06-09-thesis-f6-headtohead-n5000-seed123-v2-full-clean.json`, 2252 casos):
 
-- **Cierre del caveat de atribución de F4.** F4 había advertido que su feature de
-  relevancia era una sola señal (coseno a modos), no la fusión de cuatro fuentes del
-  baseline, de modo que el −% de relevancia conflaba el trade-off real con un desajuste
-  de baseline. Implementando una **relevancia multi-señal** (retrieval+NPMI+popularidad)
-  se observa que esta cierra entre 84 % y 102 % de la brecha single→fusión a lo largo de
-  las escalas. El trade-off *verdadero*, medido en igualdad, es $\approx$ **+46.8 % de revenue
-  por −36.9 % de relevancia**, sustancialmente más suave que el +62 %/−52 % reportado en
-  F4 con la señal única. La principal deuda metodológica de la tesis queda saldada.
+| Ranker (v2, sin fugas) | nDCG@10 |
+|---|---|
+| `popular-cohort` (oráculo / navegación) | **0.262** |
+| `popular-global` | 0.044 |
+| `popular-cohort-real` | 0.016 |
+| `f3-rrf` | **0.006** |
+| `assembled-ltr-f4` | **0.000** |
 
-- **Reranker entrenado sobre el outcome de negocio.** Un LTR cuyo objetivo es el revenue
-  esperado (en lugar de la compra binaria) *falla* el guardrail de relevancia a n=2000 y
-  n=5000, pero **lo supera a n=10000**: bate al RRF en `revenue@10` manteniendo
-  `nDCG@10` $\geq$ 0.7·RRF. Es un resultado nuevo que *emerge* a escala.
+En un mundo con best-sellers reales, **el pipeline actual colapsa**. No son bugs sino
+mecanismos conocidos: (i) el coseno-a-modos es **ciego a la popularidad** — en
+skip-gram los ítems ultra-frecuentes derivan hacia el centroide del espacio y el
+retrieval personal los rankea bajo, justo cuando son lo que la gente compra; (ii) el
+NPMI **descuenta la popularidad por construcción** (es la definición de PMI) —
+excelente para complementos de nicho, fatal como fuente principal en mundo Zipf;
+(iii) los modos se construían con ~2.8 *compras* de train cuando el historial correcto
+es el de *vistas* (~25-30 ítems, lo que producción ya usa). El v2 introdujo además la
+métrica de negocio correcta — **revenue realizado** (precio×margen de la compra
+simulada capturada en el top-k) — y con ella el antiguo campeón `f4-revenue` obtiene
+**0.0 centavos** de revenue realizado: optimizaba el espejismo de la métrica circular.
 
-- **Latencia.** La latencia end-to-end del ranking (retrieval→pool→reordenado→scorer) sin
-  el LLM tiene `p99` $\approx$ 26 ms, muy por debajo de la compuerta de 1.5 s. La etapa dominante
-  y sensible a la escala es el retrieval ($O(N\cdot d)$).
+Los fixes están identificados y validados experimentalmente (exp-I): un prior
+multiplicativo de popularidad en el retrieval (`coseno × log(2+pop)`) revive el camino
+vectorial **×11** (0.001→0.011), y la mejor forma realista del feed frío — predecir
+subcategorías desde las *vistas* y aplicar popularidad con cuotas dentro de ellas
+(`pc-views-multi`) — rinde **×2.3** sobre `popular-cohort-real`. La lección de
+producto: el home feed compite contra la navegación (el oráculo de categoría es
+inalcanzable sin intención declarada); el lugar natural de la personalización fina es
+la **página de categoría** (donde la cohorte-oráculo es legítima: la eligió el
+usuario) y el **cross-sell en PDP/carrito** (el rol real del grafo NPMI).
 
-- **Perfiles adversariales.** Sobre perfiles extremos construidos a mano (regalo puro,
-  multi-modal ortogonal, precio-extremo, sesión ambigua), el detector de regalo dispara
-  en 2 de 3 perfiles de regalo; cuando falla, el pipeline degrada con gracia al modo
-  *self*; y en todos los perfiles extrae más revenue que `popular-cohort`.
+## 4. Veredicto, limitaciones y camino
 
-- **Ablations del pool.** Removiendo una fuente a la vez, **NPMI es la más cargante para
-  el recall**: quitarla cuesta entre −0.27 y −0.38 de pool-recall según la escala, y
-  entre el 28 % y el 37 % de las compras retenidas son alcanzables vía NPMI pero **no**
-  por el retrieval coseno —exactamente los complementos que la similitud lingüística no
-  recupera. La señal de co-ocurrencia es ortogonal, y su importancia **crece** con la
-  escala.
+**Veredicto honesto.** No existe hoy evidencia de que el pipeline ensamblado venda más
+que una tienda normal en un mundo realista; existe evidencia de que la personalización
+conductual limpia rinde ×2.6 el baseline honesto en el mundo v1, y un diagnóstico
+preciso —con fixes validados a escala de experimento— de por qué el diseño actual
+falla en el mundo v2. Lo que sobrevive de la arquitectura: pool multi-fuente + RRF
+(ningún reranker aprendido lo bate), multi-modo conductual, grafo NPMI para cross-sell,
+filtros y prior por cohorte. Lo que cambia: prior de popularidad en el retrieval,
+modos sobre vistas, revenue realizado como métrica, y el detector de regalo degradado
+a *modo sugerido* (a prevalencia real su precisión es ~13 %).
 
-## Un hallazgo metodológico
+**Limitaciones vigentes.** (i) Los datos siguen siendo sintéticos; el simulador v2
+tiene una tensión de calibración documentada (concentración 72/28 vs proporción
+in-taste) cuya salida de fondo es popularidad endógena en un loop cerrado. (ii) La
+exposición aún no está mediada por el recomendador (sin position bias ni feedback
+loop): cerrar el loop en simulación —slate + cascada— es el siguiente paso del
+simulador. (iii) El LLM reranker sigue sin evidencia: o entra al head-to-head limpio
+con su coste y latencia medidos, o sale del feed. (iv) Ninguna cifra de este programa
+sustituye al experimento real.
 
-El stress-test del detector de regalo reveló un defecto de fidelidad en el propio arnés:
-inicialmente el detector se ejecutaba sobre el *historial de entrenamiento* del usuario,
-cuyo demográfico modal coincide por construcción con el del comprador, haciendo
-estructuralmente imposible la señal *cross-cohort* y desactivando el mecanismo de regalo
-en todas las evaluaciones. Corregido para ejecutarse sobre la **sesión real** del ítem
-de test (excluyéndolo, sin fuga de información) y midiendo el recipient-fit contra el
-destinatario de verdad, el recipient-fit del pipeline en el segmento de regalo pasó de
-0.29 a 0.52. El episodio ilustra el valor del stress-testing: encontrar y corregir un
-defecto real antes de fijar conclusiones.
-
-## Veredicto y limitaciones
-
-F6 confirma las contribuciones centrales del programa y, en el caso de la escala, las
-*refuerza*: el valor del pipeline está en el pool multi-fuente, la complementariedad
-vive en la co-ocurrencia y no en el coseno, el ranking multi-objetivo es una palanca
-real cuyo trade-off es más benigno de lo reportado, y la ventaja sobre el baseline
-ingenuo **crece con el tamaño del catálogo** y es robusta entre semillas. Persisten las
-limitaciones honestas: los datos son sintéticos —la validación definitiva sería el
-piloto A/B con clientes reales, diseñado pero no ejecutado—, el detector de regalo es
-débil (F1 $\approx$ 0.44) y sin mejora fácil libre de fuga, y las cifras a n=10000 se miden
-sobre una submuestra de casos. El resumen ejecutivo no técnico de esta validación se
-encuentra en `RESUMEN-EJECUTIVO.md`.
+**Camino.** Producción ya cuenta con exploración ε-greedy por slot y log de
+impresiones con propensities exactas (`epsilon.ts`, migración `0023_feed_impressions`),
+lo que desbloquea la evaluación off-policy (`ope.ts`: IPS/SNIPS/DR) sobre logs reales
+y da la materia prima del **piloto A/B con clientes reales** — diseñado, no ejecutado,
+y única validación que cuenta para el negocio. Criterio de éxito comprometido para
+cualquier resultado futuro: **batir a `popular-cohort-real` Y a item-kNN con CI95 que
+excluya 0** — nunca más a un baseline dopado. El resumen no técnico de este capítulo
+está en `RESUMEN-EJECUTIVO.md`.

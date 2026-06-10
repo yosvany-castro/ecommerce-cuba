@@ -6,42 +6,71 @@ import type { Client } from "pg";
 /**
  * F6 W1 — REAL targeted tests for the canonical unified-cases loader.
  *
- * Runs against the INTACT n=2000 / seed-42 thesis dataset. NO mocks: real
- * Postgres (getPgClient scope=thesis) + already-stored E1 vectors. Strong
- * assertions only (no toBeDefined / not.toBeNull). Read-only — never truncates
- * or regenerates. Determinism (spec §6) is asserted by a second load.
+ * Runs against WHATEVER thesis dataset the shared DB currently holds (it is a
+ * shared free-tier instance — at the time of writing the v2 dataset, n=5000 /
+ * eta=0.7 / seed 123; cf. auditoría destructiva 2026-06-09). Therefore NO
+ * hardcoded dataset sizes: every assertion is an INTERNAL-CONSISTENCY check of
+ * the loader's output against live DB counts (meta.n == |e1Item| == count of
+ * item_vectors in the canonical space, relevant ⊆ universe, candidates ==
+ * universe \ train, pool ⊆ candidates, ...). NO mocks: real Postgres
+ * (getPgClient scope=thesis) + already-stored E1 vectors. Strong assertions
+ * only (no toBeDefined / not.toBeNull). Read-only — never truncates or
+ * regenerates. Determinism (spec §6) is asserted by a second load.
+ *
+ * Case cap: a FULL load on the v2 dataset would materialize ~2.3k cases, each
+ * with a full ~5k-item candidate frame (~10M RankItems) — out of memory budget
+ * for a unit test. CASE_LIMIT bounds that; the loader's ORDER BY (user_id,
+ * product_id) makes the prefix deterministic, so per-case invariants checked
+ * on the prefix hold with the same force.
  *
  * SAFE to run in isolation (this file ONLY reads). Do NOT run the whole
  * tests/thesis dir — harness-discrimination.test.ts TRUNCATEs thesis.products.
  */
-describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
+const CASE_LIMIT = 200;
+
+describe("F6 unified-cases loader (real DB, dataset-agnostic consistency)", () => {
   let pg: Client;
   let loaded: UnifiedCasesResult;
+  /** Live count of E1 vectors in the canonical space (the loader's universe source). */
+  let dbE1Count: number;
+  /** Live count of thesis.products (superset of the E1 universe). */
+  let dbProductCount: number;
 
   beforeAll(async () => {
     pg = await getPgClient({ scope: "thesis" });
-    // Full load (no limit): required to assert meta.n === 2000 and the holdout
-    // shape. One load shared across the structural tests below.
-    loaded = await loadUnifiedCases(pg);
+    // One bounded load shared across the structural tests below (see CASE_LIMIT
+    // note above). The universe maps (e1Item/textItem) are ALWAYS full-catalog
+    // regardless of the case limit, so universe-level checks stay exact.
+    loaded = await loadUnifiedCases(pg, { limit: CASE_LIMIT });
+    dbE1Count = parseInt(
+      (
+        await pg.query<{ c: string }>(
+          `SELECT count(*)::text c FROM thesis.item_vectors WHERE space = 'e1_prod2vec'`,
+        )
+      ).rows[0]!.c,
+      10,
+    );
+    dbProductCount = parseInt(
+      (await pg.query<{ c: string }>(`SELECT count(*)::text c FROM thesis.products`)).rows[0]!.c,
+      10,
+    );
   }, 180_000);
 
   afterAll(async () => {
     if (pg) await pg.end();
   });
 
-  test("loads a non-empty case set over the intact n=2000 universe", async () => {
+  test("universe and meta are internally consistent with the live DB", () => {
     expect(loaded.cases.length).toBeGreaterThan(0);
+    expect(loaded.cases.length).toBeLessThanOrEqual(CASE_LIMIT);
     // meta.n = the E1 (prod2vec, 64d) universe = catalog representable in E1.
-    // The intact n=2000 catalog has exactly 1998 E1 vectors (2 products lack one);
-    // the spec's own comparison table cites "universo común ~1998".
-    expect(loaded.meta.n).toBe(1998);
-    expect(loaded.e1Item.size).toBe(1998);
-    // The PRODUCTS table is the n=2000 dataset, intact — the runner's sanity check.
-    const productCount = parseInt(
-      (await pg.query<{ c: string }>(`SELECT count(*)::text c FROM thesis.products`)).rows[0]!.c,
-      10,
-    );
-    expect(productCount).toBe(2000);
+    // It must equal BOTH the loaded vector map and the live item_vectors count.
+    expect(loaded.meta.n).toBeGreaterThan(0);
+    expect(loaded.meta.n).toBe(loaded.e1Item.size);
+    expect(loaded.e1Item.size).toBe(dbE1Count);
+    // The E1 universe is a subset of the catalog (some products lack a vector).
+    expect(dbProductCount).toBeGreaterThan(0);
+    expect(loaded.e1Item.size).toBeLessThanOrEqual(dbProductCount);
 
     expect(loaded.meta.nCases).toBe(loaded.cases.length);
     expect(loaded.meta.space).toBe("e1_prod2vec");
@@ -53,17 +82,30 @@ describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
     }
   });
 
+  test("every case's relevant + train ids live inside the E1 universe", () => {
+    let relevantOutsideUniverse = 0;
+    let trainOutsideUniverse = 0;
+    for (const c of loaded.cases) {
+      for (const id of c.relevant) if (!loaded.e1Item.has(id)) relevantOutsideUniverse++;
+      for (const id of c.trainIds) if (!loaded.e1Item.has(id)) trainOutsideUniverse++;
+    }
+    expect(relevantOutsideUniverse).toBe(0);
+    expect(trainOutsideUniverse).toBe(0);
+  });
+
   test("every case excludes the user's train items from its candidates", () => {
     // Aggregate violation counters across all cases (cheap); assert on totals.
     let emptyCandidates = 0;
     let trainLeak = 0; // a train id appearing among candidates
     let dupCandidates = 0; // candidate ids not unique
     let wrongFrameSize = 0; // candidates.length !== universe - train
+    let candidateOutsideUniverse = 0; // a candidate id without an E1 vector
     for (const c of loaded.cases) {
       if (c.candidates.length === 0) emptyCandidates++;
       const candIds = new Set(c.candidates.map((x) => x.id));
       if (candIds.size !== c.candidates.length) dupCandidates++;
       for (const t of c.trainIds) if (candIds.has(t)) trainLeak++;
+      for (const id of candIds) if (!loaded.e1Item.has(id)) candidateOutsideUniverse++;
       // Full frame = E1 universe \ train (train is filtered to in-universe ids).
       if (c.candidates.length !== loaded.meta.n - c.trainIds.length) wrongFrameSize++;
     }
@@ -71,6 +113,7 @@ describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
     expect(trainLeak).toBe(0);
     expect(dupCandidates).toBe(0);
     expect(wrongFrameSize).toBe(0);
+    expect(candidateOutsideUniverse).toBe(0);
   });
 
   test("every case has a bounded non-empty pool and exactly one relevant id", () => {
@@ -159,7 +202,9 @@ describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
     // Before the W8 fix the detector ran on the user's TRAIN history, whose modal
     // demographic always equals the buyer's own → cross-cohort impossible → gift
     // fired on 0/N cases. The loader now runs the detector on the test item's
-    // ACTUAL session (excluding the test product). Assert it genuinely fires.
+    // ACTUAL session (excluding the test product). Assert it genuinely fires
+    // within the deterministic CASE_LIMIT prefix (the v2 dataset has ~11 gift-
+    // intent sessions in the first 200 ordered test rows).
     let fired = 0;
     let giftIntent = 0;
     for (const c of loaded.cases) {
@@ -173,7 +218,7 @@ describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
   test("DETERMINISM: a second limited load reproduces identical case + pool ids", async () => {
     // A second INDEPENDENT load of the first 5 cases (deterministic ORDER BY in
     // the loader). Compare its case ids + pool ids against the matching prefix of
-    // the full load. Deep equality on the ordered id sequences.
+    // the shared CASE_LIMIT load. Deep equality on the ordered id sequences.
     const LIMIT = 5;
     const second = await loadUnifiedCases(pg, { limit: LIMIT });
     expect(second.cases.length).toBe(LIMIT);
@@ -201,5 +246,28 @@ describe("F6 unified-cases loader (real DB, n=2000, intact)", () => {
         firstPrefix[i].pool.map((p) => firstPrefix[i].revenueById.get(p.id)),
       );
     }
+  }, 180_000);
+
+  test("CLEAN mode loads leak-free cases with a usable serve-time anchor", async () => {
+    // Leak-free evaluation mode (auditoría destructiva 2026-06-09): popularity =
+    // train-only, serve context = pre-purchase prefix. Assert it (a) produces
+    // cases without throwing, (b) keeps the same structural invariants, and
+    // (c) yields at least one case with a usable last-viewed NPMI anchor (the
+    // pre-purchase prefix / train fallback must not collapse to all-null).
+    const cleanLoaded = await loadUnifiedCases(pg, { limit: 30, clean: true });
+    expect(cleanLoaded.cases.length).toBeGreaterThan(0);
+    expect(cleanLoaded.cases.length).toBeLessThanOrEqual(30);
+    expect(cleanLoaded.meta.n).toBe(cleanLoaded.e1Item.size);
+    expect(cleanLoaded.e1Item.size).toBe(dbE1Count);
+
+    let withAnchor = 0; // lastViewedId non-null AND resolvable in the catalog
+    let trainLeak = 0;
+    for (const c of cleanLoaded.cases) {
+      if (c.lastViewedId !== null && typeof c.lastViewedTitle === "string") withAnchor++;
+      const candIds = new Set(c.candidates.map((x) => x.id));
+      for (const t of c.trainIds) if (candIds.has(t)) trainLeak++;
+    }
+    expect(withAnchor).toBeGreaterThanOrEqual(1);
+    expect(trainLeak).toBe(0);
   }, 180_000);
 });

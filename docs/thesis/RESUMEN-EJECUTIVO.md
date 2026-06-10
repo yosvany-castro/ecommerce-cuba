@@ -1,129 +1,127 @@
 # Un vendedor experto dentro del e-commerce
 ## Resumen ejecutivo — en lenguaje claro, sin tecnicismos
 
-> **En una frase:** construimos un "cerebro de recomendación" para una tienda online
-> y lo pusimos a competir, en igualdad de condiciones, contra la forma en que una
-> tienda online **normal** ordena sus productos. Ganó — y, lo más importante, **gana
-> por MÁS margen mientras más grande es el catálogo**, que es justo el caso de una
-> tienda que revende el catálogo de Amazon/AliExpress.
+> **En una frase:** construimos un "cerebro de recomendación" para la tienda, lo
+> pusimos a prueba, celebramos los resultados… y luego una auditoría interna descubrió
+> que **el examen estaba filtrado**. Este documento cuenta la historia completa — los
+> números retirados, los números reales, y por qué el proyecto sale **más fuerte**,
+> no más débil, de haberse auditado a sí mismo.
 
 ---
 
-## 1. El problema, en simple
+## 1. Qué construimos y qué creíamos
 
-Esta tienda es un **revendedor para Cuba**: no tiene almacén ni stock físico; toma el
-catálogo gigante de Amazon/AliExpress y se lo ofrece al cliente. Como cada venta se
-gestiona contra un proveedor externo, **cada recomendación que el cliente ignora es
-dinero y confianza que se pierden**. Acertar con lo que le muestras a cada persona no
-es un lujo: es el negocio.
+Esta tienda es un **revendedor para Cuba**: no tiene almacén; ofrece el catálogo
+gigante de Amazon/AliExpress. Cada recomendación fallida cuesta dinero y confianza,
+así que construimos un sistema que intenta entender a cada cliente — sus gustos, si
+compra un regalo, qué productos combinan — en lugar de mostrar a todos "lo más
+popular".
 
-Una tienda online **normal** resuelve esto de la forma más sencilla: muestra **lo más
-popular de cada categoría**. Funciona… hasta cierto punto. Es como una tienda física
-que pone en la vitrina "lo que más se vende" y espera que a ti te sirva.
+Para probarlo montamos un mercado simulado y una competencia "en el mismo carril"
+contra la forma en que ordena una tienda normal. La primera versión de este documento
+reportaba que nuestro sistema ganaba, y que su ventaja **crecía con el tamaño del
+catálogo** (de +13 % hasta +71 % de aciertos, y cifras de venta potencial varias veces
+mayores). Esas cifras **quedan retiradas**. No eran reales.
 
-## 2. La idea, con una analogía
+## 2. La auditoría: el examen estaba filtrado
 
-| | Tienda **normal** | Lo que **construimos** |
-|---|---|---|
-| Cómo decide qué mostrarte | "Esto es lo más popular en esta categoría" | "Entiendo **a ti**: tus gustos, si compras para otra persona, qué cosas combinan, y qué te conviene" |
-| Es como… | Un **estante ordenado por ventas** | Un **vendedor experto** que te conoce y te asesora |
-| Cuándo se equivoca | Cuando tú no eres "el cliente promedio" | Menos seguido — y aún cuando duda, tiene varias formas de acertar |
+Antes de dar el trabajo por bueno, lo sometimos a una **auditoría destructiva**: un
+revisor con la misión explícita de romper los resultados. Y los rompió. En esencia,
+encontró cuatro problemas:
 
-La tienda normal trata a todos igual. Nuestro sistema trata a cada cliente como una
-persona distinta.
+1. **El sistema había visto las respuestas.** Una analogía: es como evaluar a un
+   estudiante con un examen cuyas preguntas estaban en el material con el que estudió.
+   Parte de los datos con los que el sistema "aprendía" incluía, sin que nadie lo
+   notara, las mismas compras que después debía adivinar. Cuando se le quita ese
+   acceso, la ventaja que creíamos ver desaparece — y la famosa "ventaja que crece con
+   el catálogo" resultó ser el error creciendo, no el sistema mejorando.
 
-## 3. Qué hace distinto (sus 4 "sentidos")
+2. **El medidor de ventas se medía a sí mismo.** La cifra de "venta potencial" usaba
+   la propia opinión del sistema sobre qué le gusta al cliente. Un truco burdo —
+   mostrar siempre lo más caro, sin personalizar nada — sacaba mejor nota en ese
+   medidor que nuestro sistema. Un medidor que premia eso no mide ventas.
 
-1. **Entiende la intención, no solo la moda.** En vez de "lo más vendido", arma el
-   surtido a partir de **tu** comportamiento y el de gente parecida.
-2. **Detecta cuando compras un regalo.** Si tu sesión "se siente" como una compra para
-   otra persona (p. ej., un hombre mirando ropa de niña), cambia el chip y recomienda
-   **para el destinatario**, no para ti.
-3. **Descubre productos que combinan.** Hay relaciones que las palabras no capturan: un
-   *celular* y su *funda* no se "parecen" en su descripción, pero van juntos. El sistema
-   aprende esas combinaciones a partir de lo que la gente compra junto. **Esta pieza
-   sola rescata ~1 de cada 3 compras** que el método por "parecido de texto" jamás
-   encontraría.
-4. **Equilibra "lo más relevante" con "lo que más conviene vender".** Tiene una
-   **palanca** de negocio: puede priorizar puro acierto, o inclinar la balanza hacia
-   mayor margen/ingreso — de forma medida y transparente, no a ciegas.
+3. **El mundo simulado estaba hecho a la medida.** En el mercado de prueba no había
+   "productos estrella" (en la realidad, una fracción pequeña del catálogo concentra
+   la mayoría de las ventas). Eso debilitaba artificialmente al rival y favorecía al
+   nuestro.
 
-## 4. Cómo lo probamos (para que el resultado sea creíble)
+4. **Al rival también lo habíamos dopado.** La "tienda normal" de la comparación
+   recibía una pista que ninguna tienda real tiene (la categoría exacta de lo que el
+   cliente iba a comprar). O sea: la carrera publicada era trampa contra trampa.
 
-No nos creímos el cuento solo. Construimos un **mercado simulado con verdad conocida**
-(catálogo, clientes, sesiones de compra) y un **juez imparcial** que mide, sobre
-**exactamente los mismos clientes y los mismos productos**, qué tan bien ordena cada
-sistema. Es una carrera en el mismo carril para ambos: la tienda normal y la nuestra.
+Importante: la auditoría también verificó que **no hubo mala fe** — pudo reproducir
+todos nuestros números al detalle precisamente porque el trabajo estaba bien
+documentado. Los errores son de los clásicos en este campo; lo poco común es
+encontrarlos uno mismo y publicarlos.
 
-> La métrica clave, en cristiano: **"¿qué tan arriba, en los primeros 10 resultados,
-> aparece lo que el cliente realmente terminó comprando?"** Más alto = mejor.
+## 3. Los números reales (con el examen limpio)
 
-## 5. El resultado principal
+Corregido el método de medición — el sistema ya no ve las respuestas, el rival ya no
+tiene pistas — la foto honesta es esta:
 
-Sobre el surtido completo (lo que el cliente ve de verdad), **nuestro sistema acierta
-más Y vende más** que la tienda normal. Pero lo más valioso es **cómo cambia con el
-tamaño del catálogo**:
+- **Contra una tienda normal realista** (la que muestra lo popular según lo que de
+  verdad sabe del cliente), nuestro sistema acierta **2,6 veces más** (+156 %). Esta
+  es la afirmación defendible del proyecto, y sobrevivió a la auditoría.
+- **Contra la navegación, pierde.** Si el cliente simplemente hace clic en la
+  categoría correcta y mira lo popular ahí, eso le gana a nuestro feed (−21 %).
+  Lección de producto: la personalización no debe competir contra el clic en la
+  categoría, sino trabajar **dentro** de la página de categoría y en el
+  "combina con tu compra".
 
-| Tamaño del catálogo | Tienda normal (aciertos) | Nuestro sistema (aciertos) | **Cuánto mejor** | Venta potencial |
-|---|---|---|---|---|
-| 2.000 productos | 0,177 | 0,200 | **+13 %** | +162 % |
-| 5.000 productos | 0,092 | 0,149 | **+63 %** | +185 % |
-| 10.000 productos | 0,065 | 0,111 | **+71 %** | +226 % |
+## 4. El segundo descubrimiento: le faltaba un ingrediente
 
-**Lee la columna del medio de arriba abajo:** mientras más crece el catálogo, **peor le
-va a la tienda normal** (su truco de "lo popular de la categoría" se diluye cuando hay
-miles de productos por categoría), y **mejor se sostiene el nuestro**. Por eso la
-ventaja salta de **+13 % a +71 %**. 
+Después arreglamos también el mundo simulado para que se parezca a la realidad (con
+productos estrella, sensibilidad al precio, regalos en proporción real). Y ahí
+apareció el hallazgo más valioso: **nuestro sistema era ciego a la popularidad**.
+Estaba tan enfocado en "lo que se parece a tus gustos" que rankeaba bajo los
+best-sellers — justo lo que la gente más compra. En ese mundo realista, el sistema
+actual colapsa frente a la navegación.
 
-> **Por qué importa tanto para esta tienda:** un revendedor del catálogo de
-> Amazon/AliExpress vive precisamente en el extremo derecho de esa tabla — **catálogo
-> enorme**. Ahí es donde el sistema inteligente más se despega.
+La buena noticia: el diagnóstico es preciso y los arreglos ya están probados en
+experimento. Añadir el ingrediente de popularidad a la receta multiplica el
+rendimiento del camino personalizado **por 11**, y la mejor versión realista de la
+página de inicio (predecir qué categorías te interesan por lo que miraste, y mostrar
+lo popular dentro de ellas) rinde **2,3 veces** la tienda normal. El sistema no estaba
+mal concebido; estaba cocinado para un mundo que no era el real, y ya sabemos
+exactamente qué cambiarle.
 
-Y si se activa la **palanca de negocio**, la venta potencial del top-10 puede subir
-varias veces (hasta **+5×** frente a la tienda normal) a cambio de algo de precisión —
-una decisión consciente, no un accidente.
+## 5. Qué vale de todo esto
 
-**¿Es suerte de una corrida?** No. Repetimos todo el experimento con **tres semillas
-aleatorias distintas** y el resultado se mantiene (la ventaja queda en el rango
-**+55 % a +75 %**). Es un patrón, no una casualidad.
+- **El método de medición ya está corregido y blindado.** Cualquier cifra futura
+  saldrá de un examen limpio, con la regla comprometida de que solo se declara
+  victoria si se le gana al rival honesto con significancia estadística.
+- **La arquitectura sobrevive.** Las piezas centrales (entender varios gustos por
+  cliente, combinar varias fuentes de candidatos, los productos que combinan para el
+  "compra esto también") siguen siendo las correctas; lo que cambia es la receta.
+- **La honestidad es el activo.** Un trabajo que solo reporta éxitos no es creíble.
+  Este encontró sus propios errores, los cuantificó, los publicó y corrigió el método.
+  Eso es exactamente lo que un inversionista, un tribunal o un gerente deberían
+  exigir.
 
-## 6. Honestidad: lo que NO funcionó (igual de importante)
+## 6. Qué sigue
 
-Un estudio serio reporta también sus límites:
-
-- **El detector de regalos es flojo** (acierta poco más de la mitad de las veces).
-  Cuando se equivoca, el sistema "degrada con gracia" (vuelve al modo normal), pero hay
-  margen claro de mejora. Probamos una mejora y **no ayudó** — lo decimos tal cual.
-- **El "reordenador inteligente" no le gana al método simple de mezcla** en puro
-  acierto. El mérito está en **cómo se arma el surtido** (la búsqueda), no en el
-  reordenado final. *(Curiosamente, el reordenador enfocado en ingreso sí empieza a
-  ganar cuando el catálogo es muy grande.)*
-- **Son datos simulados.** Reproducen patrones realistas y el experimento es riguroso,
-  pero la validación definitiva sería un **piloto A/B con clientes reales** (ya está
-  diseñado, falta ejecutarlo).
-
-Decimos esto con la misma fuerza que los resultados positivos: la credibilidad del
-trabajo depende de no esconder lo que falta.
-
-## 7. Qué significa para el negocio
-
-- **Más aciertos = más conversión y mejor experiencia.** El cliente encuentra antes lo
-  que quiere; menos llamadas costosas al proveedor por recomendaciones que nadie compra.
-- **La ventaja crece con el catálogo**, justo donde esta tienda opera. Escalar el
-  surtido **no diluye** al sistema; lo potencia.
-- **Una palanca de ingreso medible.** El negocio puede decidir, con números, cuánto
-  inclinar la balanza hacia margen sin volar a ciegas.
-- **Rápido.** Todo el proceso de recomendación corre en milisegundos (muy por debajo de
-  cualquier umbral de experiencia de usuario), así que es viable en producción.
+1. **Cerrar el circuito en el simulador**: que el cliente simulado vea lo que el
+   recomendador le sirve (como en la vida real), para medir el efecto de verdad.
+2. **Medir en producción sin riesgo**: la tienda ya registra qué se mostró y por qué,
+   con una pequeña dosis de variedad controlada — la materia prima para evaluar con
+   datos reales.
+3. **El veredicto final: un piloto A/B con clientes reales.** Mitad de los clientes
+   con el sistema nuevo (ya corregido), mitad con la tienda normal, y que decidan las
+   ventas reales. Está diseñado; ejecutarlo es el siguiente hito.
 
 ---
 
 ### En una línea para la gerencia
-> Frente a un e-commerce normal y en igualdad de condiciones, este sistema **acierta y
-> vende más, y su ventaja se agranda con catálogos grandes** — el escenario real del
-> negocio. Con límites honestos (detector de regalos por pulir y un piloto real
-> pendiente), es una mejora defendible, medida y lista para pilotar.
+> Creímos tener un sistema ganador; una auditoría propia demostró que la medición
+> estaba viciada. Con la medición limpia, el sistema **gana 2,6 veces a una tienda
+> normal realista** pero **pierde contra la navegación**, y descubrimos —y ya sabemos
+> corregir— que le faltaba el ingrediente de popularidad. El método de prueba quedó
+> blindado y el plan es validarlo donde único cuenta: **un piloto con clientes
+> reales**.
 
-<sub>Documento ejecutivo del programa de validación F6. Cada cifra es trazable a
-reportes técnicos verificados (`docs/superpowers/reports/2026-06-08-thesis-f6-*`).
-Comparación "cara a cara" sobre idénticos clientes, productos y división de datos.</sub>
+<sub>Documento ejecutivo del programa de validación F6 + auditoría. Cifras trazables a
+`docs/auditoria-destructiva-f6-2026-06-09.md` y a los reportes limpios
+`docs/superpowers/reports/2026-06-08-thesis-f6-headtohead-n5000-seed123-full-clean.json`
+y `2026-06-09-thesis-f6-headtohead-n5000-seed123-v2-full-clean.json`. Las cifras de la
+versión anterior de este documento están retiradas y no deben citarse.</sub>
