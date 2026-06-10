@@ -6,6 +6,10 @@ import { fetchAllModesInBucket } from "./multimode/dispatch";
 import { rrfFuse, type RankedList } from "./retrieve/rrf";
 import { fetchPopularByCohort } from "./retrieve/popular-by-cohort";
 import { fetchLastViewedProduct } from "./retrieve/last-viewed";
+import { fetchViewsCategoriesList } from "./retrieve/views-categories-source";
+import { fetchPopularGlobal } from "./retrieve/popular-global";
+import { fetchEventCounts7d } from "./retrieve/event-popularity";
+import { applyPopularityPrior } from "./ranking/pop-prior";
 import { readSessionState } from "./session/state";
 import type { CohortId } from "./cohorts/definitions";
 import { getOrInitProfileMode } from "./profile-mode";
@@ -160,6 +164,17 @@ const EXPLORATION_EPSILON = (() => {
 })();
 
 /**
+ * Multiplicative popularity prior on the cosine retrieval lists
+ * (ranking/pop-prior.ts). Pure cosine is popularity-blind — it buries
+ * best-sellers (auditoría 2026-06-09; exp-I revived the vector path ×11 with
+ * this prior). 0 disables (pure cosine, pre-fix behaviour).
+ */
+const FEED_POP_PRIOR_STRENGTH = (() => {
+  const raw = parseFloat(process.env.FEED_POP_PRIOR_STRENGTH ?? "1");
+  return Number.isFinite(raw) ? Math.max(0, raw) : 1;
+})();
+
+/**
  * Apply ε-greedy exploration to the final slate and log one impression per slot
  * (product, source exploit|explore, serving propensity) to `feed_impressions`.
  * Logging is fire-and-forget: a logging failure NEVER fails the feed request.
@@ -278,19 +293,48 @@ export async function generateFeed(
         },
       ];
     }
+    // Retrieve a wide candidate set per mode (150), then re-rank with the
+    // multiplicative popularity prior and keep the top-50: cosine proposes,
+    // popularity re-weighs (the exp-I fix — pure cosine buries best-sellers).
+    const retrievedByMode: { mode_index: number; items: { id: string; score: number }[] }[] = [];
     for (const m of modes) {
       const u = normalize(m.vector_unnormalized);
       const sessionNorm = sessionUnnorm ? normalize(sessionUnnorm) : null;
       const eff = effectiveUserVector(u, sessionNorm, nEventsSession);
-      const items = await retrieveTopKByVector(eff, excluded, 50, pg);
+      const wideK = FEED_POP_PRIOR_STRENGTH > 0 ? 150 : 50;
+      const items = await retrieveTopKByVector(eff, excluded, wideK, pg);
+      retrievedByMode.push({
+        mode_index: m.mode_index,
+        items: items.map((it) => ({ id: it.product.id, score: it.similarity })),
+      });
+    }
+    const popCounts =
+      FEED_POP_PRIOR_STRENGTH > 0
+        ? await fetchEventCounts7d(
+            [...new Set(retrievedByMode.flatMap((l) => l.items.map((x) => x.id)))],
+            pg,
+          )
+        : new Map<string, number>();
+    for (const l of retrievedByMode) {
+      const ordered =
+        FEED_POP_PRIOR_STRENGTH > 0
+          ? applyPopularityPrior(
+              l.items,
+              (id) => popCounts.get(id) ?? 0,
+              FEED_POP_PRIOR_STRENGTH,
+            )
+          : l.items;
       listsA.push({
-        source: `mode_${m.mode_index}`,
-        items: items.map((it, r) => ({ id: it.product.id, rank: r + 1 })),
+        source: `mode_${l.mode_index}`,
+        items: ordered.slice(0, 50).map((it, r) => ({ id: it.id, rank: r + 1 })),
       });
     }
   }
 
-  let listB: RankedList = { source: "cooccurrence", items: [] };
+  // weight 2: keeps the cross-sell list ("combina con lo que viste") from
+  // being diluted now that the fusion has 2 more lists (views-categories +
+  // popular-global) — without it the co-occurrence hit drops out of the top-10.
+  const listB: RankedList = { source: "cooccurrence", items: [], weight: 2 };
   let lastViewedTitle: string | null = null;
   if (opts.session_id) {
     const lastViewed = await fetchLastViewedProduct(opts.session_id, pg);
@@ -314,10 +358,33 @@ export async function generateFeed(
     }
   }
 
+  // Cohort popularity when the demographic cohort is known; GLOBAL popularity
+  // as the ensemble's rescue half (and the unisex_indeterminado fallback —
+  // before this fix that cohort had NO popularity list at all).
   const popularItems = await fetchPopularByCohort(cohortId, excluded, 20, pg);
   const listC: RankedList = { source: "popular", items: popularItems };
+  const listE: RankedList = {
+    source: "popular-global",
+    items: await fetchPopularGlobal(excluded, 20, pg),
+  };
 
-  const all: RankedList[] = [...listsA, listB, listC].filter(
+  // Views-categories source (exp-K champion family): categories predicted from
+  // the user's recent views (current session ×3) × popularity quotas inside.
+  const listD: RankedList = {
+    source: "views-categories",
+    items: await fetchViewsCategoriesList(
+      {
+        user_id: opts.user_id,
+        anonymous_id: opts.anonymous_id,
+        session_id: opts.session_id,
+        excludedIds: excluded,
+        limit: 20,
+      },
+      pg,
+    ),
+  };
+
+  const all: RankedList[] = [...listsA, listB, listD, listC, listE].filter(
     (l) => l.items.length > 0,
   );
   if (all.length === 0) return [];
