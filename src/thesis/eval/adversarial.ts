@@ -607,6 +607,11 @@ export function buildAdversarialCase(cat: CatalogData, profile: AdversarialProfi
     buyerAgeBand: userDemographic.ageBand,
     recipientGender,
     recipientAgeBand,
+    recipientGT: null, // adversarial profiles have no test session to resolve a GT recipient
+    // The adversarial worlds are hand-built around purchase histories; the
+    // views-based rankers (pc-views-multi / rrf-sess-pop) are not exercised here.
+    viewIds: [],
+    sessionViewIds: [],
     lastViewedTitle: lv ? cat.meta.get(lv)?.title ?? null : null,
     e2: undefined, // adversarial path is E1-only (no e2_hybrid baseline here).
   };

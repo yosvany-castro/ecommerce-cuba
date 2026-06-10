@@ -12,7 +12,7 @@ export default async function ExplainPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const session = await auth0.getSession().catch(() => null);
-  if (!session?.user?.sub) redirect("/auth/login?returnTo=/admin/search/explain");
+  if (!session?.user?.sub) redirect("/auth/login?returnTo=/admin/search/explain" as Parameters<typeof redirect>[0]);
   if (!(await requireAdmin())) redirect("/");
 
   const { q = "" } = await searchParams;

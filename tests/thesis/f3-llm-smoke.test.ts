@@ -30,8 +30,7 @@ describe("llmRerank (real DeepSeek)", () => {
     });
     const spy = vi.spyOn(providers.defaultProvider, "chat").mockResolvedValueOnce({
       text: duplicatedResponse,
-      inputTokens: 0,
-      outputTokens: 0,
+      usage: { input_tokens: 0, output_tokens: 0 },
     });
     try {
       const r = await llmRerank(cands, { profile_summary: "test", is_gift: false, recipient_summary: null, last_viewed: null });

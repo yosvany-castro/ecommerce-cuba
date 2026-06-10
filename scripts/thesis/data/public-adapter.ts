@@ -45,13 +45,13 @@ const { values } = parseArgs({
 });
 
 // Guard: --file is required BEFORE any DB connection or file I/O
-if (!values.file || values.file.trim() === "") {
+if (!values.file || typeof values.file !== "string" || values.file.trim() === "") {
   process.stderr.write("--file is required\n");
   process.exit(1);
 }
 
-const FILE  = values.file.trim();
-const LIMIT = parseInt(values.limit ?? "5000", 10);
+const FILE  = (values.file as string).trim();
+const LIMIT = parseInt(String(values.limit ?? "5000"), 10);
 const BATCH_SIZE = 128;
 
 // ─── Record shape ─────────────────────────────────────────────────────────────

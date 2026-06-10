@@ -128,6 +128,10 @@ async function main(): Promise<void> {
           style:       meta?.style       ?? "",
         },
         factor_vector: [],
+        margin_pct: 0,
+        stock_health: 1,
+        seller_id: "",
+        seller_age_days: 0,
       };
     });
 

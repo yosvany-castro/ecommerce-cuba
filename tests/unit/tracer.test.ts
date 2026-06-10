@@ -43,9 +43,9 @@ describe("NoopTracer", () => {
   test("start/end/set don't throw (silent no-op contract)", () => {
     const t = new NoopTracer();
     expect(() => {
-      t.start("anything");
-      t.end("anything");
-      t.set("cache", { exact_hit: true, semantic_hit: true });
+      t.start();
+      t.end();
+      t.set();
     }).not.toThrow();
   });
 

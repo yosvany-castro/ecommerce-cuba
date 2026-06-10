@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function CoOccurrenceTopPage() {
   const session = await auth0.getSession().catch(() => null);
   if (!session?.user?.sub) {
-    redirect("/auth/login?returnTo=/admin/co-occurrence/top");
+    redirect("/auth/login?returnTo=/admin/co-occurrence/top" as Parameters<typeof redirect>[0]);
   }
   if (!(await requireAdmin())) redirect("/");
 

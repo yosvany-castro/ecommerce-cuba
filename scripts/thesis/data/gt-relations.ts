@@ -81,6 +81,10 @@ async function main(): Promise<void> {
         style:       row.metadata.style ?? "",
       },
       factor_vector: [],
+      margin_pct: 0,
+      stock_health: 1,
+      seller_id: "",
+      seller_age_days: 0,
     }));
 
     // 4. Build the deterministic ground-truth relation graph
