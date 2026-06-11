@@ -96,6 +96,22 @@ describe("composePage (D2)", () => {
       expect(page.config_source).toBe("db");
     });
   });
+
+  test("MAX_PLACEMENTS_PER_SURFACE capa la 9ª fila (defensa contra write surface desbocada)", async () => {
+    await withTestDb(async (pg) => {
+      await seedSection(pg, "popular");
+      // 9 slots válidos distintos: solo los 8 primeros deben servirse.
+      for (let slot = 10; slot <= 90; slot += 10) {
+        await seedPlacement(pg, { surface: "home", slot, section_type: "popular" });
+      }
+      const page = await composePage(
+        { surface: "home", identity: { user_id: null, anonymous_id: randomUUID(), session_id: null } },
+        pg,
+      );
+      expect(page.placements).toHaveLength(8);
+      expect(page.placements.map((p) => p.slot)).toEqual([10, 20, 30, 40, 50, 60, 70, 80]);
+    });
+  });
 });
 
 describe("POST /api/slate/resolve (D3)", () => {

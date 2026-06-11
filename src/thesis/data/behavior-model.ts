@@ -327,6 +327,14 @@ export interface BehaviorOpts {
    * Only consulted when exposurePolicy is present (no-op otherwise).
    */
   cascadeLambda?: number;
+  /**
+   * v3 (Fase 2 agent harness): externally-supplied per-item attractiveness,
+   * used VERBATIM as attFactorById (no eta, no normalization). Lets the
+   * harness drive non-stationarity (demand shifts, launches, stockouts) from
+   * OUTSIDE the audited generator. Ignored when zipfS is set. Consumes NO
+   * rngV2 draws — omitting it keeps output bit-identical to v2.
+   */
+  attractivenessById?: ReadonlyMap<string, number>;
 }
 
 /**
@@ -518,6 +526,10 @@ export function sampleBehavior(
     for (let r = 0; r < ids.length; r++) {
       attFactorById.set(ids[r], Math.pow(raw[r] / meanAtt, zipfEta));
     }
+  } else if (opts.attractivenessById) {
+    // v3 knob: values used as-is; the internal Zipf shuffle does not run, so
+    // rngV2 stream alignment is preserved.
+    for (const [id, att] of opts.attractivenessById) attFactorById.set(id, att);
   }
 
   /** Conversion elasticity factor exp(−γ·sens·band/3) ∈ (0,1]; 1 when off. */

@@ -6,7 +6,7 @@
  * available via @/lib/llm/anthropic for tasks where reasoning quality matters
  * (e.g., future Phase 3c reranker).
  *
- * Pricing (deepseek-v4-flash, as of 2026-05): cache hit $0.028/M input,
+ * Pricing (deepseek-v4-flash, as of 2026-05): cache hit $0.0028/M input,
  * cache miss $0.14/M input, $0.28/M output. ~13× cheaper than Haiku 4.5.
  *
  * NOTE: The SendMessageInput interface includes a `cacheSystem` field used for

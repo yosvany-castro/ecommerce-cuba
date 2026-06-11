@@ -29,6 +29,9 @@ importers:
       deepagents:
         specifier: ^1.10.2
         version: 1.10.2(langsmith@0.7.6(openai@6.36.0(ws@8.20.0)(zod@4.4.3))(ws@8.20.0))(openai@6.36.0(ws@8.20.0)(zod@4.4.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(ws@8.20.0)
+      langchain:
+        specifier: ^1.4.4
+        version: 1.4.4(@langchain/core@1.1.48(openai@6.36.0(ws@8.20.0)(zod@4.4.3))(ws@8.20.0))(openai@6.36.0(ws@8.20.0)(zod@4.4.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(ws@8.20.0)
       ml-kmeans:
         specifier: ^7.0.0
         version: 7.0.0

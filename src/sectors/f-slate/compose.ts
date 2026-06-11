@@ -2,7 +2,7 @@ import type { Client } from "pg";
 import { randomUUID } from "node:crypto";
 import { readSessionState } from "@/sectors/d-personalization/session/state";
 import { dbHealth } from "@/lib/db/health";
-import { evaluateRule } from "./rules/evaluate";
+import { selectPlacements } from "./select";
 import type { SlateRuleContext } from "./rules/types";
 import {
   getSurfaceConfig,
@@ -87,23 +87,8 @@ export async function composePage(
       ? await getSurfaceConfig(surface, pg)
       : { placements: DEFAULT_PLACEMENTS[surface], source: "fallback", config_version: "cfg-breaker" };
 
-  // ── Filtrar por regla y resolver colisiones de slot. ──
-  // Especificidad: user > segment > global; desempate version DESC (el orden
-  // del SELECT ya viene slot ASC, version DESC).
-  const SCOPE_RANK = { user: 3, segment: 2, global: 1 } as const;
-  const yesBySlot = new Map<number, PlacementConfig>();
-  for (const p of cfg.placements) {
-    if (!evaluateRule(p.rule, rule_ctx)) continue;
-    const current = yesBySlot.get(p.slot);
-    if (
-      !current ||
-      SCOPE_RANK[p.scope] > SCOPE_RANK[current.scope] ||
-      (SCOPE_RANK[p.scope] === SCOPE_RANK[current.scope] && p.version > current.version)
-    ) {
-      yesBySlot.set(p.slot, p);
-    }
-  }
-  const placements = [...yesBySlot.values()].sort((a, b) => a.slot - b.slot);
+  // ── Filtrar por regla, resolver colisiones de slot y capar (select.ts). ──
+  const placements = selectPlacements(cfg.placements, rule_ctx);
 
   return {
     composition_id: randomUUID(),
