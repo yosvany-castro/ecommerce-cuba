@@ -69,7 +69,7 @@ export default async function HomePage() {
           />
         ))}
       </div>
-      <InfiniteFeed initialCursor={page.next_cursor} />
+      <InfiniteFeed initialCursor={page.next_cursor} slateId={page.slate_id} />
     </main>
   );
 }
