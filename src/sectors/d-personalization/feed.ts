@@ -659,6 +659,8 @@ export interface ServeFeedPageOpts {
   session_id: string | null;
   /** Opaque cursor from the previous page; absent ⇒ first page. */
   cursor?: string | null;
+  /** Optional per-request phase timing (F5). */
+  timing?: RequestTiming;
 }
 
 export interface ServedFeedPage {
@@ -723,6 +725,7 @@ export async function serveFeedPage(
       session_id: opts.session_id,
       limit: isFirstPage ? PAGE_SIZE_FIRST : PAGE_SIZE_CURSOR,
       extraExcludedIds: servedBefore,
+      timing: opts.timing,
     },
     pg,
   );

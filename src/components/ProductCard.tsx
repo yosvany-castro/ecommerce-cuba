@@ -44,6 +44,11 @@ export function ProductCard({
     <div className="relative" data-testid="product-card">
       <Link
         href={`/products/${product.id}` as never}
+        // prefetch off: cada card prefetcheada era un request RSC (y antes de
+        // F2, una conexión pg) especulativo — el peor multiplicador de red del
+        // grid en datos medidos. La navegación real sigue siendo instantánea
+        // via bfcache/router cache al volver.
+        prefetch={false}
         className="block border rounded-lg p-4 hover:shadow"
       >
         {product.image_url ? (

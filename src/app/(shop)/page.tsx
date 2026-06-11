@@ -2,8 +2,9 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
-import { generateFeed } from "@/sectors/d-personalization/feed";
+import { serveFeedPage } from "@/sectors/d-personalization/feed";
 import { ProductCard } from "@/components/ProductCard";
+import { InfiniteFeed } from "@/components/InfiniteFeed";
 import { RequestTiming } from "@/lib/timing";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +32,10 @@ export default async function HomePage() {
     );
   }
 
-  const feed = await withPg((pg) =>
-    generateFeed({ user_id, anonymous_id, session_id, limit: 20, timing }, pg),
+  const page = await timing.time("feed_page", () =>
+    withPg((pg) => serveFeedPage({ user_id, anonymous_id, session_id, timing }, pg)),
   );
+  const feed = page.items;
 
   after(() => logTimingSampled(timing));
 
@@ -67,6 +69,7 @@ export default async function HomePage() {
           />
         ))}
       </div>
+      <InfiniteFeed initialCursor={page.next_cursor} />
     </main>
   );
 }
