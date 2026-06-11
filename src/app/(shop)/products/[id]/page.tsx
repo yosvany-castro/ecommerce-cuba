@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getById } from "@/sectors/b-catalog/repository/products";
 import { ProductTracker } from "@/components/ProductTracker";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { SurfaceSections } from "@/components/slate/SurfaceSections";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,12 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <AddToCartButton productId={product.id} />
         </div>
       </div>
+      {/* D5: cross-sell por co-ocurrencia, lazy bajo el fold — no toca el
+          <100ms del HTML del producto; si falla, no se pinta nada. */}
+      <SurfaceSections
+        surface="pdp"
+        surfaceArgs={{ pdp_product_id: product.id }}
+      />
     </main>
   );
 }
