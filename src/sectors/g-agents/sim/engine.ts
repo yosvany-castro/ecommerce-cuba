@@ -22,7 +22,7 @@ import {
   realizedMarginCents,
   type ArmState,
 } from "./ledger";
-import { gini, top20Share } from "./stats";
+import { frozenCollapsed, gini, top20Share } from "./stats";
 
 /**
  * Pipeline por seed del harness (blueprint §5.13) como librería: el CLI
@@ -293,10 +293,8 @@ export async function runSeedPipeline(args: {
     salesByProduct.set(p.product_id, (salesByProduct.get(p.product_id) ?? 0) + 1);
   }
   const sales = [...salesByProduct.values()];
-  let frozenCollapse = false;
-  for (let t = MEASURED_EPOCH_START; t < lastEpoch; t++) {
-    if (frozenTraj[t] > 0 && frozenTraj[t + 1] < 0.5 * frozenTraj[t]) frozenCollapse = true;
-  }
+  // detector endurecido (Fase D H2): pares consecutivos desde e1 + frozen muerto
+  const frozenCollapse = frozenCollapsed(frozenTraj, MEASURED_EPOCH_START, lastEpoch);
 
   return {
     seed: args.worldSeed,

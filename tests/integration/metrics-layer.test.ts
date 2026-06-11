@@ -58,6 +58,7 @@ function placementConfig(over: Partial<PlacementConfig>): PlacementConfig {
     scope_ref: null,
     experiment_id: null,
     version: 1,
+    created_by: "seed",
     priority: 0,
     min_items: 1,
     budget_ms: 100,

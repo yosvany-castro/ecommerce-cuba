@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { PlacementProposalSchema } from "@/sectors/g-agents/write/schema";
+import { effectiveRule, PlacementProposalSchema } from "@/sectors/g-agents/write/schema";
 
 // La puerta de entrada del agente: si este parse se ablanda, el LLM puede
 // colar scope user, TTLs inmortales, slots seed o reglas basura.
@@ -58,5 +58,33 @@ describe("PlacementProposalSchema (C2)", () => {
     expect(
       PlacementProposalSchema.safeParse({ ...validCreate, risk_tier: "low" }).success,
     ).toBe(false);
+  });
+});
+
+describe("effectiveRule (Fase D H2: segment ⇒ cohorte inyectada)", () => {
+  const seg = (rule: unknown) =>
+    PlacementProposalSchema.parse({
+      ...validCreate,
+      scope: "segment",
+      scope_ref: "femenino_joven",
+      rule,
+    }) as Extract<ReturnType<typeof PlacementProposalSchema.parse>, { action: "create" }>;
+
+  test("global pasa intacta (sin inyección)", () => {
+    const p = PlacementProposalSchema.parse(validCreate) as ReturnType<typeof seg>;
+    expect(effectiveRule(p)).toBeNull();
+  });
+
+  test("segment con rule=null ⇒ condición session_cohort=scope_ref", () => {
+    expect(effectiveRule(seg(null))).toEqual({
+      field: "session_cohort", op: "eq", value: "femenino_joven",
+    });
+  });
+
+  test("segment con rule del agente ⇒ AND (la cohorte no se puede esquivar)", () => {
+    const own = { field: "hour_of_day", op: "gte", value: 18 };
+    expect(effectiveRule(seg(own))).toEqual({
+      all: [{ field: "session_cohort", op: "eq", value: "femenino_joven" }, own],
+    });
   });
 });

@@ -9,8 +9,10 @@ import type { Rule } from "./rules/types";
  * skew (merchandising, not inventory). DB down ⇒ serve the stale copy
  * indefinitely; nothing cached ⇒ hardcoded DEFAULT_PLACEMENTS (≡ the 0026
  * seed): the home can NEVER go blank because of the config table.
- * Rows with invalid rules are dropped at LOAD time with a warn (the write
- * path validates too — this is the second net for Fase-2 agents).
+ * Rows with invalid rules are dropped at LOAD time with a warn — a net of
+ * RULE validity only. Placement safety (hero/protected slots, cap eviction)
+ * is enforced by the agent write path (tier ⇒ pending) PLUS the agent guards
+ * in select.ts — never by this loader.
  */
 
 export type Surface = "home" | "pdp" | "cart" | "search";
@@ -26,6 +28,8 @@ export interface PlacementConfig {
   scope_ref: string | null;
   experiment_id: string | null;
   version: number;
+  /** Procedencia: las salvaguardas de select.ts distinguen filas 'agent:%'. */
+  created_by: string;
   // ui_sections (catálogo):
   priority: number;
   min_items: number;
@@ -73,6 +77,7 @@ export const DEFAULT_PLACEMENTS: Record<Surface, PlacementConfig[]> = {
       scope_ref: null,
       experiment_id: null,
       version: 0,
+      created_by: "seed",
       default_params: { limit: 20 },
       ...SECTION_DEFAULTS.hero_grid,
     },
@@ -89,6 +94,7 @@ export const DEFAULT_PLACEMENTS: Record<Surface, PlacementConfig[]> = {
       scope_ref: null,
       experiment_id: null,
       version: 0,
+      created_by: "seed",
       default_params: { limit: 8 },
       ...SECTION_DEFAULTS.cross_sell,
     },
@@ -105,6 +111,7 @@ export const DEFAULT_PLACEMENTS: Record<Surface, PlacementConfig[]> = {
       scope_ref: null,
       experiment_id: null,
       version: 0,
+      created_by: "seed",
       default_params: { limit: 6 },
       ...SECTION_DEFAULTS.cart_addons,
     },
@@ -115,7 +122,7 @@ export const DEFAULT_PLACEMENTS: Record<Surface, PlacementConfig[]> = {
 async function loadFromDb(pg: Client): Promise<Map<Surface, PlacementConfig[]>> {
   const r = await pg.query(
     `SELECT p.id::text AS placement_id, p.surface, p.slot, p.section_type, p.params,
-            p.rule, p.scope, p.scope_ref, p.experiment_id, p.version,
+            p.rule, p.scope, p.scope_ref, p.experiment_id, p.version, p.created_by,
             s.priority, s.min_items, s.budget_ms, s.freshness_policy, s.display,
             s.title_default, s.title_template, s.default_params
      FROM ui_placements p

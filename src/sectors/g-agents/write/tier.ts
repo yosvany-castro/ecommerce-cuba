@@ -20,7 +20,7 @@ export function deriveEffectiveTier(p: PlacementProposal, ctx: TierContext): Eff
   if (p.action === "pause_own") return "low"; // retirar lo propio = siempre seguro
   if (ctx.isProtectedSlot || ctx.slotHasNonAgentRow) return "high"; // ocupar/superseder seed o humano
   if (p.action === "supersede") return "medium"; // reemplaza una fila agente viva
-  if (p.scope === "segment") return "medium"; // blast radius menor pero menos observado
+  if (p.scope === "segment") return "medium"; // blast = cohorte (rule inyectada en effectiveRule), pero menos observado
   return "low"; // create en slot libre, global, con TTL
 }
 

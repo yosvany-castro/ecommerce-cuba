@@ -1,0 +1,59 @@
+{
+  "mode": "smoke",
+  "aa": true,
+  "agent": "scripted",
+  "gatedPolicy": {
+    "AGENT_MEDIUM_AUTOAPPLY": true
+  },
+  "deviations": [
+    "2.C.5: read_catalog del sim expone margin_pct per-product (prod: constante 0.6); read_metrics jamás reporta margen y el gate premia margen realizado del ledger"
+  ],
+  "spec": {
+    "universeSize": 1500,
+    "activeAtE0": 1200,
+    "users": 300,
+    "measuredEpochs": 3
+  },
+  "seeds": [
+    123
+  ],
+  "worldVersion": "sim-world-v1",
+  "ratios": [
+    1
+  ],
+  "verdict": null,
+  "invalid": false,
+  "results": [
+    {
+      "seed": 123,
+      "ratio": 1,
+      "agentMarginCents": 2544322,
+      "frozenMarginCents": 2544322,
+      "agentGmvCents": 8037679,
+      "frozenGmvCents": 8037679,
+      "trajectories": {
+        "frozen": [
+          3602216.747107468,
+          1075615.7313451928,
+          1063487.7007689662,
+          928419.5938354988,
+          552414.3948876397
+        ],
+        "agent": [
+          3602216.747107468,
+          1075615.7313451928,
+          1063487.7007689662,
+          928419.5938354988,
+          552414.3948876397
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.7801297371116422,
+        "top20Share": 0.8284482758620689,
+        "frozenCollapse": false
+      },
+      "frontiers": []
+    }
+  ],
+  "wallSeconds": 6.678
+}

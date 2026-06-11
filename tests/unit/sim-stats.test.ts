@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { gateVerdict } from "@/sectors/g-agents/sim/stats";
+import { frozenCollapsed, gateVerdict } from "@/sectors/g-agents/sim/stats";
 
 /**
  * Gate math en los 3 bordes pre-registrados (A3 §5.3): un off-by-one aquí
@@ -44,5 +44,32 @@ describe("gateVerdict (pre-registrado, sin redondeos)", () => {
     const v = gateVerdict([5.0]);
     expect(v.pass).toBe(false);
     expect(v.escalate).toBe(false);
+  });
+
+  test("n<5 jamás PASS ni ESCALADA aunque los ratios sean estelares (Fase D H1)", () => {
+    const v = gateVerdict([2.5, 2.5]);
+    expect(v.geomMean).toBeCloseTo(2.5, 10);
+    expect(v.pass).toBe(false);
+    expect(v.escalate).toBe(false);
+  });
+});
+
+describe("frozenCollapsed (Fase D H2: e1→e2 incluido + frozen muerto)", () => {
+  // traj indexada por época; medidas 2..4 (e0 orgánica fuera del detector)
+  test("frozen TODO-CERO ⇒ inválido (un brazo muerto daría ratio astronómico)", () => {
+    expect(frozenCollapsed([0, 0, 0, 0, 0], 2, 4)).toBe(true);
+  });
+
+  test("colapso e1→e2 (baseline→primera medida) SÍ dispara", () => {
+    expect(frozenCollapsed([5e6, 1e6, 0.4e6, 0.39e6, 0.38e6], 2, 4)).toBe(true);
+  });
+
+  test("margen ≤0 en UNA época medida ⇒ inválido", () => {
+    expect(frozenCollapsed([5e6, 1e6, 1e6, 0, 1e6], 2, 4)).toBe(true);
+  });
+
+  test("decadencia legítima (paso 0.59, smoke seed 123) NO dispara; e0→e1 fuera", () => {
+    // ≈ smoke 123: e0 orgánica 3.6M (régimen distinto), luego 1.07M→1.06M→0.93M→0.55M
+    expect(frozenCollapsed([3.6e6, 1.075e6, 1.063e6, 0.928e6, 0.552e6], 2, 4)).toBe(false);
   });
 });

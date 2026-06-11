@@ -3,8 +3,10 @@
  *
  * Por seed: ratio = M_agent/M_frozen (margen realizado, épocas 2..13).
  * Punto: media geométrica Ĝ = exp(mean(ln r)). CI95: t-Student en log-espacio.
- * PASA ⇔ Ĝ ≥ 2.0 ∧ CI95-low > 1.0 ∧ ratio > 1 en TODOS los seeds.
+ * PASA ⇔ N ≥ 5 ∧ Ĝ ≥ 2.0 ∧ CI95-low > 1.0 ∧ ratio > 1 en TODOS los seeds.
  * Escalada única a N=10 si Ĝ ≥ 2 con CI-low ≤ 1 (sin más extensiones).
+ * N ≥ 5 dentro del verdict (Fase D, H1): un run dev con 2 seeds cherry-picked
+ * jamás puede imprimir PASS/ESCALADA — el gate son los 5 pre-registrados.
  *
  * LECTURAS PRE-COMPROMETIDAS (A3 §5.3 — literales, sin reframing):
  * - Ĝ=1.4 CI[1.2,1.6]  ⇒ NO se despliega ("+40% significativo pero no 2x").
@@ -28,6 +30,9 @@ const T_975: Record<number, number> = {
   9: 2.262,
   10: 2.228,
 };
+
+/** Mínimo pre-registrado de seeds para que pass/escalate sean computables. */
+export const GATE_MIN_SEEDS = 5;
 
 export interface GateVerdict {
   geomMean: number;
@@ -56,10 +61,31 @@ export function gateVerdict(ratios: number[]): GateVerdict {
     ci95 = [Math.exp(mean - half), Math.exp(mean + half)];
   }
   const unanimous = ratios.every((r) => r > 1.0);
-  const pass = geomMean >= 2.0 && ci95[0] > 1.0 && unanimous;
-  // escalada solo con CI real (n≥2): sin réplicas no hay nada que escalar
-  const escalate = geomMean >= 2.0 && Number.isFinite(ci95[0]) && ci95[0] <= 1.0;
+  const gateN = n >= GATE_MIN_SEEDS;
+  const pass = gateN && geomMean >= 2.0 && ci95[0] > 1.0 && unanimous;
+  const escalate = gateN && geomMean >= 2.0 && Number.isFinite(ci95[0]) && ci95[0] <= 1.0;
   return { geomMean, ci95, unanimous, pass, escalate };
+}
+
+/**
+ * Detector de colapso del frozen (A3 §5.3, endurecido en Fase D H2): caída
+ * >50% entre épocas CONSECUTIVAS desde la baseline e1 (e0 orgánica queda
+ * fuera: régimen distinto por diseño), y brazo frozen MUERTO (margen ≤0 en
+ * cualquier época medida) ⇒ RUN INVÁLIDO — un frozen en cero daría un ratio
+ * astronómico, jamás un PASS.
+ */
+export function frozenCollapsed(
+  marginByEpoch: number[],
+  measuredStart: number,
+  lastEpoch: number,
+): boolean {
+  for (let t = measuredStart; t <= lastEpoch; t++) {
+    if (!(marginByEpoch[t] > 0)) return true;
+  }
+  for (let t = measuredStart - 1; t < lastEpoch; t++) {
+    if (marginByEpoch[t] > 0 && marginByEpoch[t + 1] < 0.5 * marginByEpoch[t]) return true;
+  }
+  return false;
 }
 
 /** Gini sobre conteos no negativos (sanity del mundo: ~heavy-tail retail). */

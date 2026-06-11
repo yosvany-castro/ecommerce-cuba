@@ -1,0 +1,129 @@
+{
+  "mode": "smoke",
+  "aa": true,
+  "agent": "scripted",
+  "gatedPolicy": {
+    "AGENT_MEDIUM_AUTOAPPLY": true
+  },
+  "spec": {
+    "universeSize": 1500,
+    "activeAtE0": 1200,
+    "users": 300,
+    "measuredEpochs": 3
+  },
+  "seeds": [
+    123,
+    9001,
+    9002
+  ],
+  "worldVersion": "sim-world-v1",
+  "ratios": [
+    1,
+    1,
+    1
+  ],
+  "verdict": {
+    "geomMean": 1,
+    "ci95": [
+      1,
+      1
+    ],
+    "unanimous": false,
+    "pass": false,
+    "escalate": false
+  },
+  "invalid": false,
+  "results": [
+    {
+      "seed": 123,
+      "ratio": 1,
+      "agentMarginCents": 2544322,
+      "frozenMarginCents": 2544322,
+      "agentGmvCents": 8037679,
+      "frozenGmvCents": 8037679,
+      "trajectories": {
+        "frozen": [
+          3602216.747107468,
+          1075615.7313451928,
+          1063487.7007689662,
+          928419.5938354988,
+          552414.3948876397
+        ],
+        "agent": [
+          3602216.747107468,
+          1075615.7313451928,
+          1063487.7007689662,
+          928419.5938354988,
+          552414.3948876397
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.7801297371116422,
+        "top20Share": 0.8284482758620689,
+        "frozenCollapse": false
+      },
+      "frontiers": []
+    },
+    {
+      "seed": 9001,
+      "ratio": 1,
+      "agentMarginCents": 2328830,
+      "frozenMarginCents": 2328830,
+      "agentGmvCents": 8990421,
+      "frozenGmvCents": 8990421,
+      "trajectories": {
+        "frozen": [
+          3600892.6916156327,
+          972082.1873194547,
+          961576.7883484437,
+          684601.4265365954,
+          682652.2476013114
+        ],
+        "agent": [
+          3600892.6916156327,
+          972082.1873194547,
+          961576.7883484437,
+          684601.4265365954,
+          682652.2476013114
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.7451692346552159,
+        "top20Share": 0.822429906542056,
+        "frozenCollapse": false
+      },
+      "frontiers": []
+    },
+    {
+      "seed": 9002,
+      "ratio": 1,
+      "agentMarginCents": 2674966,
+      "frozenMarginCents": 2674966,
+      "agentGmvCents": 10055005,
+      "frozenGmvCents": 10055005,
+      "trajectories": {
+        "frozen": [
+          3495154.7800205573,
+          903871.883255171,
+          1210044.9072360892,
+          713157.4833983303,
+          751763.2605953279
+        ],
+        "agent": [
+          3495154.7800205573,
+          903871.883255171,
+          1210044.9072360892,
+          713157.4833983303,
+          751763.2605953279
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.7237799983391924,
+        "top20Share": 0.7959697732997482,
+        "frozenCollapse": false
+      },
+      "frontiers": []
+    }
+  ],
+  "wallSeconds": 17.953
+}

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { buildMetricsReport } from "@/sectors/g-agents/metrics/report";
 import {
   PlacementProposalSchema,
+  effectiveRule,
   proposalSemanticReason,
   type PlacementProposal,
 } from "@/sectors/g-agents/write/schema";
@@ -26,7 +27,6 @@ import { simMetricsSource } from "@/sectors/g-agents/sim/sim-metrics-source";
 import type { ArmArtifacts } from "@/sectors/g-agents/sim/crons";
 import type { ArmState } from "@/sectors/g-agents/sim/ledger";
 import type { World } from "@/sectors/g-agents/sim/world";
-import type { Rule } from "@/sectors/f-slate/rules/types";
 import type { Surface } from "@/sectors/f-slate/config";
 import type { MerchandiserBackend, ProposalResult } from "./backend";
 
@@ -161,7 +161,7 @@ export function simMerchandiserBackend(args: {
       slot: p.slot,
       section_type: p.section_type,
       params: p.params,
-      rule: p.rule as Rule | null,
+      rule: effectiveRule(p),
       scope: p.scope,
       scope_ref: p.scope_ref,
       status: mapped.status,

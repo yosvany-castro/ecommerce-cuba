@@ -183,8 +183,9 @@ async function main() {
   let verdict = null;
   if (ratios.length >= 2) {
     verdict = gateVerdict(ratios);
+    // n<5 jamás imprime PASS/ESCALADA (gateVerdict exige GATE_MIN_SEEDS, Fase D H1)
     console.log(
-      `[harness] Ĝ=${verdict.geomMean.toFixed(3)} CI95=[${verdict.ci95[0].toFixed(3)}, ${verdict.ci95[1].toFixed(3)}] ` +
+      `[harness] n=${ratios.length} Ĝ=${verdict.geomMean.toFixed(3)} CI95=[${verdict.ci95[0].toFixed(3)}, ${verdict.ci95[1].toFixed(3)}] ` +
         `unanimidad=${verdict.unanimous} ⇒ ${invalid ? "RUN INVÁLIDO" : verdict.pass ? "PASS" : verdict.escalate ? "ESCALADA N=10" : "FAIL"}`,
     );
   }
@@ -200,6 +201,10 @@ async function main() {
         aa,
         agent,
         gatedPolicy: { AGENT_MEDIUM_AUTOAPPLY: true }, // R8: el flag queda escrito en el reporte
+        // anti-H7 (D2): desviación 2.C.5 explícita en cada reporte del gate
+        deviations: [
+          "2.C.5: read_catalog del sim expone margin_pct per-product (prod: constante 0.6); read_metrics jamás reporta margen y el gate premia margen realizado del ledger",
+        ],
         spec,
         seeds,
         worldVersion: SIM_WORLD_VERSION,

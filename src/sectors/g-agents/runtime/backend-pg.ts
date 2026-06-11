@@ -5,6 +5,7 @@ import { buildMetricsReport } from "@/sectors/g-agents/metrics/report";
 import { fetchCatalogContext, sqlMetricsSource } from "@/sectors/g-agents/metrics/queries";
 import {
   PlacementProposalSchema,
+  effectiveRule,
   proposalSemanticReason,
   type PlacementProposal,
 } from "@/sectors/g-agents/write/schema";
@@ -157,7 +158,7 @@ export function pgMerchandiserBackend(
         slot: p.slot,
         section_type: p.section_type,
         params: p.params,
-        rule: p.rule,
+        rule: effectiveRule(p),
         scope: p.scope,
         scope_ref: p.scope_ref,
         status: mapped.status,

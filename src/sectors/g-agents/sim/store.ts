@@ -207,6 +207,7 @@ export class SimPlacementStore {
         scope_ref: r.scope_ref,
         experiment_id: r.experiment_id,
         version: r.version,
+        created_by: r.created_by,
         priority: meta.priority,
         min_items: meta.min_items,
         budget_ms: 1000,

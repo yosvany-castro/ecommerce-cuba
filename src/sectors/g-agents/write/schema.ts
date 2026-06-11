@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RuleSchema } from "@/sectors/f-slate/rules/schema";
+import type { Rule } from "@/sectors/f-slate/rules/types";
 import { COHORT_IDS } from "@/sectors/d-personalization/cohorts/definitions";
 
 /**
@@ -16,8 +17,10 @@ export const AGENT_SECTION_WHITELIST = ["popular", "cross_sell", "cart_addons"] 
 export const AGENT_SURFACES = ["home", "pdp", "cart"] as const; // search: sin placements aún
 
 /** Slots seed (0026): (home,10) hero, (pdp,10) cross_sell, (cart,10) cart_addons.
- *  El agente NUNCA aplica directo sobre un slot ocupado por una fila no-agente. */
-export const PROTECTED_SLOTS: ReadonlySet<string> = new Set(["home:10", "pdp:10", "cart:10"]);
+ *  El agente NUNCA aplica directo sobre un slot ocupado por una fila no-agente.
+ *  La constante vive en f-slate/select (el guard de servicio la necesita y el
+ *  request path no puede importar g-agents); aquí solo se re-exporta. */
+export { PROTECTED_SLOTS } from "@/sectors/f-slate/select";
 
 const createAction = z.strictObject({
   action: z.literal("create"),
@@ -75,4 +78,20 @@ export function proposalSemanticReason(p: PlacementProposal): string | null {
     return "scope=global must not carry scope_ref";
   }
   return null;
+}
+
+/**
+ * Fase D (H2): serve-time jamás lee scope_ref (config.ts sirve scope=segment a
+ * TODOS los usuarios, con rank > global). Para que el blast radius de segment
+ * sea la cohorte DE VERDAD, el write path inyecta session_cohort=scope_ref en
+ * la rule — fail-closed: una sesión sin cohorte no ve la fila. Compartida por
+ * backend-pg y backend-sim (paridad sim↔prod del guard).
+ */
+export function effectiveRule(
+  p: Extract<PlacementProposal, { action: "create" | "supersede" }>,
+): Rule | null {
+  const rule = p.rule as Rule | null;
+  if (p.scope !== "segment" || p.scope_ref === null) return rule;
+  const cohortCond: Rule = { field: "session_cohort", op: "eq", value: p.scope_ref };
+  return rule === null ? cohortCond : { all: [cohortCond, rule] };
 }
