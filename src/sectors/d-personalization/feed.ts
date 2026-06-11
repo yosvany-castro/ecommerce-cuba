@@ -36,6 +36,7 @@ import {
   type SlateRow,
 } from "./slate/store";
 import { decodeCursor, encodeCursor } from "./slate/cursor";
+import { injectPins } from "./slate/pins";
 import {
   SLATE_DEPTH,
   SLATE_SPARES,
@@ -535,15 +536,28 @@ export async function generateFeedInternal(
         .slice(0, SLATE_DEPTH)
         .map((id, i) => ({ product_id: id, rank: i + 1, reason: "" }));
       const tailPool = allCandidates.slice(SLATE_DEPTH, SLATE_DEPTH + SLATE_SPARES);
+      // C5: pins of the session's PREVIOUS slate (even expired) survive the
+      // re-materialization at the front — clicked items stay reachable.
+      const prevPins = (
+        await pg.query(
+          `SELECT pins FROM feed_slates
+           WHERE session_id = $1 AND surface = 'home'
+           ORDER BY created_at DESC LIMIT 1`,
+          [opts.session_id],
+        )
+      ).rows[0]?.pins as string[] | undefined;
       const explored = applyEpsilonExploration(base, tailPool, {
         epsilon: EXPLORATION_EPSILON,
       });
-      const slateItems: SlateItem[] = explored.map((x) => ({
-        product_id: x.product_id,
-        position: x.rank,
-        source: x.source,
-        propensity: x.propensity,
-      }));
+      const slateItems: SlateItem[] = injectPins(
+        explored.map((x) => ({
+          product_id: x.product_id,
+          position: x.rank,
+          source: x.source,
+          propensity: x.propensity,
+        })),
+        prevPins ?? [],
+      );
       const usedExplore = new Set(
         explored.filter((x) => x.source === "explore").map((x) => x.product_id),
       );

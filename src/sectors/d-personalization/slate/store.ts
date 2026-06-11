@@ -138,3 +138,67 @@ export async function fetchServedProductIds(
   );
   return (r.rows as { id: string }[]).map((x) => x.id);
 }
+
+/**
+ * Pin a clicked product on the session's live slate (cap enforced; idempotent).
+ * Runs from the track-hook on product_view — async to the gesture, never on
+ * the serving path. Pins survive re-materialization (injectPins).
+ */
+export async function pinProductInSlate(
+  session_id: string,
+  product_id: string,
+  pg: Client,
+  cap = 4,
+): Promise<void> {
+  const slate = await loadLiveSlate(session_id, "home", pg);
+  if (!slate) return;
+  // Only products that actually live on this slate can be pinned (a PDP view
+  // arriving from search/category is not a feed click).
+  if (!slate.items.some((it) => it.product_id === product_id)) return;
+  if (slate.pins.includes(product_id)) return;
+  const pins = [...slate.pins, product_id].slice(0, cap);
+  await pg.query(`UPDATE feed_slates SET pins = $2::jsonb WHERE slate_id = $1`, [
+    slate.slate_id,
+    JSON.stringify(pins),
+  ]);
+}
+
+/**
+ * Dismiss compaction: remove the product from the UNSERVED tail of the
+ * session's live slate (served positions are history — the client already
+ * hid the card optimistically) and backfill ONE spare at the end. Positions
+ * are NOT renumbered: outstanding cursors stay valid; pages simply skip the
+ * gap. No version bump (that is the shift-invalidation lever, Etapa E).
+ */
+export async function compactSlateForDismiss(
+  session_id: string,
+  product_id: string,
+  pg: Client,
+): Promise<void> {
+  const slate = await loadLiveSlate(session_id, "home", pg);
+  if (!slate) return;
+  const servedMax = await pg.query(
+    `SELECT COALESCE(max(position), 0)::int AS p FROM feed_impressions WHERE feed_request_id = $1`,
+    [slate.slate_id],
+  );
+  const servedUpTo = Number(servedMax.rows[0].p);
+  const target = slate.items.find(
+    (it) => it.product_id === product_id && it.position > servedUpTo,
+  );
+  if (!target) return; // ya servido (el cliente lo oculta) o no está: nada que compactar
+  const maxPos = slate.items.reduce((m, it) => Math.max(m, it.position), 0);
+  const inSlate = new Set(slate.items.map((it) => it.product_id));
+  const spare = slate.spares.find((id) => !inSlate.has(id) && id !== product_id);
+  const newItems = slate.items.filter((it) => it.product_id !== product_id);
+  if (spare) {
+    newItems.push({ product_id: spare, position: maxPos + 1, source: "exploit", propensity: 1 });
+  }
+  await pg.query(
+    `UPDATE feed_slates SET items = $2::jsonb, spares = $3::jsonb WHERE slate_id = $1`,
+    [
+      slate.slate_id,
+      JSON.stringify(newItems),
+      JSON.stringify(slate.spares.filter((id) => id !== spare)),
+    ],
+  );
+}

@@ -13,6 +13,7 @@ import {
   updateProfileModeWithProduct,
 } from "./profile-mode";
 import type { CohortId } from "./cohorts/definitions";
+import { pinProductInSlate } from "./slate/store";
 import { captureCoOccurrence } from "./co-occurrence/capture";
 import { modesForEvents } from "./multimode/thresholds";
 import { recomputeModesForBucket } from "./multimode/recompute";
@@ -143,6 +144,17 @@ async function runPipeline(
       },
       pg,
     );
+  }
+
+  // Slate pin (C5): a clicked feed product stays reachable for the session
+  // even if a re-materialization would bury it (continuity anchor). Best
+  // effort — never blocks the event pipeline.
+  if (input.event_type === "product_view") {
+    try {
+      await pinProductInSlate(input.session_id, product_id, pg);
+    } catch (e) {
+      console.warn("[track-hook] slate pin failed (ignored):", e);
+    }
   }
 
   if (!newCohort) return; // warmup not complete — no vector update yet

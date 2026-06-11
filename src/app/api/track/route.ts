@@ -8,6 +8,7 @@ import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { processEventForPersonalization } from "@/sectors/d-personalization/track-hook";
 import { handleDismissAutoExclude } from "@/sectors/d-personalization/exclusion/dismiss-handler";
+import { compactSlateForDismiss } from "@/sectors/d-personalization/slate/store";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -101,6 +102,9 @@ export async function POST(req: NextRequest) {
               { anonymous_id, user_id, product_id: payload.product_id },
               pg,
             );
+            // C5: compact the live slate (unserved tail only; no renumber —
+            // outstanding cursors stay valid; a spare backfills the depth).
+            await compactSlateForDismiss(session_id, payload.product_id, pg);
           } catch (e) {
             console.warn("[track] dismiss auto-exclude failed:", e);
           }
