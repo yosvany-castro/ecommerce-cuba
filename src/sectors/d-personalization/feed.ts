@@ -37,6 +37,7 @@ import {
 } from "./slate/store";
 import { decodeCursor, encodeCursor } from "./slate/cursor";
 import { injectPins } from "./slate/pins";
+import { stabilizeSlate } from "./slate/stabilize";
 import {
   SLATE_DEPTH,
   SLATE_SPARES,
@@ -551,26 +552,32 @@ export async function generateFeedInternal(
       const tailPool = allCandidates.slice(SLATE_DEPTH, SLATE_DEPTH + SLATE_SPARES);
       // C5: pins of the session's PREVIOUS slate (even expired) survive the
       // re-materialization at the front — clicked items stay reachable.
-      const prevPins = (
+      const prevSlate = (
         await pg.query(
-          `SELECT pins FROM feed_slates
+          `SELECT pins, items FROM feed_slates
            WHERE session_id = $1 AND surface = 'home'
            ORDER BY created_at DESC LIMIT 1`,
           [opts.session_id],
         )
-      ).rows[0]?.pins as string[] | undefined;
+      ).rows[0] as { pins: string[]; items: SlateItem[] } | undefined;
+      const prevPins = prevSlate?.pins;
       const explored = applyEpsilonExploration(base, tailPool, {
         epsilon: EXPLORATION_EPSILON,
       });
-      const slateItems: SlateItem[] = injectPins(
+      // E5: churn cap — entre composiciones consecutivas de la MISMA sesión,
+      // el head conserva ≥70% de caras conocidas; la rotación gasta su
+      // presupuesto (ε-explore + novedades del ranking), nunca más.
+      const stabilized = stabilizeSlate(
         explored.map((x) => ({
           product_id: x.product_id,
           position: x.rank,
           source: x.source,
           propensity: x.propensity,
         })),
-        prevPins ?? [],
+        prevSlate?.items ?? [],
+        { headSize: PAGE_SIZE_FIRST },
       );
+      const slateItems: SlateItem[] = injectPins(stabilized, prevPins ?? []);
       const usedExplore = new Set(
         explored.filter((x) => x.source === "explore").map((x) => x.product_id),
       );

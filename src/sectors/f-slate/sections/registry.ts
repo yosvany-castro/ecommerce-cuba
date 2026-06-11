@@ -55,16 +55,32 @@ const cartAddons: SectionResolver<{ limit: number }> = {
   },
 };
 
-/** popular: 7d popularity, global or cohort-targeted. */
-const popular: SectionResolver<{ limit: number; mode: "global" | "cohort" }> = {
+/** popular: 7d popularity — global, cohort-targeted, or PDP-category. */
+const popular: SectionResolver<{ limit: number; mode: "global" | "cohort" | "pdp_category" }> = {
   section_type: "popular",
   paramsSchema: z
     .object({
       limit: z.number().int().min(1).max(30).catch(10).default(10),
-      mode: z.enum(["global", "cohort"]).catch("global").default("global"),
+      mode: z.enum(["global", "cohort", "pdp_category"]).catch("global").default("global"),
     })
     .loose(),
   async resolve(params, ctx: ResolveCtx, pg: Client) {
+    // "Lo más buscado en {categoría}" bajo el PDP: relacionados POR CATEGORÍA
+    // ordenados por popularidad — activable con una fila en ui_placements.
+    if (params.mode === "pdp_category" && ctx.rule_ctx.pdp_category) {
+      const r = await pg.query(
+        `SELECT p.id::text AS id
+         FROM products p
+         LEFT JOIN product_popularity_7d pop ON pop.product_id = p.id
+         WHERE p.is_active = true
+           AND p.metadata->>'category' = $1
+           AND p.id <> COALESCE($2::uuid, '00000000-0000-0000-0000-000000000000'::uuid)
+         ORDER BY COALESCE(pop.events_7d, 0) DESC, p.created_at DESC, p.id ASC
+         LIMIT $3`,
+        [ctx.rule_ctx.pdp_category, ctx.surfaceArgs?.pdp_product_id ?? null, params.limit * 2],
+      );
+      return (r.rows as { id: string }[]).map((x) => x.id);
+    }
     if (params.mode === "cohort" && ctx.rule_ctx.session_cohort) {
       const items = await fetchPopularByCohort(
         ctx.rule_ctx.session_cohort as CohortId,

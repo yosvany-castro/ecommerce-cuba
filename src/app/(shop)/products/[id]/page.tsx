@@ -3,6 +3,7 @@ import { getById } from "@/sectors/b-catalog/repository/products";
 import { ProductTracker } from "@/components/ProductTracker";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { SurfaceSections } from "@/components/slate/SurfaceSections";
+import { AfterAddSuggestions } from "@/components/slate/AfterAddSuggestions";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +33,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       </div>
       {/* D5: cross-sell por co-ocurrencia, lazy bajo el fold — no toca el
           <100ms del HTML del producto; si falla, no se pinta nada. */}
+      {/* E4: al AGREGAR AL CARRO, las sugerencias del carrito aparecen aquí
+          mismo (el segundo de máxima intención), resueltas por el motor. */}
+      <AfterAddSuggestions />
       <SurfaceSections
         surface="pdp"
-        surfaceArgs={{ pdp_product_id: product.id }}
+        surfaceArgs={{
+          pdp_product_id: product.id,
+          pdp_category:
+            ((product.metadata as Record<string, unknown> | null)?.category as
+              | string
+              | undefined) ?? null,
+        }}
       />
     </main>
   );

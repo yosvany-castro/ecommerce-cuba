@@ -11,7 +11,11 @@ export function AddToCartButton({ productId }: { productId: string }) {
       className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
       onClick={async () => {
         setPending(true);
-        try { await add(productId, 1); } finally { setPending(false); }
+        try {
+          await add(productId, 1);
+          // E4: el gesto de máxima intención dispara las sugerencias in situ.
+          window.dispatchEvent(new CustomEvent("cart:item-added", { detail: { productId } }));
+        } finally { setPending(false); }
       }}
     >
       {pending ? "Agregando..." : "Agregar al carrito"}
