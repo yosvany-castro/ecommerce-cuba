@@ -1,6 +1,7 @@
 import { createDeepAgent, type SubAgent } from "deepagents";
 import { createMiddleware } from "langchain";
 import { tool } from "@langchain/core/tools";
+import { ToolMessage } from "@langchain/core/messages";
 import { GraphRecursionError } from "@langchain/langgraph";
 import { z } from "zod";
 import { merchandiserLoopModel, criticModel } from "@/sectors/g-agents/llm";
@@ -18,10 +19,27 @@ import type { MerchandiserBackend, ProposalResult } from "./backend";
 
 const HIDDEN = new Set(["ls", "read_file", "write_file", "edit_file", "glob", "grep", "write_todos"]); // task VISIBLE (critic)
 
-const hideBuiltinTools = createMiddleware({
+export const hideBuiltinTools = createMiddleware({
   name: "HideBuiltinToolsMiddleware",
   wrapModelCall: async (request, handler) =>
     handler({ ...request, tools: request.tools.filter((t) => !HIDDEN.has(String(t.name))) }),
+  // Filtrar el request NO basta: el system prompt de deepagents menciona los
+  // builtins, el modelo puede alucinar uno por nombre y el ToolNode lo ejecuta
+  // igual (sigue registrado en el grafo) — un input mal tipado ahí escala a
+  // MiddlewareError fatal y mata el run entero (visto en el gate: el critic
+  // llamó write_todos con {text} en vez de {content}). Short-circuit recuperable.
+  wrapToolCall: async (request, handler) => {
+    const name = String(request.toolCall.name);
+    if (HIDDEN.has(name)) {
+      return new ToolMessage({
+        tool_call_id: request.toolCall.id ?? "",
+        name,
+        content: `La tool ${name} no está disponible en este agente. Continúa sin ella.`,
+        status: "error",
+      });
+    }
+    return handler(request);
+  },
 });
 
 export const MERCHANDISER_PROMPT = `Eres el merchandiser de una tienda e-commerce para Cuba. Tu único poder es proponer
@@ -116,6 +134,7 @@ export function buildMerchandiser(backend: MerchandiserBackend) {
     description: "Deshabilitado. No usar.",
     systemPrompt: "Responde únicamente: deshabilitado.",
     tools: [],
+    middleware: [hideBuiltinTools],
   };
 
   return createDeepAgent({
