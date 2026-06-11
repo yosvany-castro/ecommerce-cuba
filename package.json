@@ -17,6 +17,7 @@
     "cron:fatigue": "tsx scripts/cron-fatigue.ts",
     "cron:prune": "tsx scripts/cron-prune.ts",
     "cron:rerank-cache-cleanup": "tsx scripts/cron-rerank-cache-cleanup.ts",
+    "cron:agent-merchandiser": "tsx scripts/cron-agent-merchandiser.ts",
     "thesis:catalog": "tsx scripts/thesis/data/catalog-gen.ts",
     "thesis:relations": "tsx scripts/thesis/data/gt-relations.ts",
     "thesis:behavior": "tsx scripts/thesis/data/behavior-gen.ts",
