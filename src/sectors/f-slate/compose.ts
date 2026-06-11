@@ -112,28 +112,33 @@ export async function logSlateDecision(
   pg: Client,
 ): Promise<void> {
   try {
-    await pg.query(
-      `INSERT INTO slate_decisions
+    const slateId = ctx.slate_id ?? page.composition_id;
+    const rest = [
+      page.surface,
+      ctx.user_profile_id,
+      ctx.session_id,
+      page.config_version,
+      ctx.holdout ?? false,
+      page.placements.find((p) => p.experiment_id)?.experiment_id ?? null,
+      JSON.stringify(
+        page.placements.map((p) => ({
+          placement_id: p.placement_id,
+          slot: p.slot,
+          section_type: p.section_type,
+          version: p.version,
+        })),
+      ),
+    ];
+    const sql = `INSERT INTO slate_decisions
          (slate_id, surface, user_profile_id, session_id, config_version, holdout, experiment_id, placements)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
-      [
-        ctx.slate_id ?? page.composition_id,
-        page.surface,
-        ctx.user_profile_id,
-        ctx.session_id,
-        page.config_version,
-        ctx.holdout ?? false,
-        page.placements.find((p) => p.experiment_id)?.experiment_id ?? null,
-        JSON.stringify(
-          page.placements.map((p) => ({
-            placement_id: p.placement_id,
-            slot: p.slot,
-            section_type: p.section_type,
-            version: p.version,
-          })),
-        ),
-      ],
-    );
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`;
+    await pg.query(sql, [slateId, ...rest]);
+    // C1b: las impresiones de carrusel van keyed por composition_id (las del
+    // hero por slate_id) — la fila gemela hace que ambas joineen
+    // slate_decisions igual. DISTINCT ON absorbe la multiplicidad.
+    if (slateId !== page.composition_id) {
+      await pg.query(sql, [page.composition_id, ...rest]);
+    }
   } catch (e) {
     console.warn("[slate] decision logging failed (page unaffected):", e);
   }

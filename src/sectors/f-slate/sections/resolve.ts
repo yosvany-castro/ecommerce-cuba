@@ -2,6 +2,7 @@ import type { Client } from "pg";
 import { serveFeedPage } from "@/sectors/d-personalization/feed";
 import type { ComposedPage, ComposeIdentity, ComposeSurfaceArgs } from "../compose";
 import { SECTION_REGISTRY } from "./registry";
+import { logSectionImpressions, type SectionImpressionRow } from "./impressions";
 import type { ResolvedSection, SectionCardDTO } from "./types";
 
 /**
@@ -41,7 +42,7 @@ export async function resolveSections(
   const ordered = [...page.placements].sort((a, b) => a.priority - b.priority || a.slot - b.slot);
 
   const results: ResolvedSection[] = [];
-  const pendingHydration: { section: ResolvedSection; ids: string[] }[] = [];
+  const pendingHydration: { section: ResolvedSection; ids: string[]; version: number }[] = [];
 
   for (const p of ordered) {
     const started = performance.now();
@@ -126,7 +127,7 @@ export async function resolveSections(
         resolve_ms: Math.round(performance.now() - started),
       };
       results.push(section);
-      pendingHydration.push({ section, ids });
+      pendingHydration.push({ section, ids, version: p.version });
     } catch (e) {
       results.push({ ...base, items: [], outcome: isTimeout(e) ? "timeout" : "error", resolve_ms: Math.round(performance.now() - started) });
     }
@@ -150,6 +151,32 @@ export async function resolveSections(
       if (section.items.length === 0) section.outcome = "empty";
     }
   }
+
+  // ── C1b: impresiones de carruseles (lo realmente hidratado, post-claims).
+  //    feed_request_id = composition_id; cubre ambos callers (home SSR y
+  //    /api/slate/resolve) sin tocarlos. ──
+  const impressionRows: SectionImpressionRow[] = [];
+  for (const { section, version } of pendingHydration) {
+    if (section.outcome !== "served") continue;
+    section.items.forEach((it, idx) => {
+      impressionRows.push({
+        position: section.slot * 100 + idx + 1,
+        product_id: it.id,
+        section_type: section.section_type,
+        placement_version: version,
+      });
+    });
+  }
+  await logSectionImpressions(
+    {
+      composition_id: page.composition_id,
+      session_id: identity.session_id,
+      user_profile_id: null, // el runner no resuelve perfil (igual que logSlateDecision en los callers)
+      page_request_id: null,
+      rows: impressionRows,
+    },
+    pg,
+  );
 
   // El orden visual es por slot (la prioridad solo decide claims/sacrificio).
   return results.sort((a, b) => a.slot - b.slot);
