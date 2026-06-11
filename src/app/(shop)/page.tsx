@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
-import { serveFeedPage } from "@/sectors/d-personalization/feed";
-import { ProductCard } from "@/components/ProductCard";
-import { InfiniteFeed } from "@/components/InfiniteFeed";
+import { composePage, logSlateDecision } from "@/sectors/f-slate/compose";
+import { resolveSections } from "@/sectors/f-slate/sections/resolve";
+import { SlateRenderer } from "@/components/slate/SlateRenderer";
 import { RequestTiming } from "@/lib/timing";
 
 export const dynamic = "force-dynamic";
@@ -32,14 +32,28 @@ export default async function HomePage() {
     );
   }
 
-  const page = await timing.time("feed_page", () =>
-    withPg((pg) => serveFeedPage({ user_id, anonymous_id, session_id, timing }, pg)),
+  // D4: la home es una composición — composePage decide QUÉ secciones (con el
+  // seed actual = solo hero_grid, HTML equivalente al pre-slate) y el runner
+  // las llena (el hero ES el slate feed con su cursor de scroll infinito).
+  const identity = { user_id, anonymous_id, session_id };
+  const sections = await timing.time("feed_page", () =>
+    withPg(async (pg) => {
+      const page = await composePage({ surface: "home", identity }, pg);
+      const resolved = await resolveSections(page, identity, undefined, pg);
+      const hero = resolved.find((s) => s.section_type === "hero_grid");
+      await logSlateDecision(
+        page,
+        { user_profile_id: null, session_id, slate_id: hero?.slate_id ?? null },
+        pg,
+      );
+      return resolved;
+    }),
   );
-  const feed = page.items;
 
   after(() => logTimingSampled(timing));
 
-  if (feed.length === 0) {
+  const hasContent = sections.some((s) => s.outcome === "served" && s.items.length > 0);
+  if (!hasContent) {
     return (
       <main className="p-8">
         <h1 className="text-2xl font-bold mb-4">Catálogo</h1>
@@ -60,16 +74,7 @@ export default async function HomePage() {
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold mb-6">Catálogo</h1>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {feed.map((it) => (
-          <ProductCard
-            key={it.product.id}
-            product={it.product}
-            reason={it.reason}
-          />
-        ))}
-      </div>
-      <InfiniteFeed initialCursor={page.next_cursor} slateId={page.slate_id} />
+      <SlateRenderer sections={sections} />
     </main>
   );
 }
