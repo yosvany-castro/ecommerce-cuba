@@ -10,3 +10,6 @@ playwright-report
 *.tsbuildinfo
 .DS_Store
 .vercel
+
+# artefactos NDJSON del eval-harness: regenerables por seed, demasiado pesados para git
+scripts/agents/results/*.ndjson

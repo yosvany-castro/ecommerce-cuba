@@ -1,0 +1,133 @@
+{
+  "mode": "smoke",
+  "aa": false,
+  "agent": "scripted",
+  "gatedPolicy": {
+    "AGENT_MEDIUM_AUTOAPPLY": true
+  },
+  "spec": {
+    "universeSize": 1500,
+    "activeAtE0": 1200,
+    "users": 300,
+    "measuredEpochs": 3
+  },
+  "seeds": [
+    123
+  ],
+  "worldVersion": "sim-world-v1",
+  "ratios": [
+    0.8740916593660079
+  ],
+  "verdict": null,
+  "invalid": false,
+  "results": [
+    {
+      "seed": 123,
+      "ratio": 0.8740916593660079,
+      "agentMarginCents": 2223970,
+      "frozenMarginCents": 2544322,
+      "agentGmvCents": 6826140,
+      "frozenGmvCents": 8037679,
+      "trajectories": {
+        "frozen": [
+          3602216.747107468,
+          1075615.7313451928,
+          1063487.7007689662,
+          928419.5938354988,
+          552414.3948876397
+        ],
+        "agent": [
+          3602216.747107468,
+          1075615.7313451928,
+          853295.0920752609,
+          909650.1438713784,
+          461025.1315824406
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.7801297371116422,
+        "top20Share": 0.8284482758620689,
+        "frozenCollapse": false
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "789f6c4a-89da-4397-b336-2adac6951556",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "ee2a403b-0fda-4a0b-ba90-a4689f9b6299",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "9ba3ef49-9e9d-42db-8faf-000b6c5e9205",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        }
+      ]
+    }
+  ],
+  "wallSeconds": 6.982
+}
