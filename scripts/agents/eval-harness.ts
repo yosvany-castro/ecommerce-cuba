@@ -156,10 +156,15 @@ async function main() {
 
   const llmRunner = agent === "llm" && !aa ? await makeLlmRunner() : undefined;
 
-  // Seeds concurrentes: el LLM es I/O-bound; el sim de cada seed se intercala.
-  const results: SeedRunResult[] = await Promise.all(
-    seeds.map((seed) =>
-      runSeedPipeline({
+  // Seeds SECUENCIALES: con Promise.all los logs de eventos de los 5 mundos
+  // conviven en el heap y revientan los 2GB default de Node (OOM observado en
+  // e5 del gate). Un seed a la vez acota el pico a un mundo; los pipelines son
+  // independientes y deterministas por CRN — la matemática no cambia — y el
+  // coste LLM es idéntico (caché write-once por frontera).
+  const results: SeedRunResult[] = [];
+  for (const seed of seeds) {
+    results.push(
+      await runSeedPipeline({
         worldSeed: seed,
         spec,
         mode: agent,
@@ -167,8 +172,8 @@ async function main() {
         llmRunner,
         log: (s) => console.log(`[seed ${seed}] ${s} t=${el()}`),
       }),
-    ),
-  );
+    );
+  }
 
   // ── Reporte. ──
   const ratios = results.map((r) => r.ratio);
