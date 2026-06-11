@@ -18,15 +18,14 @@ import type { SendMessageInput, SendMessageOutput } from "./anthropic";
 
 export const DEEPSEEK_MODELS = {
   /**
-   * Non-thinking mode for cheap JSON extraction. Uses the legacy alias
-   * `deepseek-chat` (DeepSeek-V3 non-thinking) which deprecates 2026-07-24.
-   * Before that date: migrate to `deepseek-v4-flash` with the appropriate
-   * non-thinking parameter — consult api-docs.deepseek.com at migration time.
-   * Tested non-thinking returns content directly (no reasoning_content burn).
+   * Cheap high-volume model for JSON extraction. V4 defaults to thinking
+   * ENABLED — callers that want the old `deepseek-chat` behavior (deprecated
+   * 2026-07-24, ≡ v4-flash non-thinking) MUST pass `thinking: "disabled"` or
+   * every call burns reasoning tokens.
    */
-  flash: "deepseek-chat",
-  /** Reasoning model — reserved for future use, not currently called. */
-  pro: "deepseek-v4-pro",
+  flash: process.env.DEEPSEEK_MODEL_FLASH ?? "deepseek-v4-flash",
+  /** Reasoning model for agent workloads (thinking enabled by default). */
+  pro: process.env.DEEPSEEK_MODEL_PRO ?? "deepseek-v4-pro",
 } as const;
 
 let _client: OpenAI | null = null;
@@ -46,6 +45,13 @@ function client(): OpenAI {
 export interface SendMessageDeepSeekInput extends SendMessageInput {
   /** Force JSON output mode. Requires the prompt to contain the literal word "JSON". */
   jsonMode?: boolean;
+  /**
+   * V4 thinking-mode toggle. The API default is ENABLED — pass "disabled" for
+   * extraction workloads or reasoning tokens are billed on every call.
+   */
+  thinking?: "enabled" | "disabled";
+  /** Reasoning effort when thinking is enabled. DeepSeek accepts high | max. */
+  reasoningEffort?: "high" | "max";
 }
 
 export async function sendMessageDeepSeek(
@@ -56,6 +62,8 @@ export async function sendMessageDeepSeek(
     ...input.messages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
+  // `thinking` / `reasoning_effort` are DeepSeek extensions absent from the
+  // OpenAI param types; the SDK forwards unknown body fields as-is.
   const completion = await client().chat.completions.create({
     model: input.model,
     messages,
@@ -63,7 +71,9 @@ export async function sendMessageDeepSeek(
     temperature: input.temperature ?? 0,
     stream: false,
     ...(input.jsonMode ? { response_format: { type: "json_object" as const } } : {}),
-  });
+    ...(input.thinking ? { thinking: { type: input.thinking } } : {}),
+    ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
+  } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
 
   const text = completion.choices[0]?.message?.content ?? "";
   return {

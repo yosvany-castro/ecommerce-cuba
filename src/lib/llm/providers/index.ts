@@ -1,8 +1,9 @@
 import { deepseekFlashProvider } from "./deepseek-flash";
+import { deepseekProProvider } from "./deepseek-pro";
 import { anthropicHaikuProvider } from "./anthropic-haiku";
 import type { LLMProvider } from "../types";
 
-export { deepseekFlashProvider, anthropicHaikuProvider };
+export { deepseekFlashProvider, deepseekProProvider, anthropicHaikuProvider };
 export type { LLMProvider } from "../types";
 export type { ChatInput, ChatOutput } from "../types";
 
