@@ -26,6 +26,22 @@ import {
   writeRerankCache,
   type CachedRerankItem,
 } from "./reranker/cache";
+import {
+  insertSlate,
+  loadLiveSlate,
+  loadSlateById,
+  logSlatePageImpressions,
+  fetchServedProductIds,
+  type SlateItem,
+  type SlateRow,
+} from "./slate/store";
+import { decodeCursor, encodeCursor } from "./slate/cursor";
+import {
+  SLATE_DEPTH,
+  SLATE_SPARES,
+  PAGE_SIZE_FIRST,
+  PAGE_SIZE_CURSOR,
+} from "./slate/constants";
 
 const DAYS_ES = [
   "domingo",
@@ -42,8 +58,18 @@ export interface GenerateFeedOpts {
   anonymous_id: string | null;
   session_id: string | null;
   limit?: number;
+  /** Extra product ids to exclude (slate regeneration dedupe). */
+  extraExcludedIds?: string[];
   /** Optional per-request phase timing (F5 instrumentation). */
   timing?: RequestTiming;
+}
+
+export interface FeedPageResult {
+  items: FeedItem[];
+  /** The slate this page was served from (null: cold fallback / LLM / no session). */
+  slate: SlateRow | null;
+  /** Absolute position of the last served item (cursor continuation point). */
+  servedTo: number;
 }
 
 /**
@@ -236,10 +262,15 @@ async function resolveWithReasons(
     }));
 }
 
-export async function generateFeed(
+/** Legacy contract: first page only. Internals (slate/cursor) in generateFeedInternal. */
+export async function generateFeed(opts: GenerateFeedOpts, pg: Client): Promise<FeedItem[]> {
+  return (await generateFeedInternal(opts, pg)).items;
+}
+
+export async function generateFeedInternal(
   opts: GenerateFeedOpts,
   pg: Client,
-): Promise<FeedItem[]> {
+): Promise<FeedPageResult> {
   const limit = opts.limit ?? 20;
   // F5: phase timing (no-op without opts.timing — zero cost in untimed paths)
   const timed = <T,>(name: string, fn: () => Promise<T>): Promise<T> =>
@@ -264,6 +295,34 @@ export async function generateFeed(
   }
 
   const excluded = await timed("excluded", () => fetchExcludedIds(opts.user_id, opts.anonymous_id, pg));
+  if (opts.extraExcludedIds?.length) excluded.push(...opts.extraExcludedIds);
+
+  // ── Slate HIT path (Etapa C): a live snapshot for this session serves the
+  //    page in ~2 queries instead of recomputing the whole pipeline. Dismissed
+  //    products are filtered AT SERVE (compaction only touches unserved), and
+  //    the page backfills from deeper absolute positions, preserving them. ──
+  if (opts.session_id) {
+    const live = await timed("slate_hit", () => loadLiveSlate(opts.session_id!, "home", pg));
+    if (live) {
+      const excludedSet = new Set(excluded);
+      const page = live.items
+        .filter((it) => !excludedSet.has(it.product_id))
+        .slice(0, limit);
+      if (page.length > 0) {
+        await logSlatePageImpressions(
+          live,
+          page,
+          { user_profile_id: profile_id, page_request_id: randomUUID() },
+          pg,
+        );
+        const items = await resolveWithReasons(
+          page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+          pg,
+        );
+        return { items, slate: live, servedTo: page[page.length - 1].position };
+      }
+    }
+  }
 
   const listsA: RankedList[] = [];
   if (profile_id) {
@@ -421,25 +480,26 @@ export async function generateFeed(
       rank: i + 1,
       reason: "",
     }));
-    if (items.length === 0) return [];
+    if (items.length === 0) return { items: [], slate: null, servedTo: 0 };
     const served = await serveWithExploration(
       items,
       [],
       { profile_id, session_id: opts.session_id ?? null },
       pg,
     );
-    return resolveWithReasons(served, pg);
+    return { items: await resolveWithReasons(served, pg), slate: null, servedTo: served.length };
   }
 
-  const fused = rrfFuse(all).slice(0, 100);
-  if (fused.length === 0) return [];
+  const fusedFull = rrfFuse(all);
+  const fused = fusedFull.slice(0, SLATE_DEPTH);
+  if (fused.length === 0) return { items: [], slate: null, servedTo: 0 };
 
   const embeddings = await fetchProductEmbeddings(
     fused.map((f) => f.id),
     pg,
   );
   const top30 = mmrSelect({ candidates: fused, embeddings, k: 30 });
-  if (top30.length === 0) return [];
+  if (top30.length === 0) return { items: [], slate: null, servedTo: 0 };
 
   // LLM reranker OFF by default (docs/decision-llm-reranker-2026-06-10.md):
   // in the clean F6 head-to-head it never beat RRF+MMR on relevance, its
@@ -449,6 +509,84 @@ export async function generateFeed(
   // argued upsell), each with its own evaluation before production.
   const llmEnabled = process.env.LLM_RERANK_ENABLED === "true";
   if (!llmEnabled || !profile_id || top30.length < 10) {
+    // ── Slate MISS path: materialize the immutable post-exploration snapshot
+    //    to SLATE_DEPTH, fix exploration ONCE across every position (explore
+    //    pool = fusion tail beyond the depth), persist, serve page 1. ──
+    if (opts.session_id) {
+      // Head: RRF+MMR over the fused candidates (the exp-K validated shape).
+      const headOrdered = mmrSelect({
+        candidates: fused,
+        embeddings,
+        k: Math.min(SLATE_DEPTH, fused.length),
+      }).map((t) => t.id);
+      // Tail: popularity-ordered continuation (exp-K's fuseWithPopTail — the
+      // fusion alone is capped by per-source limits ~20-50; without this tail
+      // the infinite scroll would end after two pages in a 5000-item store).
+      const headSet = new Set(headOrdered);
+      const popTail = (
+        await timed("slate_tail", () =>
+          fetchPopularGlobal(excluded, SLATE_DEPTH + SLATE_SPARES, pg),
+        )
+      )
+        .map((x) => x.id)
+        .filter((id) => !headSet.has(id));
+      const allCandidates = [...headOrdered, ...popTail];
+      const base: CachedRerankItem[] = allCandidates
+        .slice(0, SLATE_DEPTH)
+        .map((id, i) => ({ product_id: id, rank: i + 1, reason: "" }));
+      const tailPool = allCandidates.slice(SLATE_DEPTH, SLATE_DEPTH + SLATE_SPARES);
+      const explored = applyEpsilonExploration(base, tailPool, {
+        epsilon: EXPLORATION_EPSILON,
+      });
+      const slateItems: SlateItem[] = explored.map((x) => ({
+        product_id: x.product_id,
+        position: x.rank,
+        source: x.source,
+        propensity: x.propensity,
+      }));
+      const usedExplore = new Set(
+        explored.filter((x) => x.source === "explore").map((x) => x.product_id),
+      );
+      const spares = tailPool.filter((id) => !usedExplore.has(id));
+      const slate: SlateRow = {
+        slate_id: randomUUID(),
+        session_id: opts.session_id,
+        surface: "home",
+        version: 1,
+        items: slateItems,
+        pins: [],
+        spares,
+        policy: "default",
+      };
+      await timed("slate_write", () =>
+        insertSlate(
+          {
+            slate_id: slate.slate_id,
+            user_profile_id: profile_id,
+            anonymous_id: opts.anonymous_id,
+            session_id: slate.session_id,
+            surface: slate.surface,
+            items: slateItems,
+            spares,
+          },
+          pg,
+        ),
+      );
+      const page = slateItems.slice(0, limit);
+      await logSlatePageImpressions(
+        slate,
+        page,
+        { user_profile_id: profile_id, page_request_id: randomUUID() },
+        pg,
+      );
+      const items = await resolveWithReasons(
+        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+        pg,
+      );
+      return { items, slate, servedTo: page.length > 0 ? page[page.length - 1].position : 0 };
+    }
+
+    // Legacy path (no session: crawlers / deterministic cold variant).
     const items: CachedRerankItem[] = top30.slice(0, limit).map((t, i) => ({
       product_id: t.id,
       rank: i + 1,
@@ -462,7 +600,7 @@ export async function generateFeed(
       { profile_id, session_id: opts.session_id ?? null },
       pg,
     );
-    return resolveWithReasons(served, pg);
+    return { items: await resolveWithReasons(served, pg), slate: null, servedTo: served.length };
   }
 
   const top30Ids = top30.map((t) => t.id);
@@ -508,5 +646,96 @@ export async function generateFeed(
     { profile_id, session_id: opts.session_id ?? null },
     pg,
   );
-  return resolveWithReasons(served, pg);
+  return { items: await resolveWithReasons(served, pg), slate: null, servedTo: served.length };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cursor serving (Etapa C): pages 2+ of the materialized slate.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ServeFeedPageOpts {
+  user_id: string | null;
+  anonymous_id: string | null;
+  session_id: string | null;
+  /** Opaque cursor from the previous page; absent ⇒ first page. */
+  cursor?: string | null;
+}
+
+export interface ServedFeedPage {
+  items: FeedItem[];
+  next_cursor: string | null;
+  slate_id: string | null;
+}
+
+/**
+ * Serve one feed page. With a VALID cursor (live slate, same session, same
+ * version): slice the immutable snapshot — 1-2 queries, no recompute. With an
+ * invalid/expired/foreign cursor: TRANSPARENT regeneration deduped against
+ * everything this session was already served (never a 410 — on a 300-600ms
+ * RTT network, discarding client state is the most expensive possible answer).
+ * Exhausted slate ⇒ next_cursor null (explicit end of feed).
+ */
+export async function serveFeedPage(
+  opts: ServeFeedPageOpts,
+  pg: Client,
+): Promise<ServedFeedPage> {
+  const cur = decodeCursor(opts.cursor);
+
+  if (cur && opts.session_id) {
+    const slate = await loadSlateById(cur.slate_id, pg);
+    if (slate && slate.session_id === opts.session_id && slate.version === cur.v) {
+      const remaining = slate.items.filter((it) => it.position > cur.pos);
+      if (remaining.length === 0) {
+        return { items: [], next_cursor: null, slate_id: slate.slate_id };
+      }
+      const page = remaining.slice(0, PAGE_SIZE_CURSOR);
+      const profile_id = await getProfileIdForFeed(opts.user_id, opts.anonymous_id, pg);
+      await logSlatePageImpressions(
+        slate,
+        page,
+        { user_profile_id: profile_id, page_request_id: randomUUID() },
+        pg,
+      );
+      const items = await resolveWithReasons(
+        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+        pg,
+      );
+      const last = page[page.length - 1].position;
+      const hasMore = slate.items.some((it) => it.position > last);
+      return {
+        items,
+        next_cursor: hasMore
+          ? encodeCursor({ slate_id: slate.slate_id, pos: last, v: slate.version })
+          : null,
+        slate_id: slate.slate_id,
+      };
+    }
+  }
+
+  // First page, or regeneration after an invalid/expired cursor.
+  const isFirstPage = !opts.cursor;
+  const servedBefore =
+    !isFirstPage && opts.session_id ? await fetchServedProductIds(opts.session_id, pg) : [];
+  const result = await generateFeedInternal(
+    {
+      user_id: opts.user_id,
+      anonymous_id: opts.anonymous_id,
+      session_id: opts.session_id,
+      limit: isFirstPage ? PAGE_SIZE_FIRST : PAGE_SIZE_CURSOR,
+      extraExcludedIds: servedBefore,
+    },
+    pg,
+  );
+  return {
+    items: result.items,
+    next_cursor:
+      result.slate && result.servedTo > 0 && result.slate.items.some((it) => it.position > result.servedTo)
+        ? encodeCursor({
+            slate_id: result.slate.slate_id,
+            pos: result.servedTo,
+            v: result.slate.version,
+          })
+        : null,
+    slate_id: result.slate?.slate_id ?? null,
+  };
 }
