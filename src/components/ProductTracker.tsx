@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { track } from "@/lib/client/track";
 
 function inferSource(): "home" | "category" | "search" | "direct" {
   if (typeof document === "undefined") return "direct";
@@ -17,34 +18,18 @@ function inferSource(): "home" | "category" | "search" | "direct" {
   }
 }
 
-async function trackEvent(body: Record<string, unknown>) {
-  return fetch("/api/track", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  }).catch(() => null);
-}
-
 export function ProductTracker({ productId }: { productId: string }) {
   useEffect(() => {
     const start = Date.now();
     let dwellTimer: ReturnType<typeof setTimeout> | null = null;
     let dwellSent = false;
 
-    void trackEvent({
-      event_type: "product_view",
-      occurred_at: new Date().toISOString(),
-      payload: { product_id: productId, source: inferSource() },
-    });
+    track("product_view", { product_id: productId, source: inferSource() });
 
     dwellTimer = setTimeout(() => {
       if (dwellSent) return;
       dwellSent = true;
-      void trackEvent({
-        event_type: "product_dwell",
-        occurred_at: new Date().toISOString(),
-        payload: { product_id: productId, dwell_ms: Date.now() - start },
-      });
+      track("product_dwell", { product_id: productId, dwell_ms: Date.now() - start });
     }, 30_000);
 
     return () => {

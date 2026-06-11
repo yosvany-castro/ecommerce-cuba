@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { track } from "@/lib/client/track";
 
 export interface ProductCardData {
   id: string;
@@ -21,23 +22,14 @@ export function ProductCard({
 
   if (hidden) return null;
 
-  async function onDismiss(e: React.MouseEvent) {
+  function onDismiss(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    // Outbox semantics (C4/C5): el dismiss se oculta SIEMPRE y se encola con
+    // persistencia + client_event_id — jamás revert por fallo de red (el bug
+    // anterior: con la red caída la card "rebotaba" y el gesto se perdía).
     setHidden(true);
-    try {
-      await fetch("/api/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event_type: "dismiss",
-          occurred_at: new Date().toISOString(),
-          payload: { product_id: product.id, reason: "not_interested" },
-        }),
-      });
-    } catch {
-      setHidden(false);
-    }
+    track("dismiss", { product_id: product.id, reason: "not_interested" }, { urgent: true });
   }
 
   return (
