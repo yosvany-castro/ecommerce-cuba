@@ -19,6 +19,7 @@ interface FeedCardDTO {
   currency: string;
   image_url: string | null;
   reason?: string;
+  position?: number;
 }
 
 export async function GET(req: NextRequest) {
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest) {
     currency: it.product.currency,
     image_url: it.product.image_url,
     ...(it.reason ? { reason: it.reason } : {}),
+    ...(it.position ? { position: it.position } : {}),
   }));
 
   return NextResponse.json(

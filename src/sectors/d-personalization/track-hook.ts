@@ -13,7 +13,7 @@ import {
   updateProfileModeWithProduct,
 } from "./profile-mode";
 import type { CohortId } from "./cohorts/definitions";
-import { pinProductInSlate } from "./slate/store";
+import { pinProductInSlate, bumpSlateVersion } from "./slate/store";
 import { captureCoOccurrence } from "./co-occurrence/capture";
 import { modesForEvents } from "./multimode/thresholds";
 import { recomputeModesForBucket } from "./multimode/recompute";
@@ -128,6 +128,17 @@ async function runPipeline(
     { ...advanced, current_recipient_id: recipient_id },
     pg,
   );
+
+  // E1: un SHIFT real de cohorte (la intención modelada cambió — no el primer
+  // warmup) invalida el slate vivo: los cursors en vuelo regeneran su PRÓXIMA
+  // página con la intención nueva; lo visible jamás se reordena.
+  if (cohortChanged && prevState.current_cohort_id !== null) {
+    try {
+      await bumpSlateVersion(input.session_id, pg);
+    } catch (e) {
+      console.warn("[track-hook] slate bump on shift failed (ignored):", e);
+    }
+  }
 
   // Co-occurrence capture runs INDEPENDENT of warmup state — pairs accumulate
   // from the very first event in a session.

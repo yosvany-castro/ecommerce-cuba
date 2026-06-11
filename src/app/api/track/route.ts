@@ -8,7 +8,7 @@ import { withPg } from "@/lib/db/helpers";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { processEventForPersonalization } from "@/sectors/d-personalization/track-hook";
 import { handleDismissAutoExclude } from "@/sectors/d-personalization/exclusion/dismiss-handler";
-import { compactSlateForDismiss } from "@/sectors/d-personalization/slate/store";
+import { compactSlateForDismiss, bumpSlateVersion } from "@/sectors/d-personalization/slate/store";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
       await ensureIdentityRows(pg, { anonymous_id, session_id, user_id });
 
       const results = [];
+      let slate_bumped = false;
       for (const envelope of envelopes) {
         const inserted = await insertEvent(envelope, { pg, anonymous_id, session_id, user_id });
         results.push(inserted);
@@ -95,6 +96,16 @@ export async function POST(req: NextRequest) {
         } catch (e) {
           console.warn("[track] personalization hook failed:", e);
         }
+        // E1: una BÚSQUEDA es intención nueva explícita — invalida el slate
+        // vivo (la próxima página del scroll ya nace con la señal fresca).
+        if (envelope.event_type === "search") {
+          try {
+            const v = await bumpSlateVersion(session_id, pg);
+            if (v !== null) slate_bumped = true;
+          } catch (e) {
+            console.warn("[track] slate bump on search failed:", e);
+          }
+        }
         if (envelope.event_type === "dismiss") {
           try {
             const payload = envelope.payload as { product_id: string };
@@ -110,10 +121,16 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-      return results;
+      return { results, slate_bumped };
     });
-    // Back-compat: a bare envelope gets a bare result.
-    return NextResponse.json(envelopes.length === 1 && !Array.isArray((parsedBody as { events?: unknown[] })?.events) ? result[0] : { results: result }, { status: 200 });
+    // Back-compat: a bare envelope gets a bare result; batches carry the
+    // piggy-backed liveness signal (~20 bytes en una respuesta ya pagada).
+    return NextResponse.json(
+      envelopes.length === 1 && !Array.isArray((parsedBody as { events?: unknown[] })?.events)
+        ? result.results[0]
+        : { results: result.results, slate_bumped: result.slate_bumped },
+      { status: 200 },
+    );
   } catch (e) {
     if (e instanceof ZodError) {
       return NextResponse.json({ error: "invalid_payload", detail: e.issues }, { status: 400 });

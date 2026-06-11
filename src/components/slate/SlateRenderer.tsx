@@ -1,5 +1,6 @@
 import { ProductCard } from "@/components/ProductCard";
 import { InfiniteFeed } from "@/components/InfiniteFeed";
+import { SeenTracker } from "./SeenTracker";
 import type { ResolvedSection } from "@/sectors/f-slate/sections/types";
 
 /**
@@ -31,7 +32,9 @@ function HeroGridSection({ section }: { section: ResolvedSection }) {
     <section data-testid="slate-section-hero">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {section.items.map((it) => (
-          <ProductCard key={it.id} product={it} reason={it.reason} />
+          <SeenTracker key={it.id} slateId={section.slate_id} position={it.position}>
+            <ProductCard product={it} reason={it.reason} />
+          </SeenTracker>
         ))}
       </div>
       <InfiniteFeed

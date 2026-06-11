@@ -5,6 +5,8 @@ export interface FeedItem {
   product: ProductListRow;
   similarity: number;
   reason?: string;
+  /** Posición ABSOLUTA en el slate (para el reporte de viewport, E3). */
+  position?: number;
 }
 
 export async function retrieveTopKByVector(

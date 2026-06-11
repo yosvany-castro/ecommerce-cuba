@@ -260,7 +260,20 @@ async function resolveWithReasons(
       product: byId.get(it.product_id) as ProductListRow,
       similarity: 1 / (it.rank + 1),
       reason: it.reason || undefined,
+      position: it.rank,
     }));
+}
+
+/**
+ * E2 — rótulos honestos por item del slate: el usuario debe PERCIBIR
+ * personalización, no aleatoriedad. Solo dos casos, ambos baratos y veraces:
+ * pins ("Seguías mirando" — continuidad de SU gesto) y slots ε-explore
+ * ("Para descubrir" — el cambio rotulado). Todo lo demás va sin reason.
+ */
+function slateItemReason(item: SlateItem, pins: readonly string[]): string {
+  if (pins.includes(item.product_id)) return "Seguías mirando";
+  if (item.source === "explore") return "Para descubrir";
+  return "";
 }
 
 /** Legacy contract: first page only. Internals (slate/cursor) in generateFeedInternal. */
@@ -317,7 +330,7 @@ export async function generateFeedInternal(
           pg,
         );
         const items = await resolveWithReasons(
-          page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+          page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: slateItemReason(it, live.pins) })),
           pg,
         );
         return { items, slate: live, servedTo: page[page.length - 1].position };
@@ -594,7 +607,7 @@ export async function generateFeedInternal(
         pg,
       );
       const items = await resolveWithReasons(
-        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: slateItemReason(it, slate.pins) })),
         pg,
       );
       return { items, slate, servedTo: page.length > 0 ? page[page.length - 1].position : 0 };
@@ -713,7 +726,7 @@ export async function serveFeedPage(
         pg,
       );
       const items = await resolveWithReasons(
-        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: slateItemReason(it, slate.pins) })),
         pg,
       );
       const last = page[page.length - 1].position;

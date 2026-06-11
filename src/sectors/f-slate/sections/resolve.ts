@@ -73,6 +73,7 @@ export async function resolveSections(
           currency: it.product.currency,
           image_url: it.product.image_url,
           ...(it.reason ? { reason: it.reason } : {}),
+          ...(it.position ? { position: it.position } : {}),
         }));
         for (const it of items) claimed.add(it.id);
         results.push({

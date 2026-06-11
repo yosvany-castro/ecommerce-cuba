@@ -11,6 +11,8 @@ export interface SectionCardDTO {
   currency: string;
   image_url: string | null;
   reason?: string;
+  /** Posición absoluta en el slate (solo hero — reporte de viewport). */
+  position?: number;
 }
 
 export interface ResolveCtx {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ProductCard, type ProductCardData } from "./ProductCard";
+import { SeenTracker } from "./slate/SeenTracker";
 import {
   parseSnapshot,
   shouldRestoreSnapshot,
@@ -10,6 +11,7 @@ import {
 
 interface FeedCardDTO extends ProductCardData {
   reason?: string;
+  position?: number;
 }
 
 interface FeedPageResponse {
@@ -153,7 +155,9 @@ export function InfiniteFeed({
       {items.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
           {items.map((it) => (
-            <ProductCard key={it.id} product={it} reason={it.reason} />
+            <SeenTracker key={it.id} slateId={slateId} position={it.position}>
+              <ProductCard product={it} reason={it.reason} />
+            </SeenTracker>
           ))}
         </div>
       )}

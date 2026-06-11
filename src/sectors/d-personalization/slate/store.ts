@@ -202,3 +202,28 @@ export async function compactSlateForDismiss(
     ],
   );
 }
+
+/**
+ * Live invalidation (E1): bump the slate version of the session's live slate.
+ * Outstanding cursors carry the OLD version ⇒ their next fetch regenerates
+ * transparently (deduped against everything served) — "lo que se muestra
+ * vuelve a cambiar" mid-scroll, touching only UNSEEN pages (anti-flicker:
+ * nothing visible ever reorders). Triggers: cohort SHIFT (intent changed) and
+ * SEARCH (explicit new intent). Returns the new version (null = no live slate).
+ */
+export async function bumpSlateVersion(
+  session_id: string,
+  pg: Client,
+): Promise<number | null> {
+  const r = await pg.query(
+    `UPDATE feed_slates SET version = version + 1
+     WHERE slate_id = (
+       SELECT slate_id FROM feed_slates
+       WHERE session_id = $1 AND surface = 'home' AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 1
+     )
+     RETURNING version`,
+    [session_id],
+  );
+  return r.rows[0]?.version ?? null;
+}
