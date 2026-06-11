@@ -6,6 +6,7 @@ import { composePage, logSlateDecision } from "@/sectors/f-slate/compose";
 import { resolveSections } from "@/sectors/f-slate/sections/resolve";
 import { SlateRenderer } from "@/components/slate/SlateRenderer";
 import { RequestTiming } from "@/lib/timing";
+import { isHoldout } from "@/sectors/d-personalization/holdout";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,12 @@ export default async function HomePage() {
       const hero = resolved.find((s) => s.section_type === "hero_grid");
       await logSlateDecision(
         page,
-        { user_profile_id: null, session_id, slate_id: hero?.slate_id ?? null },
+        {
+          user_profile_id: null,
+          session_id,
+          slate_id: hero?.slate_id ?? null,
+          holdout: isHoldout(identity),
+        },
         pg,
       );
       return resolved;

@@ -38,6 +38,7 @@ import {
 import { decodeCursor, encodeCursor } from "./slate/cursor";
 import { injectPins } from "./slate/pins";
 import { stabilizeSlate } from "./slate/stabilize";
+import { isHoldout } from "./holdout";
 import {
   SLATE_DEPTH,
   SLATE_SPARES,
@@ -336,6 +337,60 @@ export async function generateFeedInternal(
         );
         return { items, slate: live, servedTo: page[page.length - 1].position };
       }
+    }
+  }
+
+  // ── F2 HOLDOUT: ~10% de identidades reciben SIEMPRE la tienda baseline
+  //    (popularidad pura, sin personalización, sin exploración) — el
+  //    contrafactual limpio del sistema completo. Mantienen exclusiones y
+  //    tracking (funcionalidad base, no tratamiento). policy='holdout' en
+  //    slate e impresiones: el denominador queda etiquetado para siempre. ──
+  if (opts.session_id && isHoldout(opts)) {
+    const popDeep = await timed("holdout_popular", () =>
+      fetchPopularGlobal(excluded, SLATE_DEPTH, pg),
+    );
+    if (popDeep.length > 0) {
+      const slateItems: SlateItem[] = popDeep.map((x, i) => ({
+        product_id: x.id,
+        position: i + 1,
+        source: "exploit",
+        propensity: 1,
+      }));
+      const slate: SlateRow = {
+        slate_id: randomUUID(),
+        session_id: opts.session_id,
+        surface: "home",
+        version: 1,
+        items: slateItems,
+        pins: [],
+        spares: [],
+        policy: "holdout",
+      };
+      await insertSlate(
+        {
+          slate_id: slate.slate_id,
+          user_profile_id: profile_id,
+          anonymous_id: opts.anonymous_id,
+          session_id: slate.session_id,
+          surface: slate.surface,
+          items: slateItems,
+          spares: [],
+          policy: "holdout",
+        },
+        pg,
+      );
+      const page = slateItems.slice(0, limit);
+      await logSlatePageImpressions(
+        slate,
+        page,
+        { user_profile_id: profile_id, page_request_id: randomUUID() },
+        pg,
+      );
+      const items = await resolveWithReasons(
+        page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: "" })),
+        pg,
+      );
+      return { items, slate, servedTo: page.length > 0 ? page[page.length - 1].position : 0 };
     }
   }
 

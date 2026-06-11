@@ -118,20 +118,26 @@ export async function composePage(
 /** Fire-and-forget: registra QUÉ placements compusieron la página servida. */
 export async function logSlateDecision(
   page: ComposedPage,
-  ctx: { user_profile_id: string | null; session_id: string | null; slate_id?: string | null },
+  ctx: {
+    user_profile_id: string | null;
+    session_id: string | null;
+    slate_id?: string | null;
+    holdout?: boolean;
+  },
   pg: Client,
 ): Promise<void> {
   try {
     await pg.query(
       `INSERT INTO slate_decisions
          (slate_id, surface, user_profile_id, session_id, config_version, holdout, experiment_id, placements)
-       VALUES ($1, $2, $3, $4, $5, false, $6, $7::jsonb)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
       [
         ctx.slate_id ?? page.composition_id,
         page.surface,
         ctx.user_profile_id,
         ctx.session_id,
         page.config_version,
+        ctx.holdout ?? false,
         page.placements.find((p) => p.experiment_id)?.experiment_id ?? null,
         JSON.stringify(
           page.placements.map((p) => ({
