@@ -15,6 +15,7 @@
     "cron:npmi-recompute": "tsx scripts/cron-npmi-recompute.ts",
     "cron:popularity-7d": "tsx scripts/cron-popularity-7d.ts",
     "cron:fatigue": "tsx scripts/cron-fatigue.ts",
+    "cron:prune": "tsx scripts/cron-prune.ts",
     "cron:rerank-cache-cleanup": "tsx scripts/cron-rerank-cache-cleanup.ts",
     "thesis:catalog": "tsx scripts/thesis/data/catalog-gen.ts",
     "thesis:relations": "tsx scripts/thesis/data/gt-relations.ts",

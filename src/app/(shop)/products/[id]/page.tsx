@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { cookies, headers } from "next/headers";
+import { productImageUrl, isDataSaver } from "@/lib/image-url";
 import { getById } from "@/sectors/b-catalog/repository/products";
 import { ProductTracker } from "@/components/ProductTracker";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -14,13 +16,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   if (!UUID_RE.test(id)) return notFound();
   const product = await getById(id);
   if (!product) return notFound();
+  const ck = await cookies();
+  const hd = await headers();
+  const saver = isDataSaver(ck.get("data_saver")?.value, hd.get("save-data") === "on");
+  const heroSrc = productImageUrl(product.image_url, "pdp", { saver });
 
   return (
     <main className="p-8 max-w-3xl mx-auto">
       <ProductTracker productId={product.id} />
       <div className="grid md:grid-cols-2 gap-6">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.title} className="w-full rounded" />
+        {heroSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={heroSrc} alt={product.title} className="w-full rounded" />
         ) : (
           <div className="w-full h-80 bg-gray-100 rounded" />
         )}

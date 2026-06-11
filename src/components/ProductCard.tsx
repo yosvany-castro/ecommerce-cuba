@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { track } from "@/lib/client/track";
+import { productImageUrl, isDataSaver } from "@/lib/image-url";
 
 export interface ProductCardData {
   id: string;
@@ -46,8 +47,19 @@ export function ProductCard({
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={product.image_url}
+            src={
+              productImageUrl(product.image_url, "grid", {
+                saver: isDataSaver(
+                  typeof document !== "undefined"
+                    ? document.cookie.match(/(?:^|;\s*)data_saver=([^;]+)/)?.[1]
+                    : undefined,
+                  typeof navigator !== "undefined" &&
+                    Boolean((navigator as { connection?: { saveData?: boolean } }).connection?.saveData),
+                ),
+              }) ?? undefined
+            }
             alt={product.title}
+            loading="lazy"
             className="w-full h-40 object-cover mb-2 rounded"
           />
         ) : (
