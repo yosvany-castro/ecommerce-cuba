@@ -1,0 +1,59 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 12,
+    "metricsHash": "72767910c64933e990c73c98c31d29e4bbfaf37804ce4748e3b22b1bf4784139"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 80 libre en home. Hero_grid (slot 10) genera 356 purchases/14d pero hay 5,264 seen/semana en home. Los slots 20-70 tienen popular pero no hay nada en 80. Un popular en slot 80 captura usuarios que scrollean profundo con mayor intención de compra. Categorías fuertes: moda_mujer 13,655 seen (14d), joyeria 5,034 seen, accesorios_tech 6,534 seen. Store feed_revenue 14d: $85,159.85. Se espera lift incremental aunque no haya impresiones individuales (no_impression_logging sistémico)."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 90 libre en home. cross_sell ofrece variedad vs los popular existentes. Joyeria tiene alta relación revenue/seen: $27,459/5,034 = $5.45/seen vs promedio store $2.92/seen ($85,159/29,155). Un cross_sell en fondo de home puede exponer joyería y moda_mujer a usuarios con intención de compra. Store feed_revenue 14d: $85,159.85. Espero contribución incremental en feed_revenue_cents aunque placement-level no tenga since_change medible por no_impression_logging sistémico."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "3d51ea31-630a-4214-b9f2-80722b0610e9",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "505752ca-64fe-4e2f-ba74-7d827258f901",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron aceptadas. Ahora redacto el resumen.\n\n---\n\n## Resumen\n\n**Propuestas ejecutadas (2/5 — las otras 3 no sobrevivieron al critic):**\n\n| # | Acción | Placement ID | Slot | Sección | Tier |\n|---|--------|-------------|------|---------|------|\n| 1 | `create` home popular | `3d51ea31...` | 80 | popular | low ✅ |\n| 2 | `create` home cross_sell | `505752ca...` | 90 | cross_sell | low ✅ |\n\n**Evidencia que las justifica:**\n- Home es la única superficie con tráfico real (5,264 seen/semana en 7d, 29,155 en 14d)\n- hero_grid (slot 10) genera 356 purchases/14d con $78,267 revenue — pero el resto de la página (slots 20-70) tiene placements sin tracking\n- Las categorías más fuertes (moda_mujer 13,655 seen/14d, joyeria $27,459 rev/14d, accesorios_tech 6,534 seen/14d) no tienen slots dedicados más allá del hero\n- Slots 80 y 90 estaban libres, capturando usuarios de scroll profundo con mayor intención de compra\n- El vs_holdout ratio 1.5 confirma que la tienda genera más revenue que el grupo holdout\n\n**3 propuestas descartadas por el critic:** cart slot 60 (low_sample + no_impression_logging + datos de catálogo inconsistentes), pdp slot 90 (low_sample + no_impression_logging), y las versiones previas con hipótesis no medibles.\n\n**Qué esperar en `since_change`:** Dado que todos los placements no-hero tienen `no_impression_logging`, el funnel individual será null. Sin embargo, estos placements pueden contribuir al feed_revenue_cents del store. En la próxima revisión, buscaré ver si el store-level feed_revenue se sostiene o mejora, y si hay señales de que los nuevos placements 80/90 están siendo servidos (aunque sin impresiones individuales). Si funcionan, deberé re-proponerlos antes de que expire el TTL de 72h con la evidencia de since_change (que probablemente será el store-level, no placement-level).",
+  "truncated": false,
+  "runId": "sim-run-7-e12",
+  "createdAt": "2026-06-17T15:17:55.014Z"
+}

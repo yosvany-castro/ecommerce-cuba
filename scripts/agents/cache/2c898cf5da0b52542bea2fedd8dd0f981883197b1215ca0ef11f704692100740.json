@@ -1,0 +1,122 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 3,
+    "metricsHash": "5f6e4d1ff5a99aa598d67ef45111a5661e0fffe9318840e8335e7902b822c73a"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home hero_grid slot 10 es el único placement con datos: revenue_ratio 1.10 vs holdout en 14d (read_metrics home 14d: revenue_cents 11,195,474, purchases 1,498). Sin embargo, los slots popular existentes (slot 20 y 50) tienen flag no_impression_logging desde hace 14 días sin funnel data. Crear un nuevo popular slot 30 permite un segundo canal de revenue en home. La categoría joyería domina con $76,290.56 revenue y 922 purchases en 14d (read_metrics home 14d categories). Un popular global en home 30 capitalizará este contenido sin depender de placements previos sin tracking."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo popular slot en home para diversificar más allá de joyería. La categoría tecnología genera $17,428.10 revenue y 125 purchases en 14d (read_metrics home 14d categories: revenue_cents 1,742,810). Juguetes genera $10,922.90 revenue y 301 purchases (read_metrics same window). Ambos segmentos carecen de placement dedicado. Slot 60 está libre y el popular global puede rotar mejor vendidos de estas categorías. hero_grid sigue operando con ratio 1.10 (10% lift)."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP surface no tiene placements funcionales (cross_sell slot 30 tiene no_impression_logging, store served=0 en 7d). Crear cross_sell slot 40 en PDP permitirá recomendar productos de joyería ($76,290 revenue, 922 purchases 14d read_metrics) y tecnología ($17,428 revenue) a compradores viendo otros productos. La organic revenue de la tienda es $3,474.59 en 7d (read_metrics home 7d), indicando conversión fuera del feed. Cross-sell en PDP puede capturar esa intención de compra."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart surface no tiene placements funcionales (cart_addons slot 20 tiene no_impression_logging, store served=0 en 7d low_sample). Slot 30 ofrece un nuevo canal para cart_addons. Joyería es ideal para add-ons en checkout: productos de $35-$89 precio (read_catalog joyeria), 414 purchases en 7d. Si hero_grid genera $20,509.99 revenue semanal (read_metrics home 7d) con add-to-cart rate de 154.6/1k seen, un cart_addons puede capturar upsell en el momento de compra."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Tercer popular slot en home para la categoría juguetes: $10,922.90 revenue y 301 purchases en 14d (read_metrics home 14d categories: revenue_cents 1,092,290). Esta categoría tiene alta rotación (301 purchases vs 71 de moda_mujer con más seen). Con 3 popular slots en home (30, 60, 70) se cubren joyería (#1), tecnología (#3 revenue) y juguetes (#2 purchases). hero_grid muestra ratio 1.10 revenue lift sostenido desde hace 42 días."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "54dc6764-de6b-477e-86f1-747c3748f25e",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "725e5381-741f-4117-b081-28027dfe17e5",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "placement_id": "9f4e0428-7604-41fb-8be9-25e101483276",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "placement_id": "d92657a5-9140-41d6-bf6e-fb467f9550dd",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "0e17777e-a707-41f3-bb26-1138e9c3fc05",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las propuestas fueron aceptadas en tier **low** con **status approved**. Aquí el resumen:\n\n---\n\n## Resumen de la ronda\n\n**5 propuestas ejecutadas — 5 aceptadas.**\n\n| # | Acción | Placement ID | Slot | Rationale clave |\n|---|---|---|---|---|\n| 1 | `create` home/popular | `54dc6764...` | 30 | Joyería domina con **$76,290 revenue / 922 purchases** en 14d, pero popular slots 20 y 50 tienen `no_impression_logging`. Nuevo canal de revenue en home. |\n| 2 | `create` home/popular | `725e5381...` | 60 | Tecnología: **$17,428 revenue / 125 purchases** en 14d. Juguetes: **$10,922 revenue / 301 purchases**. Diversificación más allá de joyería. |\n| 3 | `create` pdp/cross_sell | `9f4e0428...` | 40 | PDP sin placements funcionales. Cross-sell captura intención de compra mostrando joyería a compradores de otras categorías. |\n| 4 | `create` cart/cart_addons | `d92657a5...` | 30 | Cart sin placements funcionales. Joyería (productos $35-89) ideal para upsell en checkout. |\n| 5 | `create` home/popular | `0e17777e...` | 70 | Juguetes: **301 purchases / 14d** (vs 71 de moda_mujer con más tráfico). Alta eficiencia de conversión. |\n\n**Evidencia base:** hero_grid slot 10 genera revenue_ratio **1.10** (10% lift vs holdout) sostenido 42 días. Joyería es la categoría #1 sin slot dedicado. Los 4 placements previos (popular 20/50, cross_sell 30, cart_addons 20) tienen `no_impression_logging` desde hace 14 días — no se pueden evaluar ni modificar, solo esperar.\n\n**Qué esperar en `since_change` la próxima ronda:** Los nuevos placements (home/popular 30/60/70, pdp/cross_sell 40, cart/cart_addons 30) deberían comenzar a colectar impresiones y mostrar funnel data. Si al menos 2 de 5 tienen `seen > 0` y `since_change` con revenue positivo, la estrategia funciona. Si persiste `no_impression_logging`, tocará escalar con el equipo técnico.",
+  "truncated": false,
+  "runId": "sim-run-7-e3",
+  "createdAt": "2026-06-11T10:04:17.766Z"
+}

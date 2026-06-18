@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 8,
+    "metricsHash": "16c8d97c5a69defce0e4b4a08a54eb9627fbdeaf2dd4f23b1b32f999ae8a87bb"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home es la única superficie con tráfico medible (5,412 seen, 67 purchases, $1,061,238 revenue en 7d vía hero_grid). La categoría moda_mujer domina el store: 15,396 seen, 208 purchases, $4,877,450 revenue en 14d (read_metrics home 14d). Sin embargo, no tiene ningún placement dedicado — los 8 placements popular en slots 20-90 tienen flag no_impression_logging y no generan funnel. Crear un cross_sell en home slot 30 (mismo slot donde ya existen popular placements con logging inhabilitado) permitiría surfear productos de moda_mujer (312 productos activos, 215 purchases/semana en catálogo) en la superficie con mayor tráfico de la tienda. Además, el holdout supera al default (revenue_ratio 0.73, revenue_per_1k_seen 355,910 holdout vs 259,672 default), lo que indica que hay espacio para mejorar el feed. Este cross_sell apunta a capturar parte de esa brecha."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "ebe4bf6c-9491-4bff-9121-1145c6df9cf3",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Propuesta aceptada. Resumen final:\n\n---\n\n## Resumen\n\n**1 propuesta ejecutada (de 5 posibles):**\n\n| # | Acción | Superficie | Slot | Tipo | Tier | Status |\n|---|--------|-----------|------|------|------|--------|\n| 1 | **Crear cross_sell** | home | 30 | cross_sell | low | ✅ approved |\n\n**Evidencia que la justifica:**\n- **moda_mujer** es la categoría dominante: 15,396 seen, $4,877,450 revenue en 14d (read_metrics home 14d) — pero **no tiene ni un placement funcional**.\n- El hero_grid (slot 10) es el único placement con datos; los 8 \"popular\" en slots 20-90 tienen `no_impression_logging` y no se puede actuar sobre ellos.\n- El holdout supera al default (revenue_ratio 0.73), lo que sugiere que hay espacio para mejorar el feed.\n- PDP y Cart tienen `low_sample` store-level y todos sus placements `no_impression_logging`, así que no era viable crear allí.\n\n**Las otras 4 propuestas fueron descartadas por el critic** — apuntaban a cart y pdp, pero carecen de infraestructura de medición (low_sample + no_impression_logging sistémicos).\n\n**Qué esperar en since_change (próxima revisión):**\n- Que el placement `ebe4bf6c` genere datos de funnel (seen, clicks, ATC, revenue) sin el flag `no_impression_logging`.\n- Idealmente, que capture parte del revenue de moda_mujer fuera del hero_grid, ayudando a cerrar la brecha de 27% vs holdout.\n- Si funciona (datos positivos en since_change), habrá que re-proponerlo por TTL de 72h.",
+  "truncated": false,
+  "runId": "sim-run-7-e8",
+  "createdAt": "2026-06-11T11:11:16.530Z"
+}

@@ -1,0 +1,86 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 10,
+    "metricsHash": "47bc67530d9f6a04b75d4a10135dd04fc9b990a17b0af1c1a0b768331dff386b"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP no tiene ninguna sección 'popular' activa. read_metrics 14d muestra que accesorios_tech tiene 633 purchases / 4,200 seen (15.07% purchase rate), la más alta de todas las categorías. read_catalog revela que el producto estrella syn-2026-3000-379 (Logitech powerbank) tiene 614 purchases en 7d y 50.8% margin. Un popular section en PDP slot 20 (posición alta) surfearía estos top productos a usuarios ya en modo exploración/comparación. Hipótesis medible: espero ≥5% ctr_seen (proxy clicks) y ≥30 purchases en 7d since_change, comparable al benchmark de hero_grid (1.0 ctr_seen, 191 purchases/7d en 4,847 seen)."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "accesorios_tech"
+      },
+      "scope": "segment",
+      "scope_ref": "accesorios_tech",
+      "ttl_hours": 72,
+      "rationale": "accesorios_tech es la categoría con mayor purchase rate (15.07% según read_metrics 14d: 633 purchases/4,200 seen) y su producto top syn-2026-3000-379 tiene 614 purchases/7d (read_catalog). Un cross_sell segmentado en PDP para esta categoría surfearía productos complementarios (ej: cargadores, fundas) a usuarios con alta intención de compra. Slot 40 evita conflicto con el cross_sell en slot 30 (no_impression_logging). Hipótesis medible: espero ≥3% ctr_seen y ≥15 purchases en 7d since_change entre usuarios que ven PDP de accesorios_tech."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "accesorios_tech"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Corrección de scope (global en vez de segment con cohort inválido). read_metrics 14d: accesorios_tech tiene 633 purchases/4,200 seen = 15.07% purchase rate, la más alta del catálogo. read_catalog: producto syn-2026-3000-379 (Logitech powerbank) 614 purchases/7d, margen 50.8%. Un cross_sell en PDP slot 40 con regla pdp_category eq accesorios_tech surfeará complementos a compradores de alta intención. Hipótesis: ≥3% ctr_seen y ≥15 purchases/7d since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "f3608701-ed8f-4c6c-aef6-d4868788b25d",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "placement_id": "acac505d-a880-45ea-ac40-ae62f822ca17",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas aceptadas. Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **PDP slot 20 — popular (global)** — una sección de productos populares en la página de producto, slot alto (prioridad visual).\n2. **PDP slot 40 — cross_sell segmentado a accesorios_tech** — productos complementarios cuando el usuario ve un producto de la categoría con mayor purchase rate.\n\n**Con qué evidencia:**\n- `read_metrics 14d`: accesorios_tech tiene **15.07% purchase rate** (633/4,200 seen), joyería **$8.16 revenue/seen**. Caída severa de tráfico (-77% seen vs semana anterior) y feed 14% por debajo del holdout en revenue_ratio 7d (0.86).\n- `read_catalog`: producto top syn-2026-3000-379 (Logitech powerbank): **614 purchases/7d**, $12.30, **50.8% margin** — ideal para popular y cross-sell.\n- Los 15 placements legacy (home 20-90, cart 20-70, pdp 30/50) tienen `no_impression_logging` — no debí tocarlos.\n\n**Qué espero ver en `since_change` la próxima vez:**\n- **Popular slot 20**: ≥5% ctr_seen, ≥30 purchases/7d — comparable al benchmark de hero_grid (1.0 ctr, 191 purchases/7d en 4,847 seen).\n- **Cross_sell slot 40**: ≥3% ctr_seen, ≥15 purchases/7d entre visitantes de PDP accesorios_tech.\n- Si funcionan, caducarán por TTL (72h) y deberé re-proponerlas con la evidencia de `since_change`.",
+  "truncated": false,
+  "runId": "sim-run-2026-e10",
+  "createdAt": "2026-06-17T15:38:57.622Z"
+}

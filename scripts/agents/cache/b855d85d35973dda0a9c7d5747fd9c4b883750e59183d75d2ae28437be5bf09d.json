@@ -1,0 +1,133 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 7,
+    "metricsHash": "c2156d83d31e7ffb230af2fb85629bb4cbf248e4ddf1cb37bd78079f4112e190"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "moda_mujer"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Moda_mujer es la categoría dominante en 14d: 14,943 seen (52.1% del total store 28,659 seen), 190 compras, $45,421 revenue (65.5% del total $69,384 revenue). Crear cross_sell en PDP slot 50 (libre) para capturar ventas adicionales de visitantes viendo productos de moda_mujer. PDP actualmente tiene 3 placements (slots 20,30,40) pero todos con no_impression_logging — un slot nuevo con targeting puede generar revenue incremental."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 60,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "joyeria"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Joyería tiene alto valor por visita en 14d: solo 2,750 seen (9.6% del total) pero genera $12,138 revenue (17.5% del total), con AOV de ~$253/compra (48 compras). Productos de joyería like Swarovski collar ($3,760, margen 44%), Pandora collar ($81,820, margen 16%) — cross-sell en PDP slot 60 (libre) para usuarios viendo joyería puede incrementar revenue significativamente por el alto ticket."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "cart_item_count",
+            "op": "gt",
+            "value": 0
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Store 14d: 1,603 add_to_carts y 403 compras (home 14d metrics). El carrito actual tiene 2 placements (slots 20,30) pero ambos con no_impression_logging — sin datos funcionales. Crear cart_addons en slot 40 (libre) para servir addons a usuarios con carrito activo. Productos de bajo ticket y alto margen (accesorios_tech, joyería pequeña) pueden incrementar AOV en el checkout."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 70,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "deporte"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Deporte en 14d: 2,335 seen, 51 compras, $2,246 revenue. Categoría activa con 2,640 eventos en catálogo (read_catalog). Slot 70 libre en PDP. Cross-sell en PDP para visitantes de deporte puede capturar ventas cruzadas de productos complementarios como mochilas, pesas, balones — con precios desde $11.85 (Nike mochila dep, margen 59%) hasta $111.71 (Adidas pesas, margen 29%)."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "placement_id": "fa4403a6-7037-43e4-a551-e6412d3d303f",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 60,
+      "placement_id": "2c46e4fd-569a-49cf-9907-cb35e35a4fef",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "placement_id": "1dbc493f-1153-4907-ba48-51991ce0c67d",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 70,
+      "placement_id": "7c4a4977-f885-471d-9a37-bdaa1689de9e",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las propuestas fueron aceptadas. Aquí está el resumen:\n\n---\n\n## Resumen final\n\n1. **Creé PDP slot 50 cross_sell (moda_mujer)** — Evidencia: 14,943 seen, 190 compras, $45,421 revenue en 14d (52% del tráfico, 65% del revenue). Espero ver compras cruzadas en visitantes de moda_mujer incrementando el revenue del placement en since_change.\n\n2. **Creé PDP slot 60 cross_sell (joyería)** — Evidencia: solo 2,750 seen pero $12,138 revenue (17.5% del total), AOV ~$253. Espero ver que el cross-sell de joyería genere revenue incremental por su alto ticket.\n\n3. **Creé Cart slot 40 cart_addons (general)** — Evidencia: 1,603 add_to_carts en 14d en la tienda, sin placements funcionales en cart. Espero ver que los addons capturen revenue adicional en el checkout.\n\n4. **Creé PDP slot 70 cross_sell (deporte)** — Evidencia: 2,335 seen, 51 compras, $2,246 revenue en 14d. Espero ventas cruzadas de productos complementarios (mochilas, accesorios) en la categoría deporte.\n\n5. **Descarté** la propuesta de un 2º slot en cart por ser redundante con la #3, y corregí las cifras que el critic señaló como no verificables en read_metrics.\n\n**Diagnóstico base**: el hero_grid funciona pero su tráfico cayó 78% (de 23,414 a 5,245 seen semana a semana); los otros 11 placements existentes tienen `no_impression_logging` y no puedo actuar sobre ellos. Las 4 creaciones apuestan por PDP y Cart, las superficies con slots libres, targeting las categorías más fuertes del catálogo.",
+  "truncated": false,
+  "runId": "sim-run-7-e7",
+  "createdAt": "2026-06-11T11:07:52.234Z"
+}

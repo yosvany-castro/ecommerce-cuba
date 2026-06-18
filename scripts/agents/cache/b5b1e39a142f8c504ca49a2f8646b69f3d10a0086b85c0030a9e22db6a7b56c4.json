@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 42,
+    "epoch": 11,
+    "metricsHash": "d90c9822af2c395d7b2d77b6b7caff32ef597af5e17d72be24ff9bd4951afe4b"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Único placement con datos es hero_grid (slot 10, 14d: 25,684 seen, 322 purchases, 3,383,222¢ revenue). Los otros 11 placements tienen no_impression_logging y no se pueden tocar. vs_holdout 14d: holdout genera 219,485¢/1k_seen vs feed 135,298¢/1k_seen (ratio 0.62), indicando que el feed actual no maximiza valor. El volumen semanal cayó de 23,333 seen (semana previa) a 5,336 seen (actual). Se crea popular slot 80 como nuevo punto de medición. Hipótesis: debe generar ≥100,000¢ revenue/1k_seen en 14d; si en 28d no supera 135,298¢/1k_seen se considera underperformante."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "e0bc4563-5ac6-4c23-b369-c6082777cdaa",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Propuesta aceptada y aplicada ✅\n\n---\n\n## Resumen\n\n1. **Propuse crear** `popular` en **home slot 80** (global, TTL 72h) — la única acción que sobrevivió al critic.\n2. **Evidencia**: hero_grid (slot 10) es el único placement con datos en toda la tienda (14d: 25,684 seen, 3,383,222¢ revenue). Los otros 11 placements tienen `no_impression_logging` y no se pueden tocar. El vs_holdout muestra que el holdout (sin feed) genera **1.62x más revenue/1k_seen** que el feed actual (219,485¢ vs 135,298¢), y el volumen semanal se desplomó **−77% WoW** (de 23,333 a 5,336 seen).\n3. **Espero ver** en `since_change` (cuando tenga ≥14 días) que el nuevo placement genere **≥100,000¢ revenue/1k_seen** como umbral mínimo, con objetivo de alcanzar los 135,298¢ del baseline actual del feed.\n4. **Lo que descarté**: cross_sell en home (sin producto de referencia, conceptualmente inválido), segmentación prematura por categoría (moda_mujer, tecnologia) sin baseline global primero, y slot 90 (para no saturar y poder aislar causalidad).\n5. **Próximo paso**: si en 28 días el slot 80 funciona (≥135,298¢/1k_seen), re-proponer con la evidencia de `since_change` y evaluar si abrir slot 90 o segmentar por categorías fuertes.",
+  "truncated": false,
+  "runId": "sim-run-42-e11",
+  "createdAt": "2026-06-11T10:44:51.430Z"
+}

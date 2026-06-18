@@ -1,0 +1,59 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 42,
+    "epoch": 12,
+    "metricsHash": "f108a113158f63619e7c27fd89acb30773fe6d49658bbbb2d655930086b46bb8"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 80 popular: hero_grid (4236ac4e, slot 10) genera 4,760 seen y 615,881 revenue_cents en 7d pero acapara 90% del seen total (5,276). Todos los placements slots 20-70 tienen flag no_impression_logging. moda_mujer aporta 551,763 revenue_cents (78% del feed) con 1,961 seen en 7d (2,516,534 revenue_cents, 10,475 seen en 14d). Un popular section en slot 80 expondrá productos de alta demanda a usuarios que scrollearon más abajo, ampliando el funnel más allá de hero_grid."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 90 cross_sell: tecnologia genera 424,344 revenue_cents en 14d desde solo 784 seen (~541 revenue_cents/seen). accesorios_tech tiene 51 purchases en 14d desde 4,910 seen. moda_mujer genera 2,516,534 revenue_cents en 14d con 10,475 seen (alta frecuencia). Cross_sell en slot 90 recomendará productos complementarios entre moda_mujer (alta frecuencia) y tecnologia/accesorios_tech (alto valor por seen), buscando revenue incremental medible en since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "4e2efc60-d804-4d5c-b47b-5ffef352a84a",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "fbc8dbf8-7025-4efc-8987-20796fca4de1",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas aceptadas ✅✅. Con 2 propuestas sólidas es suficiente. Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **Popular en home slot 80** (id: `4e2efc60`) — Sección popular global para exponer productos de alta demanda (especialmente moda_mujer) a usuarios que scrollearon más abajo\n2. **Cross_sell en home slot 90** (id: `fbc8dbf8`) — Sección cross-sell global para recomendar productos complementarios entre moda_mujer (alta frecuencia) y tecnologia/accesorios_tech (alto valor por seen)\n\n**Evidencia que las sustentó:**\n- Hero_grid acapara 90% del seen total (4,760 de 5,276 en 7d), mientras todos los slots 20-70 tienen `no_impression_logging`\n- moda_mujer: 551,763 revenue_cents (78% del feed) en 7d, 2,516,534 revenue_cents en 14d\n- tecnologia: 424,344 revenue_cents en 14d desde solo 784 seen (~541/seen)\n- Trend semanal: seen -77%, purchases -78%, revenue -74% — urge ampliar el funnel\n\n**Qué espero ver en since_change la próxima vez:**\n- Ambos placements deben generar seen > 0, purchases > 0 y revenue_cents > 0 en since_change\n- El slot 80 popular debería capturar tráfico incremental de scroll profundo con productos de moda_mujer principalmente\n- El slot 90 cross_sell debería generar compras cruzadas entre categorías, elevando el revenue por sesión\n- Si funcionan (TTL 72h), habrá que re-proponerlos con la evidencia recolectada",
+  "truncated": false,
+  "runId": "sim-run-42-e12",
+  "createdAt": "2026-06-11T10:50:52.640Z"
+}

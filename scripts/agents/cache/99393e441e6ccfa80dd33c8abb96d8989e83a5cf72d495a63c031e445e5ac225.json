@@ -1,0 +1,136 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 5,
+    "metricsHash": "d912b1ee5b49b64c1d89bd23616adee360ba20c3f1ff710b6e51d8da1a6dad62"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "category": "accesorios_tech"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "14d read_metrics: accesorios_tech tiene 708 purchases/4809 seen = 14.7% conversion, la más alta de todas las categorías (vs moda_mujer 1.0%, juguetes 1.1%, deporte 3.0%). Revenue $9,309 en 14d. El producto estrella 'Logitech powerbank' (syn-2026-3000-379) genera 618 purchases/semana a $12.30 con margen 50.8%. No existe ningún placement dedicado para esta categoría de alto rendimiento. El único placement activo (hero_grid@10) mezcla todas las categorías sin segmentación. Dado que la tienda cayó -82% revenue en 7d (de $68,292 a $12,240) con revenue_ratio 0.64 vs holdout, se necesita urgently un canal dedicado para la categoría de mayor conversión."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "14d read_metrics: accesorios_tech domina con 708 purchases/4809 seen = 14.7% conversión, la más alta de toda la tienda (vs moda_mujer 1.0%, juguetes 1.1%). Revenue $9,309 en 14d. Top producto: Logitech powerbank (syn-2026-3000-379) con 618 purchases/semana. La tienda cayó -82% revenue en últimos 7d ($68,292→$12,240) con revenue_ratio 0.64 vs holdout. No existe placement dedicado para la categoría de mayor conversión. Un popular@30 mostraría los productos más vendidos, que son mayoritariamente accesorios_tech por su alta rotación."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "accesorios_tech"
+          }
+        ]
+      },
+      "scope": "segment",
+      "scope_ref": "pdp_category:accesorios_tech",
+      "ttl_hours": 72,
+      "rationale": "14d metrics: accesorios_tech tiene 14.7% conversión (708 purchases/4809 seen), la más alta. Producto estrella Logitech powerbank (syn-2026-3000-379) con 618 purchases/semana. Cross-sell en PDP cuando el usuario ve accesorios_tech puede aumentar ATC. Moda_mujer tiene $50,634 revenue pero solo 1% conv — cross-sell de accesorios_tech (alta rotación, bajo precio promedio $12-19) como complemento económico. Revenue_ratio 0.64 indica necesidad de mejorar monetización del feed."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "accesorios_tech"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "14d metrics: accesorios_tech 14.7% conv (708pp/4809 seen, $9,309 revenue). Logitech powerbank (syn-2026-3000-379) 618 purchases/semana, $12.30, margen 50.8%. Cross-sell en PDP cuando el usuario ve accesorios_tech puede capturar ATC adicional. PDP actual solo tiene cross_sell@30 con no_impression_logging creado hace 28d — slot 50 nuevo, regla pdp_category=accesorios_tech, podría tener mejor instrumentación."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "14d metrics: accesorios_tech 14.7% conversión con 708 purchases. El cart_addons existente (slot 30, no_impression_logging) fue creado hace 14d. Slot 40 nuevo puede tener instrumentación fresca. Productos de accesorios_tech tienen precio promedio bajo ($5.26-$32.60) ideales para add-to-cart impulsivo. Revenue_ratio 0.64 indica que el feed necesita mejorar monetización; cross-sell/cart_addons de alta-conversión pueden ayudar."
+    }
+  ],
+  "results": [
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "12142a19-f64a-4c83-9f76-46955c2eb0ac",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "placement_id": "50d0fb75-f06d-4a6d-9b90-5047f8841d9c",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "placement_id": "5ecb55e3-b911-44cd-a6eb-b3117710a65f",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Tres propuestas aceptadas. Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**3 propuestas ejecutadas y aceptadas** (todas tier `low`, `approved`):\n\n| # | Acción | Placement ID | Evidencia clave |\n|---|---|---|---|\n| 1 | `home/popular@30` | `12142a19-...` | accesorios_tech: 708 purchases/4,809 seen = **14.7% conversión** (14d). Tienda -82% revenue en 7d. |\n| 2 | `pdp/cross_sell@50` (rule: pdp_category=accesorios_tech) | `50d0fb75-...` | Misma categoría estrella. Logitech powerbank: 618 purchases/semana, $12.30, margen 50.8%. |\n| 3 | `cart/cart_addons@40` | `5ecb55e3-...` | Productos tech de bajo precio ($5-$32) ideales para add-to-cart impulsivo. Revenue ratio 0.64 vs holdout. |\n\n**What I expect in `since_change` next time:**\n- Los placements nuevos deberían empezar a generar datos de funnel (seen, purchases, revenue). Espero ver que `popular@30` (home) capture tráfico de accesorios_tech y que `cross_sell@50` (PDP) y `cart_addons@40` (cart) tengan al menos impresiones registradas — a diferencia de los placements legacy con `no_impression_logging`. Si funcionan, se re-proponen con evidencia de `since_change` para renovar TTL o escalar a tier más alto.\n\n**Descarte por critic:**\n- Props de home/popular para deporte y moda_mujer (inmedibles por `no_impression_logging` histórico en section_type popular)\n- Props de PDP/cart adicionales (misma razón + low_sample)",
+  "truncated": false,
+  "runId": "sim-run-2026-e5",
+  "createdAt": "2026-06-17T15:26:07.652Z"
+}

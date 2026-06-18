@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 8,
+    "metricsHash": "f0e3cd92519d2da36d7e3bf22f91f0f54fb7dd449d28d04e2ff1dd9dcafc435b"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo placement popular en home slot 90 para capitalizar la categoría accesorios_tech. Read_metrics home 14d (ventana 2026-04-09 a 2026-04-23) muestra: accesorios_tech tiene 5,099 seen y 713 purchases (14.0% purchase_rate), vs moda_mujer 13,845 seen y solo 135 purchases (0.97%). El revenue_ratio vs_holdout es 0.88, indicando que el feed necesita más impulso. La categoría accesorios_tech genera $9,712.39 revenue en 14d home. Catálogo muestra el producto syn-2026-3000-379 con 602 purchases_7d, confirmando alta demanda. Hipótesis: en 72h este placement generará >=20 purchases, aprovechando la alta intención de compra de esta categoría. Slot 90 está libre en home."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "a761a319-7e5b-4611-9936-ae07e9ea573a",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "La propuesta fue **aceptada** — placement creado con tier low, status approved, ID `a761a319-7e5b-4611-9936-ae07e9ea573a`.\n\nNo tengo más acciones viables: todos los demás slots en home (20-80) están ocupados por placements con `no_impression_logging` (solo cabe esperar), PDP/Cart/Search tienen `low_sample`, y ya usé el único slot libre (90).\n\n---\n\n## Resumen Final\n\n| Acción | ¿Qué hice? | Evidencia | Expectativa |\n|---|---|---|---|\n| **CREATE** home slot 90 `popular` | Nuevo placement para accesorios_tech | Read_metrics home 14d: accesorios_tech = 5,099 seen, 713 purchases (14% rate), $9,712 rev — vs 0.97% de moda_mujer. vs_holdout ratio 0.88 indica feed débil. | Espero ≥20 purchases en 72h TTL. Si funciona, re-proponer con datos de `since_change`. |\n\n**Por qué solo 1 acción:** De 8 placements en home, 7 tienen `no_impression_logging` (prohibido tocarlos). PDP, Cart y Search tienen `low_sample`. El único slot libre era el 90, que usé para la categoría con mejor conversión (14% vs 1% promedio).",
+  "truncated": false,
+  "runId": "sim-run-2026-e8",
+  "createdAt": "2026-06-17T15:33:14.851Z"
+}

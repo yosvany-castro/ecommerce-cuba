@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 13,
+    "metricsHash": "9d2d2add541e900504aef0ed9408e8812c1e555996e3bf3aa5d668eb228c5566"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home 14d (read_metrics window_days=14): hero_grid slot 10 captura 26,190 seen con 926 purchases y revenue 6,049,258¢ (ctr_seen=1.0). Sin embargo vs_holdout revenue_ratio=0.54 indica que la tienda rinde solo 54% del holdout —hay oportunidad de mejora significativa. La categoría accesorios_tech convierte a 16.7% (711 purchases de 4,259 seen en 14d, revenue 894,129¢), muy por encima del promedio store (3.6%). Slot 90 está libre y capturará a usuarios que hacen scroll completo. Un popular con best-sellers tech puede generar revenue incremental estimado >25,000¢/semana."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "15d4ed36-8a2a-4f6c-bef2-a9cd9b54ce85",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "✅ **¡Aceptada!** Placement creado con tier low, status approved, ID: `15d4ed36-8a2a-4f6c-bef2-a9cd9b54ce85`.\n\nSolo esta propuesta sobrevivió la revisión del critic (las demás chocaban con flags `no_impression_logging` o `low_sample`). Procedo a cerrar con el resumen.\n\n---\n\n## Resumen (5 líneas)\n\n1. **Propuse crear** un `popular` en home slot 90 (ID: `15d4ed36-8a2a-4f6c-bef2-a9cd9b54ce85`), con TTL de 72h y alcance global.\n2. **Evidencia**: read_metrics 14d muestra que hero_grid (slot 10) genera 26,190 seen con revenue 6,049,258¢ (ctr_seen=1.0), pero el vs_holdout revenue_ratio=0.54 indica que la tienda deja dinero sobre la mesa. La categoría `accesorios_tech` convierte al 16.7% (711 purchases de 4,259 seen), muy por encima del promedio store de 3.6%.\n3. **Descarté** otras 4 propuestas por objeciones del critic: no se puede superseder placements con `no_impression_logging`, PDP y Cart tienen `low_sample`, y no se puede proponer dos placements en el mismo slot.\n4. **Espero ver** en `since_change` dentro de 7 días: al menos 5 purchases atribuidas, revenue incremental >25,000¢, y que el nuevo popular no canibalice al hero_grid sino que genere tráfico incremental en el funnel inferior del home.\n5. **Si funciona**, el placement expirará por TTL a las 72h y deberé re-proponerlo con la evidencia de since_change para extenderlo.",
+  "truncated": false,
+  "runId": "sim-run-2026-e13",
+  "createdAt": "2026-06-17T15:49:26.926Z"
+}

@@ -1,0 +1,99 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 10,
+    "metricsHash": "31a49e6a24048d9be0d61ba9dd7d1b1a5c9b677079958c48e1f1c26e326c4fc7"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "La tienda perdió 80% de revenue WoW ($13,127,051 prev 7d -> $2,679,513 actual 7d). hero_grid (slot 10) es el único placement con datos: 82,020 served, 26,549 seen, $14,343,058 revenue en 14d. El ratio vs_holdout 14d es apenas 1.09x, indicando que el feed apenas supera al holdout. Crear un popular section en slot 90 (único slot libre en home, múltiplo de 10 válido) puede capturar scroll-down y expandir la superficie de descubrimiento. moda_mujer domina con 440 purchases y $137,667 revenue en 14d; hay 299 productos activos para surfear. TTL 72h para test rápido."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {
+        "category": "moda_mujer"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El slot 90 permite un segundo placement de distinto section_type (cross_sell) sin conflicto. En 14d, moda_mujer generó 440 purchases y $137,667 revenue con 18,346 seen y CTR=1. Un cross_sell en home puede sugerir productos complementarios (ej: cartera + blazer + tacones) a usuarios que ya vieron hero_grid, aumentando el AOV. hero_grid tiene 82,020 served/14d con revenue_ratio 1.74x en 7d pero solo 1.09x en 14d — hay margen para mejorar el cross-selling. TTL 72h para evaluación rápida."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El slot 90 permite un segundo placement de distinto section_type (cross_sell) sin conflicto. En 14d, moda_mujer generó 440 purchases y $137,667 revenue con 18,346 seen y CTR=1. Un cross_sell en home complementa al popular del mismo slot, sugiriendo productos relacionados a usuarios que ya vieron hero_grid. hero_grid tiene 82,020 served/14d con revenue_ratio 1.74x en 7d pero solo 1.09x en 14d — hay margen cross-sell. TTL 72h para test."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "home/slot 80 tiene un cross_sell con no_impression_logging (id a1d56409), pero un popular del mismo slot con distinto section_type puede coexistir. hero_grid genera 82,020 served/14d con revenue $14,343,058. El ratio vs_holdout 7d es 1.74x pero cae a 1.09x en 14d. Se necesita expandir superficie de descubrimiento. Popular en slot 80 ofrece productos top sin reglas. moda_mujer: 440 purchases/14d, $137,667 revenue. TTL 72h."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "d1a6c5b7-3cf7-43ce-a537-23c371b59091",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "reason": "cooldown: agent already touched home:90 <48h ago"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "059c6dd3-9ced-4eef-8c72-b140ced83b07",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Segunda propuesta aceptada ✅. Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse (2 acciones, de 5 borradores filtrados por el critic):**\n\n1. **`home/popular/slot 90`** (global, TTL 72h) ✅ → `d1a6c5b7-3cf7-43ce-a537-23c371b59091` — tier **low**, approved\n2. **`home/popular/slot 80`** (global, TTL 72h) ✅ → `059c6dd3-9ced-4eef-8c72-b140ced83b07` — tier **low**, approved\n\n**Qué se descartó y por qué:**\n- Propuestas en **PDP y Cart** → critic objetó con razón: ambas superficies tienen flag `low_sample` con served=0. No hay tráfico que aprovechar.\n- Propuesta con regla `is_logged_in` → sin datos de segmentación en el reporte.\n- Propuesta de `cross_sell slot 90` → params inválidos + cooldown del slot.\n\n**Evidencia que las justifica:**\n- hero_grid (slot 10) es el **único placement con métricas**: 82,020 served, $14,343,058 revenue en 14d, CTR=1.\n- **Revenue cayó 80% WoW**: de $13,127,051 (prev 7d) a $2,679,513 (actual 7d).\n- **vs_holdout 14d = 1.09x** — el feed apenas supera al holdout; hay urgencia de mejora.\n- Los otros 10 placements tienen `no_impression_logging` (intocables).\n- moda_mujer es la categoría dominante: 440 purchases/14d, $137,667 revenue, 299 productos activos.\n\n**Qué espero ver en `since_change` la próxima vez:**\n- Que el slot 90 y slot 80 en home registren impresiones (served > 0) — si aparecen con `no_impression_logging`, el problema es de infraestructura, no de placement.\n- Que la tasa de seen total mejore del actual 33% (5,466 seen / 16,560 served en 7d).\n- Que el revenue_ratio vs_holdout 7d se mantenga ≥ 1.74x o mejore.\n- Si funcionan (CTR > 0, purchases > 0), re-proponer con TTL más largo y evidencia de `since_change`.",
+  "truncated": false,
+  "runId": "sim-run-31337-e10",
+  "createdAt": "2026-06-17T16:08:41.994Z"
+}

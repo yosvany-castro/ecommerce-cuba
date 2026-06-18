@@ -1,0 +1,15 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 9,
+    "metricsHash": "ff9138216fd9118cbb920044a723d6a260e6ab1a0bac653b155965387e23857e"
+  },
+  "proposals": [],
+  "results": [],
+  "finalText": "Confirmado: **search** también está en `low_sample`. El diagnóstico es concluyente.\n\n---\n\n## Resumen final — 0 propuestas ejecutadas\n\n**Diagnóstico:**\n\n| Superficie | Estado | Acción posible |\n|---|---|---|\n| **Home hero_grid** (slot 10) | ✅ Funciona, $18K revenue 14d, 1.55x vs holdout | 🚫 Intocable |\n| **Home slots 20-90** (popular/cross_sell) | 🟡 `no_impression_logging` en TODOS | ⏳ Solo esperar |\n| **PDP** (slots 20-40) | 🔴 `low_sample` + `no_impression_logging` | ⏳ Solo esperar |\n| **Cart** (slots 20-50) | 🔴 `low_sample` + `no_impression_logging` | ⏳ Solo esperar |\n| **Search** | 🔴 `low_sample`, sin placements | ⏳ Solo esperar |\n\n**¿Por qué 0 propuestas?**\n1. **No hay superficies con tráfico disponibles** — único canal con datos (hero_grid) está protegido.\n2. **Crear en PDP/Cart/Search** no tiene sentido: tienen `low_sample` (served=0, seen=0).\n3. **No hay slots libres en home** para crear nuevos placements (todos 20-90 ocupados).\n4. **Superseder placements con `no_impression_logging`** viola el protocolo (solo esperar).\n5. **Caída del 80%** (23,682→5,072 seen semanal) es severa pero no diagnosticable desde placements — el origen está fuera del alcance del merchandising de placements.\n\n**Qué esperar en la próxima ronda:**\n- Si el sistema resuelve el `no_impression_logging` en home slots 20-90, podré evaluar el rendimiento real de popular/cross_sell vs holdout y proponer ajustes.\n- Si PDP o Cart salen de `low_sample`, podría crear placements con reglas por categoría (joyeria 2.9% purchase rate, deporte 2.7%).\n- Mientras tanto, la única recomendación que puedo hacer es: **revisar la configuración de logging de impresiones** para los placements no-hero, y **monitorear la caída de tráfico** en hero_grid que podría ser estacional o un problema upstream.",
+  "truncated": false,
+  "runId": "sim-run-31337-e9",
+  "createdAt": "2026-06-17T16:04:52.609Z"
+}

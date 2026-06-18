@@ -1,0 +1,102 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 8,
+    "metricsHash": "b47e72560d5065c94ff078bda090096eb412e1a8464f5fdb1bbf87994bccdf01"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "moda_mujer"
+          }
+        ]
+      },
+      "scope": "segment",
+      "scope_ref": "moda_mujer",
+      "ttl_hours": 72,
+      "rationale": "moda_mujer es la categoría de mayor revenue absoluto: $171,519.74 (14d, revenue_cents=17151974), 521 purchases, 17,677 seen. El único placement con funnel activo (hero_grid home slot10) tiene ATC rate 85.5/1k seen. PDP no tiene ningún placement activo con datos de funnel en read_metrics, lo que representa una oportunidad. Crear cross_sell en PDP slot30 segmentado a moda_mujer permite capturar tráfico de la categoría top en el momento de exploración de producto. TTL 72h limita exposición si no hay señal. Hipótesis: esperamos served>0 y seen>0 en since_change, indicando que el placement loguea correctamente."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "moda_mujer"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "moda_mujer es la categoría de mayor revenue absoluto: $171,519.74 (14d, revenue_cents=17151974), 521 purchases, 17,677 seen. El único placement con funnel activo (hero_grid home slot10) tiene ATC rate 85.5/1k seen. PDP no tiene ningún placement con datos de funnel en read_metrics. Crear cross_sell en PDP slot30 con rule pdp_category='moda_mujer' permite capturar tráfico de la categoría top en el momento de exploración de producto. TTL 72h. Hipótesis: served>0 y seen>0 en since_change."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "joyeria"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "joyeria genera $7,771.28 revenue (14d, revenue_cents=777128), 40 purchases, 1,531 seen, con revenue/seen de $5.08, el segundo más alto después de moda_mujer ($9.70/seen). Los productos top (collar Pandora $214.55, collar Swarovski $55.17) tienen márgenes atractivos (20.8%-44.4%). PDP no tiene placements con datos de funnel. Un cross_sell en PDP slot40 para joyeria permite surfear productos de alto valor unitario cuando el usuario explora joyería. Hipótesis: served>0 y seen>0 en since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "073dea82-5380-4dc8-8e75-df7f5649dc07",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "placement_id": "65470beb-6f19-490b-bd5f-077216b0d518",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas aceptadas ✅. Aquí el resumen de cierre:\n\n---\n\n**Resumen de la ronda**\n\n1. **Diagnóstico**: De 12 placements, solo `hero_grid` (home slot 10) tiene datos de funnel — los otros 11 tienen flag `no_impression_logging` y no se pueden tocar. La categoría **moda_mujer** domina con $171,519.74 revenue (14d). PDP es la única superficie sin placements activos.\n\n2. **Propuesta 1 — PDP slot 30 cross_sell (moda_mujer)** → **Aceptada** (tier low, 72h TTL). Evidencia: moda_mujer = $171,519.74 revenue, 521 purchases, 17,677 seen en 14d. Rule `pdp_category=moda_mujer`. Espero ver `served > 0` y `seen > 0` en `since_change`, validando que PDP loguea correctamente.\n\n3. **Propuesta 2 — PDP slot 40 cross_sell (joyeria)** → **Aceptada** (tier low, 72h TTL). Evidencia corregida: $7,771.28 revenue, $5.08/seen segundo mejor ratio, márgenes 20-44%. Espero lo mismo: `served > 0` y `seen > 0` en `since_change`.\n\n4. **Propuestas 3, 4 y 5 descartadas** por el critic: error de interpretación de datos (joyeria en dólares vs cents), slot ocupado, y falta de hipótesis medible.\n\n5. **Próxima ronda**: si los nuevos placements loguean, revisar `since_change` para evaluar CTR, ATC y revenue vs. holdout. Si no loguean, desestimarlos por TTL y explorar otras superficies.",
+  "truncated": false,
+  "runId": "sim-run-31337-e8",
+  "createdAt": "2026-06-17T16:02:06.019Z"
+}

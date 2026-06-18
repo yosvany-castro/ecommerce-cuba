@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 9,
+    "metricsHash": "5c4020bfc522f36d25620a16937daf4d92e3eddca016961560b522fd7a82b0ca"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Crear cart_addons en slot 20 de cart. read_metrics 14d muestra que accesorios_tech tiene la tasa de conversión más alta del store: 663 purchases / 4,166 seen = 15.9%, generando $8,469.94 revenue_cents. Store 14d total purchases=967. Un cart_addons capturaría usuarios en el momento de compra con productos de alta conversión como accesorios_tech. Espero ver en since_change al menos 50 purchases y $2,000 revenue_cents en 14d desde este placement."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 60,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Crear cross_sell en cart slot 60. read_metrics 14d: store add_to_carts=2,695 y purchases=967 (36% tasa atc→compra). hero_grid 7d tiene atc_per_1k_seen=96.2. Un cross_sell en cart puede mejorar el funnel atc→purchase ofreciendo productos relacionados. Espero ver en since_change al menos 20 purchases y 240 add_to_carts en 14d."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Crear popular en cart slot 70. read_metrics 7d: hero_grid es el único placement con datos y genera served=14,800 y revenue_cents=1,787,732 (97% del feed revenue total de $1,838,985). Store 14d trend muestra caída de purchases de 779 a 188 entre semanas. Un popular en cart diversifica fuentes de revenue. Espero ver en since_change al menos 10 purchases y $500 revenue_cents en 14d."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "ab1f1f1b-5f45-4b80-a4d9-1c105238f7c0",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 60,
+      "placement_id": "807cd65e-34f0-4fb6-ae09-3058b879fed9",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 70,
+      "placement_id": "d625c7d0-cc24-4d31-85e2-0b8b7cb17bae",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas. Aquí está el resumen:\n\n---\n\n## Resumen\n\n**Propuestas ejecutadas (3/3 aceptadas, tier low):**\n\n| # | Acción | Placement ID | Evidencia | Hipótesis esperada |\n|---|---|---|---|---|\n| 1 | **CREATE cart slot 20** → cart_addons | `ab1f1f1b-...` | accesorios_tech: 15.9% conversión (663 compras/4,166 seen) en 14d, $8,469 revenue | ≥50 purchases / $2,000 revenue en 14d |\n| 2 | **CREATE cart slot 60** → cross_sell | `807cd65e-...` | Store 14d: 2,695 ATC → 967 purchases (36%); hero_grid atc_per_1k=96.2 | ≥20 purchases / 240 ATC en 14d |\n| 3 | **CREATE cart slot 70** → popular | `d625c7d0-...` | hero_grid 7d genera 97% del feed revenue ($17,877); purchases cayeron 779→188 | ≥10 purchases / $500 revenue en 14d |\n\n**Qué esperar en `since_change` la próxima vez:** Los 3 placements expirarán por TTL (72h). Si en `since_change` vemos que generan purchases y revenue, deberé re-proponerlos con esa evidencia y posiblemente migrarlos a tier high. El principal riesgo es que el sistema les asigne `no_impression_logging` como a los placements anteriores — si eso ocurre, la única acción válida será esperar.",
+  "truncated": false,
+  "runId": "sim-run-2026-e9",
+  "createdAt": "2026-06-17T15:35:40.850Z"
+}

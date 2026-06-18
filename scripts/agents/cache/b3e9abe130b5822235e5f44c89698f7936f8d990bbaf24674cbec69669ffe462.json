@@ -1,0 +1,15 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 777,
+    "epoch": 12,
+    "metricsHash": "70dd1b508dbea6252fe52d16e35bbe19b86ba6a02be67c85b89fc9536e953e7c"
+  },
+  "proposals": [],
+  "results": [],
+  "finalText": "El critic fue contundente: PDP y Cart tienen `served=0, seen=0` — literalmente no hay tráfico en esas superficies. Las 4 propuestas fueron descartadas. No tengo margen para corregirlas porque el problema de fondo (superficies sin tráfico) no es subsanable.\n\nRevisemos si queda alguna alternativa viable.\n\n**Inventario de situación:**\n| Superficie | Placements | Estado |\n|---|---|---|\n| **home** | hero_grid (slot 10) | ✅ No tocar |\n| **home** | popular/cross_sell (slots 20-90) | ⛔ `no_impression_logging` → esperar |\n| **pdp** | — | ⛔ `low_sample`, served=0 → sin audiencia |\n| **cart** | — | ⛔ `low_sample`, served=0 → sin audiencia |\n| **search** | — | ⛔ `low_sample`, served=0 → sin audiencia |\n\n**Mis placements propios (created_by agent:*):** Ninguno.\n\nNo hay una sola acción ejecutable que sobreviva a las reglas del protocolo:\n1. No puedo tocar hero_grid.\n2. Los 7 placements de home en slots 20-90 tienen `no_impression_logging` → única acción: esperar.\n3. PDP, Cart y Search no tienen tráfico (`served=0, seen=0` en 7d y 14d) → crear placements no tendría audiencia que medir.\n4. No tengo placements propios para pausar ni propuestas previas que re-evaluar.\n\n---\n\n### Resumen\n\n**Qué diagnostiqué:** La tienda depende exclusivamente de `hero_grid` (slot 10) para generar revenue de feed ($5,429.95 en 7d). Los 7 placements restantes en home (slots 20-90) llevan 84-140 días con `no_impression_logging`, lo que los hace inutilizables. Las superficies PDP, Cart y Search no registran tráfico (`served=0`). La tendencia 14d muestra una caída severa de seen (24,025 → 5,040, -79%) aunque el vs_holdout sigue saludable (ratio 0.84).\n\n**Qué propondría cuando cambien las condiciones:**\n- Cuando el flag `no_impression_logging` desaparezca de home 20-90, evaluaría sus métricas reales y propondría pausas/reemplazos.\n- Si PDP o Cart empiezan a recibir tráfico, propondría `cross_sell` para joyería (2.1% conv) y `cart_addons` para tecnología ($633 avg ticket).\n- Si el vs_holdout cayera por debajo de 0.8, propondría refrescar el hero_grid.\n\n**Qué espero ver en `since_change` la próxima vez:** Que algún placement de home (20-90) haya perdido el flag `no_impression_logging` y empiece a reportar métricas, o que PDP/Cart muestren `served > 0` para justificar nuevos placements.",
+  "truncated": false,
+  "runId": "sim-run-777-e12",
+  "createdAt": "2026-06-18T05:37:32.772Z"
+}
