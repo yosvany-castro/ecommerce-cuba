@@ -248,11 +248,87 @@ export interface HoldoutRow {
   split: "train" | "test";
 }
 
+// ─── journeyPolicy (Build-A multi-surface) public types ──────────────────────
+// These describe the FAITHFUL multi-surface exposure regime (spec §3-4): the
+// store renders several surfaces (home / pdp / cart), each composed of ordered
+// SECTIONS, and the shopper examines them with a two-level cascade. They are
+// defined here (not in the sim package) because behavior-model is the lower
+// layer; sim/policy.ts depends on this module, never the other way round.
+
+/** One examinable item inside a rendered section. Mirrors policy.ts ExposedItem
+ *  field-for-field so the policy can map 1:1 without an import cycle. */
+export interface JourneyExposedItem {
+  product_id: string;
+  placement_id: string;
+  section_type: string;
+  placement_version: number;
+  source: "exploit" | "explore";
+  propensity: number;
+}
+
+/** A rendered carousel/grid on a surface, ordered vertically by the policy. */
+export interface SurfaceSection {
+  sectionType: string;
+  placementId: string;
+  placementVersion: number;
+  items: JourneyExposedItem[];
+}
+
+/** What the journeyPolicy returns for a session: the home composition plus the
+ *  mirror resolvers that compose the PDP and cart surfaces endogenously. */
+export interface JourneyPolicyResult {
+  /** Holdout vs default label (carried through to the per-surface impressions). */
+  policyArm: "default" | "holdout";
+  /** Home surface sections ordered vertically (hero = index 0). */
+  home: SurfaceSection[];
+  /** cross_sell (+ optional popular pdp_category) anchored to the viewed product. */
+  resolvePdp: (anchorProductId: string) => SurfaceSection[];
+  /** cart_addons anchored to the products carted this session. */
+  resolveCart: (cartProductIds: string[]) => SurfaceSection[];
+}
+
+/** Mutually exclusive with exposurePolicy. Present ⇒ the two-level attention +
+ *  endogenous depth-1 journey regime runs (spec §3-4). Returning null for a
+ *  session falls back to organic behaviour (same escape hatch as an empty
+ *  exposurePolicy slate). */
+export type JourneyPolicy = (ctx: ExposureContext) => JourneyPolicyResult | null;
+
+/** A single rendered impression on one surface of one session, with the flag of
+ *  whether the two-level attention actually reached it. The ledger turns this
+ *  into a SimImpression (surface + section_id + placement_id + position) and
+ *  attributes purchases per-surface — mirror of production. */
+export interface SurfaceImpression {
+  surface: "home" | "pdp" | "cart";
+  /** 1-based position WITHIN the surface render (across its sections, in order). */
+  position: number;
+  product_id: string;
+  placement_id: string;
+  section_type: string;
+  placement_version: number;
+  source: "exploit" | "explore";
+  propensity: number;
+  /** True iff the two-level cascade examined this item (⇒ product_view emitted). */
+  examined: boolean;
+}
+
+/** Per-session multi-surface exposure produced by the journey regime; consumed
+ *  by sim/ledger.ts (zipped with out.sessions by index). */
+export interface SessionJourneyExposure {
+  session_id: string;
+  user_id: string;
+  policyArm: "default" | "holdout";
+  impressions: SurfaceImpression[];
+}
+
 export interface BehaviorOutput {
   users: SimUser[];
   sessions: SimSession[];
   events: SimEvent[];
   holdout: HoldoutRow[];
+  /** Present ONLY in the journeyPolicy regime (spec §10); absent (undefined) in
+   *  every v1/v2/v3 / exposurePolicy run ⇒ JSON.stringify omits it ⇒ the audited
+   *  bit-identical hashes are unchanged. */
+  journeyExposures?: SessionJourneyExposure[];
 }
 
 export interface BehaviorOpts {
@@ -320,11 +396,28 @@ export interface BehaviorOpts {
    */
   exposurePolicy?: (ctx: ExposureContext) => string[];
   /**
+   * Build-A FAITHFUL multi-surface regime (spec §3-4). MUTUALLY EXCLUSIVE with
+   * exposurePolicy (passing both throws). When present, a session is no longer a
+   * single concatenated slate examined by one cascade; instead the store renders
+   * the HOME (hero + agent carousels, ordered vertical sections) and the shopper
+   * examines it with a TWO-LEVEL cascade (vertical across sections P(reach S_v)=
+   * λ^v, horizontal within a section λ^i). The journey is endogenous and depth-1:
+   * each home product_view opens that PDP (resolvePdp → cross_sell, fresh
+   * two-level), and ≥1 add_to_cart opens the cart once (resolveCart → cart_addons,
+   * fresh two-level). cross_sell/cart_addons conversions do NOT spawn further PDP
+   * visits (no recursion). The hero is home section index 0 ⇒ its per-item
+   * attention stays λ^i exactly (sovereignty). Every draw comes from rngV2 in a
+   * fixed documented order; omitting this knob is BIT-IDENTICAL to today.
+   */
+  journeyPolicy?: JourneyPolicy;
+  /**
    * Cascade continuation probability (cascade click model): slot 0 is always
    * examined; after examining slot j the user moves to slot j+1 with this
    * probability (one rngV2 draw per transition). Default 0.85 ⇒ E[examined]
    * ≈ 6.2 on a 20-slot slate — comparable to the organic VIEW_WINDOW of 4–8.
-   * Only consulted when exposurePolicy is present (no-op otherwise).
+   * Consulted by BOTH the exposurePolicy cascade and the journeyPolicy two-level
+   * attention; it is the single audited λ for vertical AND horizontal decay
+   * (spec §3: "un solo λ=0.85"). No-op when neither policy is present.
    */
   cascadeLambda?: number;
   /**
@@ -498,6 +591,11 @@ export function sampleBehavior(
   opts: BehaviorOpts,
   complementsBySource: ComplementsBySource = new Map(),
 ): BehaviorOutput {
+  // journeyPolicy (Build-A) and exposurePolicy are two different exposure
+  // regimes for the SAME slot in the funnel; running both at once is undefined.
+  if (opts.journeyPolicy && opts.exposurePolicy) {
+    throw new Error("journeyPolicy and exposurePolicy are mutually exclusive");
+  }
   const rng = makeRng(opts.seed);
 
   // ── v2 knobs — every v2-only draw comes from a SEPARATE rng stream so that
@@ -582,6 +680,9 @@ export function sampleBehavior(
   // ── 2. Generate sessions + events ────────────────────────────────────────────
   const sessions: SimSession[] = [];
   const events: SimEvent[] = [];
+  // Multi-surface exposures (journeyPolicy regime only); stays undefined-on-the-
+  // -return otherwise so the audited bit-identical hashes never see a new field.
+  const journeyExposures: SessionJourneyExposure[] = [];
 
   for (const user of users) {
     const tasteSubsSet = new Set(user.latent_state.tasteSubcategories);
@@ -623,6 +724,165 @@ export function sampleBehavior(
         : null;
       const attOf = (p: SynthProduct): number =>
         attFactorById.size > 0 ? (attFactorById.get(p.source_product_id) ?? 1) : 1;
+
+      // ════════════════════════════════════════════════════════════════════════
+      // journeyPolicy regime (Build-A, spec §3-4): FAITHFUL multi-surface world.
+      // Self-contained: it emits this session's events + multi-surface exposure
+      // and `continue`s, never touching the organic/exposurePolicy paths below.
+      // ALL randomness here is rngV2, in a FIXED documented order (home → PDPs
+      // in examination order → cart). No Date.now / Math.random.
+      // ════════════════════════════════════════════════════════════════════════
+      if (opts.journeyPolicy) {
+        const lambda = opts.cascadeLambda ?? CASCADE_LAMBDA_DEFAULT;
+        const sat = (p: SynthProduct): number => {
+          // Noiseless click-model utility (same ground truth as organic choice),
+          // floored/ceiled like the exposurePolicy satisfaction gate.
+          const s = scoreProduct(
+            p, tasteSubsSet, user.latent_state.budgetBand, user.price_sensitivity,
+            isGift, recipientProfile, 0, attOf(p),
+          );
+          return Math.min(SATISFACTION_MAX, Math.max(SATISFACTION_MIN, s / AFFINITY_IN_TASTE));
+        };
+
+        let eventCounter = 0;
+        const eventTs = (): string =>
+          msOffsetToIso(sessionStartMs + ++eventCounter * EVENT_STEP_MS);
+
+        const impressions: SurfaceImpression[] = [];
+        const cartedIds: string[] = [];
+        let anyCart = false;
+
+        /**
+         * Render ONE surface (a list of vertical sections) under the two-level
+         * cascade, run the funnel on the examined items, and record impressions.
+         * Returns the product ids that got a product_view, in examination order.
+         *
+         * Draw order per surface (all rngV2):
+         *   for each section v (top→bottom):
+         *     if v>0: ONE vertical-continuation draw; on fail (≥λ) STOP the surface
+         *     for each item i in the section (left→right):
+         *       if i>0: ONE horizontal-continuation draw; on fail break THIS section
+         *       (item examined ⇒ product_view, then cart draw, then buy draw)
+         */
+        const renderSurface = (
+          surface: "home" | "pdp" | "cart",
+          sectionsIn: SurfaceSection[],
+        ): string[] => {
+          const viewed: string[] = [];
+          let position = 0; // 1-based across the whole surface render
+          let reachedSurface = true; // vertical cascade may stop early
+          for (let v = 0; v < sectionsIn.length; v++) {
+            const section = sectionsIn[v];
+            // Vertical cascade: P(reach S_v) = λ^v. Section 0 always reached.
+            let reachedSection = reachedSurface;
+            if (v > 0) {
+              if (reachedSurface && rngV2.next() < lambda) {
+                reachedSection = true;
+              } else {
+                reachedSection = false;
+                reachedSurface = false; // stop on first vertical failure
+              }
+            }
+            let horizontalAlive = reachedSection; // horizontal cascade within section
+            for (let i = 0; i < section.items.length; i++) {
+              const item = section.items[i];
+              position += 1;
+              let examined = false;
+              if (horizontalAlive) {
+                if (i === 0) {
+                  examined = true; // first item of a reached section always examined
+                } else if (rngV2.next() < lambda) {
+                  examined = true;
+                } else {
+                  horizontalAlive = false; // cascade stops for the rest of this section
+                }
+              }
+              impressions.push({
+                surface,
+                position,
+                product_id: item.product_id,
+                placement_id: item.placement_id,
+                section_type: item.section_type,
+                placement_version: item.placement_version,
+                source: item.source,
+                propensity: item.propensity,
+                examined,
+              });
+              if (!examined) continue;
+
+              const product = productById.get(item.product_id);
+              if (!product) continue; // unknown id ⇒ impression recorded, no funnel
+              // product_view for every examined item.
+              events.push({
+                user_id: user.user_id,
+                session_id: session.session_id,
+                event_type: "product_view",
+                product_id: item.product_id,
+                occurred_at: eventTs(),
+              });
+              viewed.push(item.product_id);
+              // Funnel gated by elasticity × satisfaction (mirror of the organic
+              // loop), draws from rngV2 so the regime is self-contained.
+              const ef = elasticity(product.attrs.priceBand, user.price_sensitivity);
+              const s = sat(product);
+              if (rngV2.next() < P_CART * ef * s) {
+                events.push({
+                  user_id: user.user_id,
+                  session_id: session.session_id,
+                  event_type: "add_to_cart",
+                  product_id: item.product_id,
+                  occurred_at: eventTs(),
+                });
+                anyCart = true;
+                cartedIds.push(item.product_id);
+                if (rngV2.next() < P_BUY * ef * s) {
+                  events.push({
+                    user_id: user.user_id,
+                    session_id: session.session_id,
+                    event_type: "purchase",
+                    product_id: item.product_id,
+                    occurred_at: eventTs(),
+                  });
+                }
+              }
+            }
+          }
+          return viewed;
+        };
+
+        const result = opts.journeyPolicy({
+          user,
+          sessionIndex: si,
+          isGift,
+          recipient: recipientProfile
+            ? { gender: recipientProfile.gender, age_min: recipientProfile.age_min, age_max: recipientProfile.age_max }
+            : null,
+          rng: rngV2,
+        });
+
+        if (result === null) {
+          // Escape hatch: a null result falls back to organic behaviour (same as
+          // an empty exposurePolicy slate). basket stays null ⇒ block below runs.
+        } else {
+          // (a) HOME visit.
+          const homeViewed = renderSurface("home", result.home);
+          // (b) PDP visit per home product_view, in examination order (depth-1).
+          for (const anchor of homeViewed) {
+            renderSurface("pdp", result.resolvePdp(anchor));
+          }
+          // (c) ONE cart visit if anything was carted in the whole session.
+          if (anyCart) {
+            renderSurface("cart", result.resolveCart(cartedIds));
+          }
+          journeyExposures.push({
+            session_id: session.session_id,
+            user_id: user.user_id,
+            policyArm: result.policyArm,
+            impressions,
+          });
+          continue; // session fully handled by the journey regime
+        }
+      }
 
       // ── Basket selection: exposure-mediated OR organic ───────────────────────
       // Exposure regime (roadmap #6): "the store" decides what the user sees;
@@ -915,5 +1175,9 @@ export function sampleBehavior(
     }
   }
 
-  return { users, sessions, events, holdout };
+  // journeyExposures is attached ONLY when the journey regime ran; absent
+  // otherwise so JSON.stringify omits it (audited bit-identical hashes intact).
+  return opts.journeyPolicy
+    ? { users, sessions, events, holdout, journeyExposures }
+    : { users, sessions, events, holdout };
 }

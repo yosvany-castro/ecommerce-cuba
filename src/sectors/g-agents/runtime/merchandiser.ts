@@ -38,13 +38,51 @@ export const hideBuiltinTools = createMiddleware({
         status: "error",
       });
     }
-    return handler(request);
+    // Una tool REAL (propose_placement) llamada con args que violan su Zod
+    // (p.ej. slot<20) lanza en la capa de tool de langchain y escala a un
+    // MiddlewareError FATAL que mata el run entero — igual que el builtin
+    // alucinado de arriba. Convertir cualquier throw en un ToolMessage de error
+    // recuperable: el agente lee el motivo y corrige, en vez de perder la época.
+    try {
+      return await handler(request);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return new ToolMessage({
+        tool_call_id: request.toolCall.id ?? "",
+        name,
+        content: `La llamada a ${name} falló: ${msg}. Corrige los argumentos y reintenta (recuerda: en create el slot va de 20 a 90, nunca 10).`,
+        status: "error",
+      });
+    }
   },
 });
 
 export const MERCHANDISER_PROMPT = `Eres el merchandiser de una tienda e-commerce para Cuba. Tu único poder es proponer
 cambios de placements (secciones de página) vía propose_placement; jamás aplicas nada
-directamente: el sistema decide el tier y el status. Protocolo obligatorio:
+directamente: el sistema decide el tier y el status.
+
+ESTRUCTURA DE LA TIENDA (dónde vive el valor — léela antes de proponer):
+- El HOME tiene el hero (slot 10, del motor, INTOCABLE) y debajo los carruseles que TÚ añades
+  en slots 20..90. La atención del usuario DECAE con el slot: slot 20 (justo bajo el hero) es
+  el de MAYOR atención, slot 30 el siguiente, y así. Los carruseles del home son ADITIVOS
+  PUROS: sin ti el home solo muestra el hero, así que cada carrusel tuyo es margen nuevo. Son
+  tu MAYOR palanca. Prioriza LLENAR los slots bajos del home (20, luego 30, 40) con secciones
+  fuertes y bien justificadas por métricas.
+- La PDP muestra cross_sell (anclado al producto mirado) y la página de CARRITO muestra
+  cart_addons. Esas superficies ya sirven un default razonable; tu placement ahí solo aporta
+  si supera al default. Útiles, pero SECUNDARIAS frente a los carruseles aditivos del home.
+- Estrategia: primero asegura los carruseles de alto valor del home (slots bajos); LUEGO, si
+  tienes evidencia, mejora PDP/cart. No dispersa en superficies de bajo tráfico antes de
+  haber cubierto el inmueble aditivo del home.
+
+SECCIONES Y PARAMS VÁLIDOS (cualquier OTRA clave = RECHAZO automático; no inventes claves):
+- popular     → { "limit": 1..30, "mode": "global" | "cohort" | "pdp_category" }.
+  Para "lo más popular de una categoría" usa mode="pdp_category" (NO existe clave "category").
+  mode="cohort" = popular dentro del segmento del usuario.
+- cross_sell  → { "limit": 1..20 }.
+- cart_addons → { "limit": 1..20 }.
+
+Protocolo obligatorio:
 1. Llama read_metrics (window_days=7) y, si necesitas tendencia, window_days=14.
 2. Diagnostica: ¿qué placement decae?, ¿qué categoría sube sin slot?, ¿qué propuesta
    tuya anterior (created_by agent:*) funcionó o no (since_change)?
@@ -60,9 +98,10 @@ directamente: el sistema decide el tier y el status. Protocolo obligatorio:
 6. Cierra con un resumen de 5 líneas: qué propusiste, con qué evidencia, qué esperas
    ver en since_change la próxima vez.
 Reglas duras (el sistema las impone igualmente): no tocas hero_grid; no tocas filas
-ajenas (solo pause_own de las tuyas; para pausar algo humano usa request_pause); slots
-nuevos solo 20..90; todo lo que apliques expira por TTL — si funciona, deberás
-re-proponerlo con la evidencia de since_change.`;
+ajenas (solo pause_own de las tuyas; para pausar algo humano usa request_pause); en
+create el slot va de 20 a 90 en TODAS las superficies (home, pdp, cart) — el slot 10 es
+del seed/sistema y NUNCA se usa en create; todo lo que apliques expira por TTL — si
+funciona, deberás re-proponerlo con la evidencia de since_change.`;
 
 export const CRITIC_PROMPT = `Eres un auditor escéptico de propuestas de merchandising. Recibes un borrador de
 propuestas de placements y los números que supuestamente las justifican. Tu trabajo:
@@ -189,8 +228,15 @@ export async function runMerchandiserOnce(opts: {
     const last = result.messages.at(-1);
     finalText = typeof last?.content === "string" ? last.content : (last?.text ?? "");
   } catch (e) {
-    if (e instanceof GraphRecursionError || isAbortLike(e)) {
-      truncated = true; // las propuestas ya escritas por tools sobreviven
+    // GraphRecursion / abort / timeout → run truncado, las propuestas ya escritas
+    // por tools sobreviven. MiddlewareError (un error de tool que A1 no convirtió
+    // en ToolMessage recuperable) NO debe invalidar el seed entero: backstop final.
+    if (
+      e instanceof GraphRecursionError ||
+      isAbortLike(e) ||
+      (e instanceof Error && e.name === "MiddlewareError")
+    ) {
+      truncated = true;
     } else {
       throw e;
     }

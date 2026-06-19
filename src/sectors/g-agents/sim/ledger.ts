@@ -91,12 +91,21 @@ export function ingestEpoch(args: {
   epoch: number;
 }): void {
   const { arm, out, exposures, world, epoch } = args;
+  const journey = out.journeyExposures ?? null;
   const shiftMs = epoch * EPOCH_DAYS * DAY_MS;
   const at = (iso: string): Date => new Date(Date.parse(iso) + shiftMs);
 
+  if (exposures !== null && journey !== null) {
+    throw new Error("ingestEpoch: pass either exposures (exposurePolicy) or journeyExposures, not both");
+  }
   if (exposures !== null && exposures.length !== out.sessions.length) {
     throw new Error(
       `exposure/session mismatch: ${exposures.length} exposures vs ${out.sessions.length} sessions`,
+    );
+  }
+  if (journey !== null && journey.length !== out.sessions.length) {
+    throw new Error(
+      `journey/session mismatch: ${journey.length} journeyExposures vs ${out.sessions.length} sessions`,
     );
   }
 
@@ -111,7 +120,50 @@ export function ingestEpoch(args: {
 
   // ── Impresiones (épocas con exposición). ──
   const newImpressions: SimImpression[] = [];
-  if (exposures !== null) {
+  if (journey !== null) {
+    // ── Régimen multi-superficie (journeyPolicy, spec §10). ──
+    // El generador YA produjo las impresiones de TODAS las superficies con su
+    // flag `examined`; aquí solo se les pone served_at/seen_at y un
+    // feed_request_id ÚNICO POR RENDER (cada superficie renderizada = un feed
+    // request real). Render boundary = position vuelve a 1.
+    for (let i = 0; i < out.sessions.length; i++) {
+      const session = out.sessions[i];
+      const exp = journey[i];
+      const servedAt = at(session.started_at);
+      // Las vistas se emiten en EL MISMO orden que las impresiones examinadas
+      // (home→pdp→cart, posición ASC): se consumen 1:1 para el seen_at real.
+      const views = viewsBySession.get(session.session_id) ?? [];
+      let vCursor = 0;
+      let renderSeq = -1;
+      for (const imp of exp.impressions) {
+        if (imp.position === 1) renderSeq += 1; // nueva superficie renderizada
+        let seenAt: Date | null = null;
+        if (imp.examined) {
+          // Empareja con la siguiente vista del producto en orden de render.
+          while (vCursor < views.length && views[vCursor].pid !== imp.product_id) vCursor++;
+          seenAt = vCursor < views.length ? views[vCursor].at : servedAt;
+          if (vCursor < views.length) vCursor++;
+        }
+        newImpressions.push({
+          epoch,
+          feed_request_id: `sl-${arm.name}-${epoch}-${i}-${imp.surface}-${renderSeq}`,
+          session_id: session.session_id,
+          user_id: session.user_id,
+          position: imp.position,
+          product_id: imp.product_id,
+          section_id: imp.section_type,
+          placement_id: imp.placement_id,
+          placement_version: imp.placement_version,
+          policy: exp.policyArm,
+          surface: imp.surface,
+          source: imp.source,
+          propensity: imp.propensity,
+          served_at: servedAt,
+          seen_at: seenAt,
+        });
+      }
+    }
+  } else if (exposures !== null) {
     for (let i = 0; i < out.sessions.length; i++) {
       const session = out.sessions[i];
       const exp = exposures[i];
@@ -198,7 +250,22 @@ export function ingestEpoch(args: {
     });
   }
 
-  arm.log.impressions.push(...newImpressions);
+  // Loop en vez de spread: el journey multi-superficie genera miles de
+  // impresiones por época (home + PDP por ítem visto + carrito); push(...array)
+  // desborda el call-stack de V8 cuando el array cruza el límite de argumentos.
+  for (const imp of newImpressions) arm.log.impressions.push(imp);
+
+  // Poda de impresiones fuera de ventana: a escala-gate el journey acumula
+  // ~585k impresiones/época; sin cota, 14 épocas × 2 brazos desbordan los 4GB.
+  // La atribución mira ≤7d (≈época previa) y la capa de métricas clampa a 28d
+  // (≈2 épocas) — conservar las últimas 3 épocas cubre ambas con margen. Las
+  // compras (ground-truth del veredicto) y los eventos (user-state + NPMI de 6
+  // épocas) NO se podan; solo las impresiones, que son el grueso de la memoria.
+  // Acota además el re-índice de atribución (líneas arriba) a O(ventana).
+  const keepImpressionsFrom = epoch - 2;
+  if (keepImpressionsFrom > 0) {
+    arm.log.impressions = arm.log.impressions.filter((imp) => imp.epoch >= keepImpressionsFrom);
+  }
 }
 
 /** Métrica primaria del gate: margen realizado (¢) en [fromEpoch, toEpoch]. */

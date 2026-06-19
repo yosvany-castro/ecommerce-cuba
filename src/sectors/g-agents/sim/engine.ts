@@ -12,7 +12,7 @@ import {
 import { buildWorld, type World } from "./world";
 import { SimPlacementStore } from "./store";
 import { runEpochCrons, type ArmArtifacts } from "./crons";
-import { buildUserState, makeArmPolicy, type SessionExposure } from "./policy";
+import { buildUserState, makeArmJourneyPolicy } from "./policy";
 import {
   gmvCents,
   ingestEpoch,
@@ -201,20 +201,21 @@ export async function runSeedPipeline(args: {
     const userState = buildUserState(frozen.log, t, world);
     const rows = frozenStore.selectableRows(epochStart(t));
     // holdoutRows = rows: composición idéntica en e1; solo cambia la etiqueta
-    const armPolicy = makeArmPolicy({ rows, holdoutRows: rows, artifacts, userState, world, epoch: t });
+    const armPolicy = makeArmJourneyPolicy({ rows, holdoutRows: rows, artifacts, userState, world, epoch: t });
     const out1 = sampleBehavior(
       world.epochView(t),
-      { ...baseOpts(world, t), exposurePolicy: armPolicy.policy },
+      { ...baseOpts(world, t), journeyPolicy: armPolicy.policy },
       world.complements(t),
     );
     assertNoInactiveEvents(out1, world, t);
-    // brazo agente: etiquetas holdout reales; brazo frozen: todo default
-    ingestEpoch({ arm: agent, out: out1, exposures: armPolicy.exposures, world, epoch: t });
-    const defaultExposures: SessionExposure[] = armPolicy.exposures.map((e) => ({
-      ...e,
-      policyArm: "default",
-    }));
-    ingestEpoch({ arm: frozen, out: out1, exposures: defaultExposures, world, epoch: t });
+    // brazo agente: etiquetas holdout reales del journey; brazo frozen: todo
+    // default (composición idéntica en e1 ⇒ misma simulación, solo re-etiqueta).
+    ingestEpoch({ arm: agent, out: out1, exposures: null, world, epoch: t });
+    const frozenOut1: BehaviorOutput = {
+      ...out1,
+      journeyExposures: (out1.journeyExposures ?? []).map((e) => ({ ...e, policyArm: "default" })),
+    };
+    ingestEpoch({ arm: frozen, out: frozenOut1, exposures: null, world, epoch: t });
     log(`  e1 congelada: events=${out1.events.length}`);
   }
 
@@ -268,14 +269,14 @@ export async function runSeedPipeline(args: {
         arm === agent && !args.aa && mode !== "none"
           ? rows.filter((r) => frozenIds.has(r.placement_id))
           : null;
-      const armPolicy = makeArmPolicy({ rows, holdoutRows, artifacts, userState, world, epoch: t });
+      const armPolicy = makeArmJourneyPolicy({ rows, holdoutRows, artifacts, userState, world, epoch: t });
       const out = sampleBehavior(
         world.epochView(t),
-        { ...baseOpts(world, t), exposurePolicy: armPolicy.policy },
+        { ...baseOpts(world, t), journeyPolicy: armPolicy.policy },
         world.complements(t),
       );
       assertNoInactiveEvents(out, world, t);
-      ingestEpoch({ arm, out, exposures: armPolicy.exposures, world, epoch: t });
+      ingestEpoch({ arm, out, exposures: null, world, epoch: t });
     }
     log(`  e${t} simulada`);
   }

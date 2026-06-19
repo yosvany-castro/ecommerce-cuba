@@ -1,6 +1,12 @@
-import type { ExposureContext } from "@/thesis/data/behavior-model";
+import type {
+  ExposureContext,
+  JourneyPolicy,
+  JourneyPolicyResult,
+  JourneyExposedItem,
+  SurfaceSection,
+} from "@/thesis/data/behavior-model";
 import { selectPlacements } from "@/sectors/f-slate/select";
-import { DEFAULT_PLACEMENTS, type PlacementConfig } from "@/sectors/f-slate/config";
+import { DEFAULT_PLACEMENTS, type PlacementConfig, type Surface } from "@/sectors/f-slate/config";
 import type { SlateRuleContext } from "@/sectors/f-slate/rules/types";
 import { SECTION_REGISTRY } from "@/sectors/f-slate/sections/registry";
 import { applyEpsilonExploration } from "@/sectors/d-personalization/explore/epsilon";
@@ -236,4 +242,188 @@ export function makeArmPolicy(args: ArmPolicyArgs): ArmPolicy {
   };
 
   return { policy, exposures };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// journeyPolicy (Build-A, spec §3-4, §10): el compositor MULTI-SUPERFICIE FIEL.
+//
+// Diferencias clave con makeArmPolicy (exposurePolicy, un solo home de 20):
+//  - composición POR SUPERFICIE (home / pdp / cart), cada una vía selectPlacements
+//    con cap MAX_PLACEMENTS_PER_SURFACE=8 (el cap real de prod);
+//  - se ELIMINA el slice(0,SLATE_K) global que mataba al agente: cada sección se
+//    trunca por su PROPIO limit (claiming espejo de resolve.ts) y nada más;
+//  - ε-greedy POR SECCIÓN (no un único barrido global), con la función REAL de
+//    producción y ctx.rng (el único stream legal);
+//  - pdp ⇒ cross_sell anclado al pdp_product_id; cart ⇒ cart_addons anclado a
+//    los cart_product_ids — los resolvers espejo de prod (sections.ts).
+//
+// El hero (home, sección vertical 0) nunca se toca: su atención sigue siendo λ^i
+// (soberanía); el agente jamás escribe hero_grid (PROTECTED_SLOTS en select.ts).
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface ArmJourneyPolicy {
+  policy: JourneyPolicy;
+}
+
+export function makeArmJourneyPolicy(args: ArmPolicyArgs): ArmJourneyPolicy {
+  const { world, epoch, artifacts, userState } = args;
+  const active = world.activeIds(epoch);
+  const popOf = (id: string) => artifacts.popularity.get(id) ?? 0;
+  const byPop = (a: string, b: string) => popOf(b) - popOf(a) || a.localeCompare(b);
+  const activeByPop = [...active].sort(byPop);
+  const popularRank = activeByPop.filter((id) => popOf(id) > 0);
+  const heroCache = new Map<string, string[]>();
+
+  /**
+   * Claiming espejo de resolve.ts pero SIN slice global: prioridad ASC + slot ASC,
+   * cada sección truncada a SU limit; las secciones por debajo de min_items se
+   * descartan. Devuelve SurfaceSection[] en orden de slot ASC (orden vertical de
+   * render) con ε-greedy POR SECCIÓN aplicado.
+   */
+  const composeSurface = (
+    surface: Surface,
+    rows: PlacementConfig[],
+    ruleCtx: SlateRuleContext,
+    sectionCtx: SimSectionCtx,
+    rng: ExposureContext["rng"],
+  ): SurfaceSection[] => {
+    let selected = selectPlacements(rows, ruleCtx); // ya capeado a MAX_PLACEMENTS_PER_SURFACE
+    if (selected.length === 0) {
+      // anti-trampa #7: una superficie vacía no debe existir; sirve el DEFAULT.
+      // selectPlacements re-filtra por la regla (cart_addons requiere cart≥1).
+      selected = selectPlacements(DEFAULT_PLACEMENTS[surface], ruleCtx);
+    }
+    if (selected.length === 0) return [];
+
+    const claimed = new Set<string>();
+    const byPlacement = new Map<string, string[]>();
+    const claimOrder = [...selected].sort((a, b) => a.priority - b.priority || a.slot - b.slot);
+    for (const p of claimOrder) {
+      if (p.section_type === "hero_grid") {
+        const limit = typeof p.params.limit === "number" ? p.params.limit : 20;
+        const ids = resolveSimSection("hero_grid", p.params, sectionCtx)
+          .filter((id) => !claimed.has(id))
+          .slice(0, limit);
+        for (const id of ids) claimed.add(id);
+        byPlacement.set(p.placement_id, ids);
+        continue;
+      }
+      const resolver = SECTION_REGISTRY[p.section_type];
+      if (!resolver) continue;
+      const parsed = resolver.paramsSchema.safeParse(p.params);
+      const fallback = parsed.success ? parsed : resolver.paramsSchema.safeParse(p.default_params);
+      if (!fallback.success) continue;
+      const params = fallback.data as Record<string, unknown>;
+      const limit = typeof params.limit === "number" ? params.limit : p.min_items;
+      const ids = resolveSimSection(p.section_type, params, sectionCtx)
+        .filter((id) => !claimed.has(id))
+        .slice(0, limit); // ← truncado POR SECCIÓN, jamás slice global de 20
+      if (ids.length < p.min_items) continue; // below_min ⇒ sección no servida
+      for (const id of ids) claimed.add(id);
+      byPlacement.set(p.placement_id, ids);
+    }
+
+    // Ensamblado por slot ASC (orden vertical), ε-greedy POR SECCIÓN.
+    const sections: SurfaceSection[] = [];
+    for (const p of selected) {
+      const ids = byPlacement.get(p.placement_id);
+      if (!ids || ids.length === 0) continue;
+      const inSection = new Set(ids);
+      const pool = activeByPop.filter((id) => !inSection.has(id) && !claimed.has(id));
+      const explored = applyEpsilonExploration(
+        ids.map((id, i) => ({ product_id: id, rank: i + 1, reason: "" })),
+        pool,
+        { epsilon: EPSILON, rng: () => rng.next() },
+      );
+      const items: JourneyExposedItem[] = explored.map((e) => ({
+        product_id: e.product_id,
+        placement_id: p.placement_id,
+        section_type: p.section_type,
+        placement_version: p.version,
+        source: e.source,
+        propensity: e.propensity,
+      }));
+      sections.push({
+        sectionType: p.section_type,
+        placementId: p.placement_id,
+        placementVersion: p.version,
+        items,
+      });
+    }
+    return sections;
+  };
+
+  const policy: JourneyPolicy = (ctx: ExposureContext): JourneyPolicyResult => {
+    const uid = ctx.user.user_id;
+    const holdout =
+      args.holdoutRows !== null && isHoldout({ user_id: uid, anonymous_id: null });
+    const rows = holdout ? args.holdoutRows! : args.rows;
+
+    const sectionCtx: SimSectionCtx = {
+      userId: uid,
+      sessionCohort: userState.cohortByUser.get(uid) ?? null,
+      artifacts,
+      popularRank,
+      activeByPop,
+      activeIds: active,
+      lastViewed: userState.lastViewedByUser.get(uid) ?? null,
+      viewedSubs: userState.viewedSubsByUser.get(uid) ?? [],
+      subcategoryOf: world.subcategoryOf,
+      popOf,
+      heroCache,
+    };
+
+    const { hour, dow } = pseudoClock(uid, ctx.sessionIndex);
+    const homeRule: SlateRuleContext = {
+      surface: "home",
+      hour_of_day: hour,
+      day_of_week: dow,
+      is_logged_in: true,
+      user_segment: null,
+      session_cohort: sectionCtx.sessionCohort,
+      recipient_active: false,
+      signal_window_size: userState.viewCountByUser.get(uid) ?? 0,
+      gift_confirmed: false,
+      cart_item_count: 0,
+      pdp_product_id: null,
+      pdp_category: null,
+    };
+    const home = composeSurface("home", rows.filter((r) => r.surface === "home"), homeRule, sectionCtx, ctx.rng);
+
+    const resolvePdp = (anchorProductId: string): SurfaceSection[] => {
+      const pdpRows = rows.filter((r) => r.surface === "pdp");
+      const pdpCtx: SimSectionCtx = {
+        ...sectionCtx,
+        pdpAnchor: anchorProductId,
+        pdpCategory: world.subcategoryOf(anchorProductId),
+      };
+      const pdpRule: SlateRuleContext = {
+        ...homeRule,
+        surface: "pdp",
+        pdp_product_id: anchorProductId,
+        pdp_category: world.subcategoryOf(anchorProductId),
+      };
+      return composeSurface("pdp", pdpRows, pdpRule, pdpCtx, ctx.rng);
+    };
+
+    const resolveCart = (cartProductIds: string[]): SurfaceSection[] => {
+      const cartRows = rows.filter((r) => r.surface === "cart");
+      const cartCtx: SimSectionCtx = { ...sectionCtx, cartIds: cartProductIds };
+      const cartRule: SlateRuleContext = {
+        ...homeRule,
+        surface: "cart",
+        cart_item_count: cartProductIds.length,
+      };
+      return composeSurface("cart", cartRows, cartRule, cartCtx, ctx.rng);
+    };
+
+    return {
+      policyArm: holdout ? "holdout" : "default",
+      home,
+      resolvePdp,
+      resolveCart,
+    };
+  };
+
+  return { policy };
 }
