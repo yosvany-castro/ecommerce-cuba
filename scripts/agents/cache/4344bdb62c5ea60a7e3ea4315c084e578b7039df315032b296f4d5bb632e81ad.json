@@ -1,0 +1,134 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 42,
+    "epoch": 2,
+    "metricsHash": "4b3f718bc36ce739705b653d94dbb864f13396c3e46c7ff14ba47c4efd0c8330"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME carrusel aditivo puro (slot 20, máxima atención bajo hero). Tecnología tiene el revenue más alto por seen en home: $3,430/1k seen (revenue_cents=2,044,924 / seen=5,963 en 7d). Al ser slot 20, capta a usuarios que ya vieron el hero. Sin este placement el home no tiene carruseles — es margen 100% nuevo. Read_metrics home 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME carrusel aditivo slot 30. Moda_mujer es la categoría con mayor volumen de seen en home (7,375 seen, revenue_cents=1,009,657 → $1,369/1k seen) y catálogo robusto (307 productos activos). Segundo carrusel bajo hero, justo tras tecnología. Sin este placement el home no tiene carruseles — margen neto nuevo. Read_metrics home 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME carrusel aditivo slot 40. Deporte tiene 6,146 seen, $746/1k seen (revenue_cents=458,366) y 75 purchases directas en home en 7d — alta intención de compra. Diversifica la oferta del home tras tecnología (slot20) y moda_mujer (slot30). Read_metrics home 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME carrusel aditivo slot 50 con popular global (todas las categorías). Hipótesis medible: este carrusel debe generar ~10-15 purchases adicionales/semana (0.2-0.3% de ~5,078 seen semanales del home) y >$50,000 revenue_cents/semana. Complementa los carruseles categoriales anteriores con descubrimiento cross-categorial. Sin él el home solo tiene hero. Read_metrics home 7d."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP placement cross_sell (slot 20). La PDP tiene 40,166 served y 24,627 seen en 7d — alta exposición. El default cross_sell ya existe pero un placement explícito con limit=10 puede mejorar attach rate: actualmente 594 add_to_carts y 44 purchases desde PDP. Tras cubrir los 4 carruseles aditivos del home (slots 20-50), esta es la mejora secundaria de mayor impacto. Read_metrics pdp 7d."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "cf1960a8-a9f2-4a24-bea6-984ecdd936f6",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "477565da-6bb9-4a91-af12-e0b1b204aa01",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "e802e483-3d63-4159-85ad-40755536f81f",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "reason": "live cap reached for home (3 agent rows)"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "ba1aef3d-573c-4f1c-8246-910d45ccc8a2",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "## Resultados\n\n**4 de 5 propuestas aceptadas** 🟢 — solo la #4 chocó con el límite del sistema (cap de 3 agent rows en home).\n\n### Propuestas ejecutadas:\n\n| # | Superficie | Slot | Tipo | Tier | Status | Placement ID |\n|---|---|---|---|---|---|---|\n| 1 | **HOME** | **20** | popular (tecnología) | low | ✅ approved | `cf1960a8-...` |\n| 2 | **HOME** | **30** | popular (moda_mujer) | low | ✅ approved | `477565da-...` |\n| 3 | **HOME** | **40** | popular (deporte) | low | ✅ approved | `e802e483-...` |\n| 4 | HOME | 50 | popular (global) | — | ❌ live cap (max 3) | — |\n| 5 | **PDP** | **20** | cross_sell (limit=10) | low | ✅ approved | `ba1aef3d-...` |\n\n### Evidencia que las respalda (read_metrics 7d):\n- **Slot 20 (tecnología)**: $3,430 revenue/1k seen — el más rentable de la tienda. Máxima atención bajo hero.\n- **Slot 30 (moda_mujer)**: 7,375 seen — mayor volumen de audiencia + $1,369/1k seen.\n- **Slot 40 (deporte)**: 6,146 seen + 75 purchases directas en home — alta conversión.\n- **PDP cross_sell**: 40,166 served/semana — superficie masiva para mejorar attach rate.\n\n### Lo que espero ver en `since_change` la próxima vez:\n- **Home**: que los 3 carruseles aditivos (slots 20-30-40) incrementen el revenue total del home sobre el ratio 1.13x actual (hero solo), estimando +15-20% por la exposición categorial dirigida.\n- **PDP**: que el cross_sell explícito aumente add_to_carts (hoy 594) y purchases (hoy 44) desde PDP, apuntando a +10% en tasa de conversión.",
+  "truncated": false,
+  "runId": "sim-run-42-e2",
+  "createdAt": "2026-06-18T12:51:01.123Z"
+}

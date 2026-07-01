@@ -1,0 +1,68 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 42,
+    "epoch": 5,
+    "metricsHash": "5ee504a8011009dd66ddd0588e7b0a9cf8cba15a802acc0efd3f3db61e6ff254"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "pdp_category"
+      },
+      "rule": {
+        "field": "pdp_category",
+        "op": "exists"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 70: carrusel popular mode=pdp_category (limit=20). Aditivo puro (slot vacio hoy). Justificacion: las categorias moda_mujer ($12,019 revenue/7d, la #1) y belleza (81 purchases/7d, la #1 en compras) no tienen carrusel dedicado. mode=pdp_category personaliza el contenido segun la categoria del PDP que el usuario acaba de visitar, maximizando relevancia. El slot 60 (arriba) muestra ATC/1k=98.4 probando alto engagement en profundidad. Hipot: espero ATC/1k >=30 (benchmark slot 20=34.8, slot 40=37)."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 80: carrusel popular mode=global (limit=20). Aditivo puro (slot vacio hoy). Los slots activos del home muestran engagement consistente en profundidad: slot 20 ATC/1k=34.8, slot 40 ATC/1k=37, slot 60 ATC/1k=98.4 (sobre 2,936 seen/7d). Esto demuestra que los usuarios que scrollean hasta el final estan altamente comprometidos. Un carrusel global adicional en slot 80 captura trafico residual sin canibalizar. Hipot: espero ATC/1k >=20 (conservador, asumiendo decaimiento ~50% respecto a slot 60)."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "b4dfaa13-7adf-4d5e-9ce7-b6cb3a6eba95",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "9eb27814-53cd-4b96-9351-5a305e013ab6",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas aceptadas en tier low. Cierro con el resumen.\n\n---\n\n## Resumen de acciones ejecutadas\n\n**Propuesta 1 ✅** — `HOME slot 70 · popular mode=\"pdp_category\" limit=20`\n- **ID:** `b4dfaa13-7adf-4d5e-9ce7-b6cb3a6eba95`\n- **Evidence:** moda_mujer = $12,019 revenue/7d (#1), belleza = 81 purchases/7d (#1), ninguna con carrusel dedicado. mode=\"pdp_category\" personaliza por categoría del PDP de origen.\n- **Rule:** solo se activa cuando `pdp_category` existe (usuario viene de PDP).\n- **Expected:** ATC/1k ≥ 30 (benchmark slots activos 20 y 40).\n\n**Propuesta 2 ✅** — `HOME slot 80 · popular mode=\"global\" limit=20`\n- **ID:** `9eb27814-53cd-4b96-9351-5a305e013ab6`\n- **Evidence:** Slot 60 (arriba) logra ATC/1k=98.4 — usuarios deep-scroll altamente engaged. Carrusel adicional captura tráfico residual sin canibalizar.\n- **Expected:** ATC/1k ≥ 20 (conservador vs slot 60).\n\n**No actué en:**\n- PDP cross_sell y cart_addons → ambos con `no_impression_logging` (esperar)\n- Home slots 30 y 50 → `no_impression_logging` en sus versiones actuales (esperar)\n\n**Próxima revisión:** Verificar `since_change` de ambos placements para evaluar si merecen renew (TTL 72h) o ajuste de params.",
+  "truncated": false,
+  "runId": "sim-run-42-e5",
+  "createdAt": "2026-06-18T13:38:13.047Z"
+}

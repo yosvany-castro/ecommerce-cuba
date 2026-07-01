@@ -1,0 +1,65 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 42,
+    "epoch": 6,
+    "metricsHash": "12f1225f60e4d3fe05a0e528712fb11a1be291f9fe59c610b8e6021c27f63456"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "mode": "cohort",
+        "limit": 20
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 20 es el carrusel de MAYOR atencion bajo el hero. Ya existen placements populares mode=global en este slot (v1 y v2, ambos con no_impression_logging). mode=cohort anade personalizacion por segmento de usuario, complementando y potencialmente mejorando la relevancia frente al modo global generico. Store 7d: revenue_ratio=1.28 vs holdout, confirmando que el feed genera valor incremental. Los carruseles home son aditivos puros por diseno de la tienda: cada seccion nueva es margen incremental sin canibalizar."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {
+        "mode": "cohort",
+        "limit": 15
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 80 actualmente libre. Home carrusels son aditivos puros: cada seccion nueva genera margen incremental. Store 7d: 40,634 seen, 177 purchases, $15,189 revenue con revenue_ratio=1.28 vs holdout. Slot 80 capta usuarios que escrolean profundo. Uso mode=cohort con limit=15 (menor que slot 20 porque la atencion decae con el slot mas alto). No hay riesgo de canibalizacion porque los carruseles del home son acumulativos."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "90278732-9ac7-4fb7-8d57-9e312d5235e3",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "6ad210c6-7321-4bf3-8c04-591c0aae2301",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron **aceptadas y aprobadas** (tier low). Aquí el resumen:\n\n---\n\n## Resumen de la ronda\n\n**Diagnóstico inicial:** Todos los placements existentes (popular en home slots 20–70, cross_sell en PDP, cart_addons en carrito) tienen el flag `no_impression_logging`, lo que impide medir su rendimiento. Según protocolo, la única acción válida sobre ellos es esperar.\n\n**Propuestas ejecutadas (2/2 aceptadas):**\n\n| # | Acción | Surface | Slot | Sección | Params | Estado |\n|---|--------|---------|------|---------|--------|--------|\n| 1 | CREATE | home | **20** | popular | mode=cohort, limit=20, global | ✅ approved (low) |\n| 2 | CREATE | home | **80** | popular | mode=cohort, limit=15, global | ✅ approved (low) |\n\n**Evidencia citada en rationales:**\n- Store 7d: 40,634 seen, 177 purchases, $15,189 revenue\n- vs_holdout revenue_ratio = **1.28** (feed supera al holdout un 28%)\n- Hero grid 7d: 4,578 seen, 29 purchases, $3,332 revenue\n\n**Qué espero ver en `since_change` la próxima vez:**\n- **Slot 20 (cohort):** Al ser el carrusel de máxima atención post-hero, espero que mode=cohort genere similar o mayor CTR que el mode=global existente, con since_change mostrando datos de funnel medibles si el flag `no_impression_logging` se resuelve sistémicamente.\n- **Slot 80 (cohort):** Al ser un slot nuevo (antes vacío), espero ver tráfico incremental positivo —cualquier seen/purchase aquí es margen neto nuevo. Si el flag persiste, since_change seguirá siendo null, y tocará esperar.",
+  "truncated": false,
+  "runId": "sim-run-42-e6",
+  "createdAt": "2026-06-18T13:46:19.262Z"
+}

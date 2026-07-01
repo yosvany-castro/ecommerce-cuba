@@ -1,0 +1,135 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 123,
+    "epoch": 2,
+    "metricsHash": "afcd2b47bf79e22e9c4e8c90b3e28f3399de9ee4091234af5a31e4fcc98310d9"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 20 es el de mayor atención bajo el hero. Actualmente home tiene 0 carruseles (solo hero_grid slot 10). Home genera 1.569 seen, 241 ATC, 72 purchases y $3.319 revenue en 7d. Un carrusel popular global aditivo expondrá los productos más demandados a ese tráfico sin canibalizar nada. Espero ver en since_change un aumento de ATC (>241) y purchases (>72) atribuibles al nuevo carrusel en home vs. baseline actual."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 15,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 30: segundo carrusel aditivo. Home: 1.569 seen/semana con 241 ATC y 72 purchases. mode=cohort personaliza por segmento de usuario, complementando el carrusel global del slot 20. La tienda sirve 4.960 sesiones semanales en home con distintos segmentos; la personalización puede mejorar conversión vs. contenido único. Espero ver contribución incremental a ATC y purchases de home en since_change."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 10,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 40: tercer carrusel aditivo con limit=10 (curado, menos scroll). Home: 1.569 seen y 72 purchases en 7d. Un carrusel más compacto captura usuarios que hacen scroll profundo, exponiendo productos de alta rotación. Aditivo puro, sin canibalización. Espero ver en since_change purchases incrementales atribuibles a este tercer carrusel en home."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP: 7.408 seen, 229 ATC, 21 purchases en 7d. Ya existe un cross_sell default, pero no hay ningún placement optimizado de agente. Un cross_sell con limit=10 bien seleccionado puede superar al default y elevar los 229 ATC semanales. La alta tasa seen→ATC (229/7.408=3,1%) muestra intención de compra, momento ideal para cross_sell. Espero en since_change un incremento de ATC desde PDP vs. baseline."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "CART: 989 served, 694 seen, 31 ATC, 5 purchases, $344 revenue en 7d. Bajo tráfico pero máxima intención de compra. Ya existe default de addons pero sin optimización de agente. Un cart_addons con limit=10 puede incrementar el ticket promedio ($344/5=$68,8 actual). Espero en since_change un aumento de revenue desde cart y/o un incremento en el valor promedio por compra."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "789f6c4a-89da-4397-b336-2adac6951556",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "ee2a403b-0fda-4a0b-ba90-a4689f9b6299",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "9ba3ef49-9e9d-42db-8faf-000b6c5e9205",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "## ✅ Las 5 propuestas fueron aprobadas (tier low)\n\n| # | Superficie | Slot | Sección | Params | Status |\n|---|-----------|------|---------|--------|--------|\n| 1 | **HOME** | 20 | popular global (limit 20) | mode=global | ✅ approved |\n| 2 | **HOME** | 30 | popular cohort (limit 15) | mode=cohort | ✅ approved |\n| 3 | **HOME** | 40 | popular global (limit 10) | mode=global | ✅ approved |\n| 4 | **PDP** | 20 | cross_sell (limit 10) | — | ✅ approved |\n| 5 | **CART** | 20 | cart_addons (limit 10) | — | ✅ approved |\n\n### Resumen\n\n**Diagnóstico inicial:** La tienda solo tenía el hero_grid (slot 10, home) y **cero carruseles de agente**. Con 1.569 seen/semana en home, 241 ATC y 72 purchases, cada carrusel es margen aditivo puro.\n\n**Qué propuse:**\n1. **HOME slot 20** — popular global (top 20 bestsellers) en el slot de máxima atención bajo el hero\n2. **HOME slot 30** — popular por cohorte (personalizado por segmento) para complementar\n3. **HOME slot 40** — popular global curado (top 10) para scroll profundo\n4. **PDP slot 20** — cross_sell optimizado para los 7.408 usuarios que ven PDP/semana\n5. **CART slot 20** — cart_addons para incrementar ticket promedio en los 694 usuarios en carrito\n\n**Evidencia citada:** métricas precisas por superficie (HOME: 1.569 seen, 241 ATC, 72 purch, $3.319; PDP: 7.408 seen, 229 ATC; CART: 694 seen, 31 ATC).\n\n**Qué espero ver en since_change:** incremento en ATC y purchases en home (desde 241 y 72 respectivamente), mejora de cross_sell en PDP, y aumento de revenue en carrito.",
+  "truncated": false,
+  "runId": "sim-run-123-e2",
+  "createdAt": "2026-06-18T11:32:28.199Z"
+}

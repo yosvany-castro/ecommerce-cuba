@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 123,
+    "epoch": 2,
+    "metricsHash": "afcd2b47bf79e22e9c4e8c90b3e28f3399de9ee4091234af5a31e4fcc98310d9"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP no tiene placements propios (0 placements en 7d y 14d). Revenue PDP 7d = $2,054.98, seen = 7,408 → $277/1k seen. Categorías fuertes (14d read_metrics): tecnologia $21,011.46 revenue con 11,027 seen, moda_mujer $7,727.07 con 8,031 seen. Un cross_sell en PDP slot 30 puede recomendar productos de estas categorías de alta conversión. Hipótesis: mejorar revenue_per_1k_seen un 10%+ al capturar intención de compra en PDP."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart no tiene placements (0 en 7d/14d). Revenue cart 7d = $343.84, seen = 694, ATC = 31 (4.5% rate). Revenue 14d = $2,143.61 con 3,982 seen. Categorías con alto revenue/seen en 14d: joyeria $3,441.71 / 6,263 seen = $0.55/seen, tecnologia $21,011.46 / 11,027 seen = $1.91/seen. Cart_addons en slot 20 permite upselling post-ATC. Hipótesis: aumentar ATC rate de ~4.5% y revenue por sesión de carrito."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home solo tiene hero_grid (slot 10, flag 'no_impression_logging' solo en ese placement). Home 7d: 1,569 seen, 72 purchases (4.6% purchase rate), $3,318.82 revenue. Purchase rate de 4.6% es saludable vs holdout (45.9 purchases/100 sesiones ≈ 46%). Un section 'popular' en slot 30 mostraría bestsellers aprovechando categorías de alta rotación (14d read_metrics: tecnologia $21K, moda_mujer $7.7K). Hipótesis: aumentar purchase rate de 4.6% a 5.5%+ y revenue/seen."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "789f6c4a-89da-4397-b336-2adac6951556",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas. Aquí el resumen:\n\n---\n\n## Resumen\n\n**1. PDP — cross_sell slot 30** ✅ aceptado (low tier, approved)\n- **Evidencia**: PDP sin placements; revenue 7d $2,054.98 ($277/1k seen); categorías fuertes tecnologia ($21K/14d) y moda_mujer ($7.7K/14d) desde read_metrics.\n- **Qué espero ver en since_change**: Revenue per 1k seen en PDP suba de ~$277 a ~$305+ y aumenten los ATC desde PDP.\n\n**2. Cart — cart_addons slot 20** ✅ aceptado (low tier, approved)\n- **Evidencia**: Cart sin placements; revenue 7d $343.84; solo 31 ATC en 694 seen (4.5%). Categorías con alto revenue/seen: tecnologia ($1.91/seen) y joyeria ($0.55/seen).\n- **Qué espero ver en since_change**: Mejora en ATC rate (>4.5%) y revenue por sesión de carrito.\n\n**3. Home — popular slot 30** ✅ aceptado (low tier, approved)\n- **Evidencia**: Home solo tiene hero_grid con flag (no usable); 1,569 seen, 72 purchases (4.6% purchase rate), $3,318.82 revenue en 7d. Popular mostrará bestsellers del catálogo.\n- **Qué espero ver en since_change**: Purchase rate suba de 4.6% a ~5.5%+ y revenue/seen mejore.\n\nLas 3 son propuestas TTL (72h) — si funcionan, habrá que re-proponerlas con los datos de since_change como evidencia.",
+  "truncated": false,
+  "runId": "sim-run-123-e2",
+  "createdAt": "2026-06-18T11:08:14.219Z"
+}

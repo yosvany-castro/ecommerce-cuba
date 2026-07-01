@@ -1,0 +1,92 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 123,
+    "epoch": 3,
+    "metricsHash": "22998700b46a0d675a09039b2423e208bd633f25439337e9cabcbe63ed22495c"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "moda_mujer"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo slot popular para moda_mujer en home (slot 40). read_metrics 14d muestra: moda_mujer 140 purchases, $7,203.69 revenue — mayor volumen de compras. Home slot 30 popular genérico tiene 46 purchases/14d, $1,147.93 revenue. Un slot dedicado para moda_mujer puede generar >=20 purchases/14d incrementales (14% del total 140). Revenue esperado: >= $1,000/14d dado revenue promedio de $51.45/purchase en moda_mujer. No canibaliza slot 30 porque es slot nuevo en superficie adicional."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "juguetes"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo cart_addons para juguetes en cart slot 40. read_metrics 14d: juguetes 77 purchases, $1,266.85 revenue, productos de bajo precio ($5-$35, ej. Lego $7.40). Cart slot 20 genérico tiene atc_per_1k_seen=44.5 (14d). Juguetes de bajo precio son impulse buys ideales en carrito. Se esperan >=8 add-to-carts/14d y >=4 purchases/14d incrementales. Slot 40 es nuevo, no canibaliza slot 20."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "tecnologia"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo cross_sell para tecnologia en pdp slot 50. read_metrics 14d: tecnologia 95 purchases, $16,191.62 revenue — mayor revenue de todas las categorías. Productos de alto valor ($100+ ej. smartphone $101.76, tablet $104.88) ideales para cross-sell. PDP slot 30 cross_sell genérico genera 172 purchases/14d, $16,089.09 revenue. Slot 50 específico para tecnologia puede generar >=10 purchases/14d incrementales con >=$1,500 revenue. No canibaliza slot 30."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "ee2a403b-0fda-4a0b-ba90-a4689f9b6299",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "placement_id": "9ba3ef49-9e9d-42db-8faf-000b6c5e9205",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "placement_id": "1d8debee-bf33-4e3b-a425-f4b2494a68c3",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas con tier **low** y status **approved**. Aquí el resumen:\n\n---\n\n## Resumen\n\n**Qué propuse:**\n1. **Home slot 40 — popular moda_mujer** (ID: `ee2a403b-...`): Nuevo placement de productos populares filtrado a moda_mujer, la categoría con más purchases (140 en 14d, $7,203.69 revenue).\n2. **Cart slot 40 — cart_addons juguetes** (ID: `9ba3ef49-...`): Addons de juguetes en carrito (77 purchases/14d, productos bajo precio ideales para impulse buy).\n3. **PDP slot 50 — cross_sell tecnologia** (ID: `1d8debee-...`): Cross-sell de tecnología (95 purchases/14d, $16,191.62 revenue — la categoría de mayor ingreso).\n\n**Evidencia clave citada:**\n- moda_mujer: 140 purchases, $7,203.69 revenue (14d)\n- juguetes: 77 purchases, $1,266.85 revenue (14d)\n- tecnologia: 95 purchases, $16,191.62 revenue (14d)\n- Home slot 30 popular (genérico): 46 purchases/14d\n- Cart slot 20 cart_addons (genérico): atc_per_1k_seen=44.5\n- PDP slot 30 cross_sell (genérico): 172 purchases/14d\n\n**Qué espero ver en since_change la próxima vez:**\n- Slot 40 home popular moda_mujer: ≥20 purchases/14d, ≥$1,000 revenue incrementales\n- Slot 40 cart cart_addons juguetes: ≥8 add-to-carts/14d, ≥4 purchases/14d\n- Slot 50 PDP cross_sell tecnologia: ≥10 purchases/14d, ≥$1,500 revenue incrementales\n\nLos 3 placements expirarán por TTL en 72h. Si funcionan, habrá que re-proponerlos con la evidencia de since_change.",
+  "truncated": false,
+  "runId": "sim-run-123-e3",
+  "createdAt": "2026-06-18T11:14:25.735Z"
+}

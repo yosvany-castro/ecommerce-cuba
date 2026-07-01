@@ -1,0 +1,82 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 20 es el carrusel de máxima atención bajo el hero (slot 10). El hero_grid (id=4236ac4e) genera $1,218 rev/7d con 14,680 served y 179 ATC. Los 3 carruseles previos en slot 20 tienen flag no_impression_logging (84+ días sin datos), por lo que el home tiene 0 carruseles funcionales. Crear popular mode=global captura el tráfico del hero. La categoría tecnologia lidera en revenue ($23,571 rev en 14d según read_metrics) y moda_mujer le sigue ($11,473 rev en 14d). Hipótesis medible: espero que este carrusel genere al menos $100-150/semana en revenue incremental, basado en que el hero ya genera $1,218/semana y un carrusel popular debería aportar 8-12% adicional."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo en home (slot 30). El slot 20 ya tendrá popular mode=global, así que usar mode=cohort evita duplicación y personaliza por segmento. En 14d las categorías deporte (31,141 seen, 108 purchases) y moda_mujer (26,907 seen, $11,473 rev) tienen alta tracción. El cross_sell PDP (id=b600f82f) muestra ATC/1k seen de 48.2 — evidencia sólida de que recomendar productos funciona en esta tienda. Hipótesis medible: espero revenue incremental de $80-130/semana y al menos 20 ATC/semana desde este carrusel."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Tercer carrusel aditivo en home slot 40. Aunque la atención decae respecto a slot 20 y 30, es aditivo puro — sin carruseles el home solo muestra hero. Las categorías accesorios_tech (18,263 seen/14d, 100 purchases/14d) y deporte (31,141 seen/14d, $3,413 rev/14d) tienen alta rotación de productos. El cart_addons slot 30 (id=68fd5c8f) genera $405 rev/7d con 50 ATC, demostrando que las recomendaciones en cualquier superficie aportan revenue. Hipótesis medible: espero $50-90/semana incremental de este carrusel, con al menos 10 ATC/semana."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "3e8c4f79-59b0-4a46-9bca-a38853cbd0b4",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "8074da5b-ba73-4f3c-9385-75e26a595c41",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "95dd6e72-6b3e-4374-9567-49cf09b4e460",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas. Cierro con el resumen.\n\n---\n\n## Resumen\n\n**Qué propuse:** 3 carruseles `popular` en el home (slots 20, 30, 40) — la superficie aditiva más palanca de la tienda.\n\n**Con qué evidencia:**\n- El home tenía **0 carruseles funcionales** (slots 20-40 con `no_impression_logging`, solo el hero intocable funcionaba)\n- El hero_grid genera $1,218/7d — al agregar carruseles populares debajo, capturamos su tráfico\n- El cross_sell PDP prueba que recomendar productos funciona (ATC/1k=48.2, $8,429 rev/7d)\n- Categorías fuertes: tecnologia ($23,571 rev/14d), moda_mujer ($11,473 rev/14d), deporte (31,141 seen/14d)\n\n**Qué espero ver en `since_change` la próxima vez:**\n- Revenue incremental del home: estimado **$230-370/semana** combinado de los 3 carruseles\n- Al menos **50-70 ATC/semana** atribuibles a los nuevos carruseles\n- Si funcionan, volver a proponerlos antes del TTL (72h) con la evidencia recogida\n- PDP y cart ya tienen placements funcionales (cross_sell slot 30, cart_addons slot 30) — no los toqué",
+  "truncated": false,
+  "runId": "sim-run-42-e12",
+  "createdAt": "2026-06-19T05:18:14.502Z"
+}

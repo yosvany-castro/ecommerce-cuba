@@ -1,0 +1,80 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home hero genera $3,588 revenue/28d (21 purchases, 4,468 seen) pero slots 20-50 están ocupados con popular sin logging. Crear popular en slot 60 añade un carrusel medible. Categorías fuertes: deporte 16,581 seen/75 purchases, tecnologia 12,782 seen/$8,629 revenue (home 7d). Hipótesis: ≥5 purchases y ≥$200 revenue incremental en 28d since_change."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP tiene 78,081 served/48,854 seen con 4,598 ATC y 224 purchases ($21,758 revenue en 7d). El cross_sell slot 20 existente tiene no_impression_logging. Un cross_sell adicional en slot 30 es aditivo en superficie de alta intención. Hipótesis: ATC incremental atribuible ≥20 en 28d since_change."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 6
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart tiene 3,737 served/2,604 seen con 97 ATC y 8 purchases ($964 revenue en 7d). El cart_addons slot 20 existente tiene no_impression_logging. Añadir addons en slot 30 es aditivo en página de alta intención de compra. Hipótesis: ≥2 purchases y ≥$80 revenue incremental en 28d since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "0171ae18-5def-4fd0-be11-ca78d55e62e2",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "b600f82f-c0d7-4a59-8938-f20577e409b0",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "placement_id": "68fd5c8f-eee9-44e6-84e8-11f33d5acea4",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "**Propuesta 3 aceptada** ✅ Cart slot 30 → cart_addons (placement_id: `68fd5c8f-eee9-44e6-84e8-11f33d5acea4`)\n\nTodas aceptadas. No propongo más porque 3 placements aditivos con hipótesis claras es una carga razonable para un primer ciclo. Veo margen para más en el futuro cuando tenga métricas *since_change* de estas.\n\n---\n\n### Resumen de 5 líneas\n\n1. **Diagnóstico**: Todos los placements existentes en home/PDP/cart (salvo el hero) tienen `no_impression_logging` — sin datos de embudo, la única acción posible es esperar. El hero del home funciona bien ($3,588/28d) y las categorías deporte (16,581 seen/7d) y tecnología ($8,629 revenue/7d) dominan.\n2. **Propuestas ejecutadas**: (a) **HOME slot 60** → `popular` global (limit=12) — carrusel aditivo bajo el hero; (b) **PDP slot 30** → `cross_sell` (limit=8) — complementos en superficie de 48K seen/7d; (c) **Cart slot 30** → `cart_addons` (limit=6) — addons en página de alta intención.\n3. **Evidencia citada**: Home hero genera 14,680 served/4,468 seen/21 purchases en 28d; PDP mueve 78K served/4,598 ATC/$21.7K revenue en 7d; Cart convierte 8 purchases/$964 revenue en 7d.\n4. **Todas aprobadas** en tier `low` por el sistema — comenzarán a servir y acumular datos.\n5. **Próximo ciclo**: Revisar `since_change` de estos 3 placements. Si alguno muestra purchases/revenue positivos, re-proponer con evidencia sólida antes del TTL de 72h. También monitorear si la caída del 79% en seen del home se estabiliza.",
+  "truncated": false,
+  "runId": "sim-run-42-e11",
+  "createdAt": "2026-06-19T05:09:15.968Z"
+}

@@ -1,0 +1,378 @@
+{
+  "mode": "smoke",
+  "aa": false,
+  "agent": "scripted",
+  "gatedPolicy": {
+    "AGENT_MEDIUM_AUTOAPPLY": true
+  },
+  "deviations": [
+    "2.C.5: read_catalog del sim expone margin_pct per-product (prod: constante 0.6); read_metrics jamás reporta margen y el gate premia margen realizado del ledger"
+  ],
+  "spec": {
+    "universeSize": 1500,
+    "activeAtE0": 1200,
+    "users": 300,
+    "measuredEpochs": 12
+  },
+  "seeds": [
+    123
+  ],
+  "worldVersion": "sim-world-v2",
+  "ratios": [
+    1.8677684602060372
+  ],
+  "verdict": null,
+  "invalid": true,
+  "results": [
+    {
+      "seed": 123,
+      "ratio": 1.8677684602060372,
+      "agentMarginCents": 15060696,
+      "frozenMarginCents": 8063470,
+      "agentGmvCents": 58797495,
+      "frozenGmvCents": 29675296,
+      "trajectories": {
+        "frozen": [
+          3602216.747107468,
+          1191633.7248969362,
+          778634.6212456846,
+          431424.30011185043,
+          446232.6524913902,
+          499224.76297309663,
+          828297.0617545338,
+          805863.9550597721,
+          1550813.9629518173,
+          512781.0401307126,
+          459567.37382371386,
+          621524.2235733748,
+          400233.15297683165,
+          728873.2448455179
+        ],
+        "agent": [
+          3602216.747107468,
+          1191633.7248969362,
+          1569888.1212774557,
+          756994.5077557152,
+          889547.8007092515,
+          871272.1888286601,
+          1312569.518063403,
+          1493514.321303861,
+          2032798.4777789041,
+          1055045.3472229869,
+          621667.2638267772,
+          2564196.902672314,
+          614798.9599754089,
+          1278402.1937423584
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.6480500258089392,
+        "top20Share": 0.7132222616093584,
+        "frozenCollapse": true
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "789f6c4a-89da-4397-b336-2adac6951556",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "ee2a403b-0fda-4a0b-ba90-a4689f9b6299",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "9ba3ef49-9e9d-42db-8faf-000b6c5e9205",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 5,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "1d8debee-bf33-4e3b-a425-f4b2494a68c3",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 6,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "63f2620b-78aa-4d41-981f-53e434040440",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "2ecb9b3b-abc5-4152-96ac-4982dc779439",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 7,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "912df4db-2952-4465-bee2-ee7fe4d3c5a7",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 8,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "d375fa0f-aac5-41f6-8959-eb7bda6619fa",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "0252c156-d1dc-48b4-a19b-b84ba63ade89",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 9,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "f5f9ec07-b1a1-4692-bd74-0a20ce332a66",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 10,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "018311b6-18f0-4c6d-94ef-bd31799e23b0",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "77363224-4dff-475e-99ac-cf11324f05cf",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 11,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "dc090d02-6a1a-4405-93f2-b80721a817b4",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 12,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "b41927aa-6c5b-4976-a9bc-43b6acd4e3d3",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "5cef70af-6554-4b00-b5a4-2e49722b5389",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 13,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "5ec26229-bada-40e5-950c-ec05993958b0",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": true
+        }
+      ]
+    }
+  ],
+  "wallSeconds": 597.702
+}

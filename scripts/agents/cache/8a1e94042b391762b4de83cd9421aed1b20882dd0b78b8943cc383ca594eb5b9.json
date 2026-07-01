@@ -1,0 +1,89 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 42,
+    "epoch": 9,
+    "metricsHash": "72a2a9e2450b88ea39b2009d26af64382183165d864af78abd88a4edce126ce6"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 60 está vacío (aditivo puro, sin canibalización). El hero_grid (slot 10) genera 35.3 ATC/1K seen y 26 cents revenue/seen (14d: 25,698 seen, 92 purchases, $6,670 revenue), demostrando que el home convierte. Deporte (139.8K seen, 546 purchases, $43,985 revenue 14d) y moda_mujer (50.6K seen, 219 purchases, $50,260 revenue 14d) son categorías fuertes para ranking global. Al ser aditivo, cualquier conversión incremental es ganancia neta."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 70 está vacío (aditivo puro). mode=cohort personaliza por segmento de usuario, complementando el popular global del slot 60. La tienda muestra revenue_ratio 1.69x vs holdout en 7d y 1.36x en 14d, indicando que las recomendaciones del motor añaden valor significativo. Sin riesgo de canibalización por ser slot nuevo. Hipótesis: este carrusel generará al menos 15 purchases/14d, incremental vs línea base."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {
+        "limit": 16,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 80 está vacío (aditivo puro). Limit reducido a 16 porque la atención decae en slots más bajos. Datos: store 7d tiene 74,478 seen con 8,029 ATC y $34,436 revenue; 14d: 411,965 seen, 43,265 ATC, $185,045 revenue. El CTR es ~1.0 (proxy product_view), indicando buena exposición visual. Hipótesis: al menos 10 purchases/14d incrementales. El sistema decidirá tier y riesgo."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "379f93ee-dea9-42a9-9cf4-df5e1134dfbe",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "8732ce0c-7d52-4b44-b23a-b1b746acf9f4",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "dd060394-2109-4748-884e-4c92c1f006ab",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas con tier **low** y status **approved**. Cierro con el resumen:\n\n---\n\n**Resumen**\n\n1. **Home slot 60** — Carrusel `popular` global (limit=20). Evidencia: hero_grid genera 35.3 ATC/1K seen y 26¢ revenue/seen; deporte y moda_mujer son categorías fuertes. Aditivo puro, sin canibalización.\n2. **Home slot 70** — Carrusel `popular` por cohorte (limit=20). Complementa al slot 60 con personalización. Justificado por revenue_ratio 1.69x vs holdout (7d), indicando que las recomendaciones aportan valor.\n3. **Home slot 80** — Carrusel `popular` global (limit=16, menor por atenuación de atención). Aditivo puro sobre 411,965 seen/14d de tráfico de tienda.\n\n**Próxima iteración**: Espero ver en `since_change` si estos 3 carruseles logran generar al menos 10-15 purchases incrementales cada uno en 14 días (hipótesis planteada). Si funcionan, los renovaría con evidencia sólida; si no, ajustaría params o probaría otras secciones en los slots restantes (90).",
+  "truncated": false,
+  "runId": "sim-run-42-e9",
+  "createdAt": "2026-06-18T14:17:58.607Z"
+}
