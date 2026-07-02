@@ -95,7 +95,7 @@ describe("slate serving lifecycle (C1/C2)", () => {
       // ── 3. CURSOR: page 2 continues at absolute positions 21+, no overlap. ──
       const first = await serveFeedPage({ ...identity, cursor: null }, pg);
       expect(first.slate_id).toBe(slateId);
-      expect(first.next_cursor).not.toBeNull();
+      expect(first.next_cursor === null).toBe(false);
 
       const page2 = await serveFeedPage({ ...identity, cursor: first.next_cursor }, pg);
       expect(page2.slate_id).toBe(slateId);

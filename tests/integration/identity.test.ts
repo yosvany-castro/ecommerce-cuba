@@ -65,7 +65,7 @@ describe("ensureSession (cookie-only)", () => {
     expect(cookie?.value).toBe(sid);
     expect(cookie?.httpOnly).toBe(true);
     expect(cookie?.maxAge).toBe(30 * 60);
-    expect(res.cookies.get("session_last_activity")).toBeDefined();
+    expect((res.cookies.get("session_last_activity")?.value ?? "").length).toBeGreaterThan(0);
   });
 
   test("returning within 30 min keeps the session_id; expired window rotates it", () => {

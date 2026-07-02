@@ -63,7 +63,6 @@ describe("journeyPolicy: audited no-knob path untouched", () => {
   test("returning null per session ⇒ organic fallback (no journeyExposures rows)", () => {
     const cat = sampleCatalog(300, 1);
     const out = sampleBehavior(cat, { users: 20, days: 45, seed: 7, journeyPolicy: () => null });
-    expect(out.journeyExposures).toBeDefined();
     expect(out.journeyExposures).toHaveLength(0);
     // organic fallback still produced events
     expect(out.events.length).toBeGreaterThan(0);
