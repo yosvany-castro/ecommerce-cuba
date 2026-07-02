@@ -84,7 +84,9 @@ describe("POST /api/track", () => {
     expect(body.error).toBe("invalid_input");
   });
 
-  test("malformed payload (mismatched shape) → 400 invalid_payload", async () => {
+  // Validación de payload UPFRONT (route.ts:46-50): un 400 garantiza "nada se
+  // aplicó" para la cola batch del cliente ⇒ el rechazo sale como invalid_input.
+  test("malformed payload (mismatched shape) → 400 invalid_input upfront", async () => {
     await withTestDb(async (pg) => {
       const anonId = await createAnonymousSession(pg);
       const req = makePostReq(
@@ -98,7 +100,7 @@ describe("POST /api/track", () => {
       const res = await POST(req);
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.error).toBe("invalid_payload");
+      expect(body.error).toBe("invalid_input");
     });
   });
 

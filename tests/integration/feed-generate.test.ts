@@ -1,4 +1,12 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, vi } from "vitest";
+
+// Estos tests miden el EJE de personalización (usuarios contrastados divergen,
+// la cohorte domina). El prior de popularidad de producción (exp-I: "cosine
+// proposes, popularity re-weighs") mezcla best-sellers a propósito e infla el
+// Jaccard en catálogos chicos — se apaga aquí para aislar el eje bajo prueba.
+vi.hoisted(() => {
+  process.env.FEED_POP_PRIOR_STRENGTH = "0";
+});
 import { randomUUID } from "node:crypto";
 import { withTestDb, truncateTestTables } from "@/../tests/helpers/db";
 import { seedProductWithEmbedding } from "@/../tests/helpers/seed";

@@ -34,20 +34,31 @@ export async function embed(
   const apiKey = process.env.VOYAGE_API_KEY;
   if (!apiKey) throw new Error("VOYAGE_API_KEY is required");
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      input: texts,
-      model: EMBEDDING_MODEL,
-      input_type: opts.inputType,
-      output_dimension: EMBEDDING_DIM,
-      output_dtype: "float",
-    }),
-  });
+  const doFetch = () =>
+    fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        input: texts,
+        model: EMBEDDING_MODEL,
+        input_type: opts.inputType,
+        output_dimension: EMBEDDING_DIM,
+        output_dtype: "float",
+      }),
+    });
+
+  // Un reintento SOLO ante fallo de red (DNS/socket, "fetch failed") — la
+  // causa #1 de flakiness observada en la suite. Errores HTTP no se reintentan.
+  let res: Response;
+  try {
+    res = await doFetch();
+  } catch {
+    await new Promise((r) => setTimeout(r, 750));
+    res = await doFetch();
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
