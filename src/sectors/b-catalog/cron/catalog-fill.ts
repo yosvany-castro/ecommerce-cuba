@@ -1,5 +1,5 @@
 import type { Client } from "pg";
-import { fetchFromAggregator } from "@/sectors/b-catalog/mock/aggregator";
+import { activeProvider } from "@/sectors/b-catalog/provider";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 
@@ -35,7 +35,7 @@ export async function runCatalogFill(opts: RunOptions): Promise<RunResult> {
       const t0 = Date.now();
       let result;
       try {
-        result = await fetchFromAggregator({ category, limit: opts.productsPerCallOverride });
+        result = await activeProvider.fetch({ category, limit: opts.productsPerCallOverride });
       } catch (e) {
         await opts.pg.query(
           `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)

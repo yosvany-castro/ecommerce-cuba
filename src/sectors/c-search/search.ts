@@ -12,7 +12,13 @@ import { shouldCallMock, FRESHNESS_THRESHOLD_HOURS } from "./decide/shouldCallMo
 import { getCategoryFreshness } from "./decide/freshness";
 import { persistSearch, type SearchMethod } from "./persist/searches";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
-import { fetchFromAggregator } from "@/sectors/b-catalog/mock/aggregator";
+import { activeProvider } from "@/sectors/b-catalog/provider";
+import {
+  AGGREGATOR_DAILY_BUDGET_CENTS,
+  budgetExceeded,
+  fetchSpentLast24h,
+} from "./decide/budget";
+import { singleFlight } from "./decide/single-flight";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 import { Tracer, NoopTracer, type ITracer } from "./debug/tracer";
@@ -256,7 +262,7 @@ export async function hybridSearch(
   let decisionReason = "not evaluated";
 
   if (normalized) {
-    const should = shouldCallMock(fused.length, normalized.confidence, lastRefreshedAt);
+    let should = shouldCallMock(fused.length, normalized.confidence, lastRefreshedAt);
     if (!should) {
       if (fused.length >= 12) decisionReason = "enough_local_hits";
       else if (normalized.confidence <= 0.5) decisionReason = "low_confidence";
@@ -267,7 +273,15 @@ export async function hybridSearch(
         decisionReason = "category_recently_refreshed";
       } else decisionReason = "criteria_not_met";
     } else {
-      decisionReason = "low_count_high_confidence_stale_category";
+      // F4 T2: freno de gasto ANTES de pagar — el presupuesto se lee de la
+      // auditoría real (mock_calls, 24h). Corta con razón visible en el trace.
+      const spent = await fetchSpentLast24h(pg);
+      if (budgetExceeded(spent, AGGREGATOR_DAILY_BUDGET_CENTS)) {
+        should = false;
+        decisionReason = "daily_budget_exhausted";
+      } else {
+        decisionReason = "low_count_high_confidence_stale_category";
+      }
     }
     tracer.set("decision", { should_call_mock: should, reason: decisionReason });
 
@@ -278,11 +292,15 @@ export async function hybridSearch(
           ? parseInt(process.env.HYBRID_SEARCH_MOCK_LIMIT, 10)
           : undefined;
         const t0 = Date.now();
-        const mockResult = await fetchFromAggregator({
-          category: normalized.categories?.[0] as MockCategory | undefined,
-          query: normalized.search_terms,
-          limit: limitOverride,
-        });
+        // F4 T2: dos búsquedas idénticas concurrentes comparten UNA llamada
+        // pagada (key = hash canónico de la query).
+        const mockResult = await singleFlight(`aggregator:${hash}`, () =>
+          activeProvider.fetch({
+            category: normalized.categories?.[0] as MockCategory | undefined,
+            query: normalized.search_terms,
+            limit: limitOverride,
+          }),
+        );
         mockProductsFetched = mockResult.products.length;
         await pg.query(
           `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
