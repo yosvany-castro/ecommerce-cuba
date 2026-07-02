@@ -3,24 +3,17 @@ import { withPg } from "@/lib/db/helpers";
 import { dbHealth } from "@/lib/db/health";
 import { serveFeedPage } from "@/sectors/d-personalization/feed";
 import { RequestTiming } from "@/lib/timing";
+import type { StorefrontCard } from "@/storefront/contract";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Slim per-card DTO (Etapa C): ~0.45KB gzip per 10 items and INVARIANT to
+ * Slim per-card shape (Etapa C): ~0.45KB gzip per 10 items and INVARIANT to
  * real-catalog description length — the grid never ships description/metadata
  * (the PDP does). Every response is COMPLETE state for its page (no diffs):
- * resilience over marginal bytes on a lossy network.
+ * resilience over marginal bytes on a lossy network. F2: la forma ES
+ * StorefrontCard (contract) — campo a campo idéntica al DTO inline retirado.
  */
-interface FeedCardDTO {
-  id: string;
-  title: string;
-  price_cents: number;
-  currency: string;
-  image_url: string | null;
-  reason?: string;
-  position?: number;
-}
 
 export async function GET(req: NextRequest) {
   if (dbHealth() === "down") {
@@ -47,7 +40,7 @@ export async function GET(req: NextRequest) {
     ),
   );
 
-  const items: FeedCardDTO[] = page.items.map((it) => ({
+  const items: StorefrontCard[] = page.items.map((it) => ({
     id: it.product.id,
     title: it.product.title,
     price_cents: it.product.price_cents,

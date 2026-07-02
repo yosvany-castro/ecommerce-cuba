@@ -1,21 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ProductCard, type ProductCardData } from "./ProductCard";
+import { ProductCard } from "./ProductCard";
 import { SeenTracker } from "./slate/SeenTracker";
 import {
   parseSnapshot,
   shouldRestoreSnapshot,
   type FeedSnapshot,
 } from "@/lib/client/feed-snapshot";
-
-interface FeedCardDTO extends ProductCardData {
-  reason?: string;
-  position?: number;
-}
+import type { StorefrontCard } from "@/storefront/contract";
 
 interface FeedPageResponse {
-  items: FeedCardDTO[];
+  items: StorefrontCard[];
   next_cursor: string | null;
   slate_id: string | null;
 }
@@ -45,7 +41,7 @@ export function InfiniteFeed({
   initialCursor: string | null;
   slateId: string | null;
 }) {
-  const [items, setItems] = useState<FeedCardDTO[]>([]);
+  const [items, setItems] = useState<StorefrontCard[]>([]);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [state, setState] = useState<"idle" | "loading" | "error" | "done">(
     initialCursor ? "idle" : "done",
@@ -64,7 +60,7 @@ export function InfiniteFeed({
   // scroll clampado). No puede ser un useState lazy: correría en SSR/hydration
   // y desajustaría el HTML del servidor.
   useLayoutEffect(() => {
-    const snap = parseSnapshot<FeedCardDTO>(sessionStorage.getItem(SNAPSHOT_KEY));
+    const snap = parseSnapshot<StorefrontCard>(sessionStorage.getItem(SNAPSHOT_KEY));
     if (shouldRestoreSnapshot(snap, slateId, Date.now())) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setItems(snap!.items);
@@ -89,7 +85,7 @@ export function InfiniteFeed({
   useEffect(() => {
     if (!slateId) return;
     const save = () => {
-      const snap: FeedSnapshot<FeedCardDTO> = {
+      const snap: FeedSnapshot<StorefrontCard> = {
         slate_id: slateId,
         items,
         cursor,
