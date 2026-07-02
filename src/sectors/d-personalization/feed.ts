@@ -1,7 +1,6 @@
 import type { Client } from "pg";
 import type { RequestTiming } from "@/lib/timing";
 import { normalize } from "@/lib/math";
-import { effectiveUserVector } from "./vector/effective";
 import { retrieveTopKByVector, type FeedItem } from "./retrieve";
 import { fetchAllModesInBucket } from "./multimode/dispatch";
 import { rrfFuse, type RankedList } from "./retrieve/rrf";
@@ -114,20 +113,6 @@ async function fetchExcludedIds(
     [user_id, anonymous_id],
   );
   return (r.rows as { product_id: string }[]).map((x) => x.product_id);
-}
-
-async function fetchSessionVectorUnnorm(
-  session_id: string,
-  pg: Client,
-): Promise<number[] | null> {
-  const r = await pg.query(
-    `SELECT vector_unnormalized::text AS v, weight_sum
-     FROM session_vectors WHERE session_id = $1`,
-    [session_id],
-  );
-  if (r.rows.length === 0) return null;
-  if (Number(r.rows[0].weight_sum) <= 0) return null;
-  return JSON.parse(r.rows[0].v) as number[];
 }
 
 async function fetchProductEmbeddings(
@@ -299,15 +284,11 @@ export async function generateFeedInternal(
 
   let cohortId: CohortId = "unisex_indeterminado";
   let recipientId: string | null = null;
-  let nEventsSession = 0;
-  let sessionUnnorm: number[] | null = null;
 
   if (opts.session_id) {
     const s = await timed("session_state", () => readSessionState(opts.session_id!, pg));
     if (s.current_cohort_id) cohortId = s.current_cohort_id;
     recipientId = s.current_recipient_id;
-    nEventsSession = s.signal_window_size;
-    sessionUnnorm = await timed("session_vector", () => fetchSessionVectorUnnorm(opts.session_id!, pg));
   }
 
   const excluded = await timed("excluded", () => fetchExcludedIds(opts.user_id, opts.anonymous_id, pg));
@@ -428,11 +409,12 @@ export async function generateFeedInternal(
     // popularity re-weighs (the exp-I fix — pure cosine buries best-sellers).
     const retrievedByMode: { mode_index: number; items: { id: string; score: number }[] }[] = [];
     for (const m of modes) {
+      // Solo el vector de perfil: el "vector de sesión" α-mixing de F3a jamás
+      // se escribió en producción (state.ts insertaba vector cero) y la señal
+      // de sesión validada (exp-k) entra por views-categories, no por aquí.
       const u = normalize(m.vector_unnormalized);
-      const sessionNorm = sessionUnnorm ? normalize(sessionUnnorm) : null;
-      const eff = effectiveUserVector(u, sessionNorm, nEventsSession);
       const wideK = FEED_POP_PRIOR_STRENGTH > 0 ? 150 : 50;
-      const items = await timed("retrieve_modes", () => retrieveTopKByVector(eff, excluded, wideK, pg));
+      const items = await timed("retrieve_modes", () => retrieveTopKByVector(u, excluded, wideK, pg));
       retrievedByMode.push({
         mode_index: m.mode_index,
         items: items.map((it) => ({ id: it.product.id, score: it.similarity })),

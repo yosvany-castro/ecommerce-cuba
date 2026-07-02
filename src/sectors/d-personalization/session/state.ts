@@ -47,6 +47,9 @@ export async function persistSessionState(
   state: FullSessionState,
   pg: Client,
 ): Promise<void> {
+  // vector_unnormalized/weight_sum: columnas legado F3a (NOT NULL) — el vector
+  // de sesión se retiró del feed (jamás se pobló; la señal de sesión validada
+  // entra por views-categories). Se rellenan con cero y no se leen.
   const zeroVec = "[" + new Array(EMBEDDING_DIM).fill(0).join(",") + "]";
   await pg.query(
     `INSERT INTO session_vectors

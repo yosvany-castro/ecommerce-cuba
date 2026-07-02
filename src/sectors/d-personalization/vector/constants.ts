@@ -25,7 +25,3 @@ export const EVENT_WEIGHTS: Record<EventType | "dismiss", number> = {
 export const TAU_PROFILE_DAYS = 60;
 export const TAU_SESSION_MINUTES = 30;
 export const KAPPA = 10;
-
-export const ALPHA_BASE = 0.1;
-export const ALPHA_PER_EVENT = 0.05;
-export const ALPHA_MAX = 0.7;
