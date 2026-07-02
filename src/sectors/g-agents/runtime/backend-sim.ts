@@ -28,7 +28,7 @@ import type { ArmArtifacts } from "@/sectors/g-agents/sim/crons";
 import type { ArmState } from "@/sectors/g-agents/sim/ledger";
 import type { World } from "@/sectors/g-agents/sim/world";
 import type { Surface } from "@/sectors/f-slate/config";
-import type { MerchandiserBackend, ProposalResult } from "./backend";
+import { PROD_MARGIN_PCT, type MerchandiserBackend, type ProposalResult } from "./backend";
 
 /**
  * Backend sim del merchandiser (blueprint §5.12): el agente REAL de C2 corre
@@ -295,7 +295,7 @@ export function simMerchandiserBackend(args: {
         events_7d: pop.get(id) ?? 0,
         views_7d: views.get(id) ?? 0,
         purchases_7d: buys.get(id) ?? 0,
-        margin_pct: world.marginOf(id), // visible per-product en el sim (2.C.5)
+        margin_pct: PROD_MARGIN_PCT, // 2.C.5 CERRADA: el agente ve el margen plano de prod; el ledger liquida con el real
       }));
       const byCat = new Map<string, { events_7d: number; purchases_7d: number; products: number }>();
       for (const id of active) {

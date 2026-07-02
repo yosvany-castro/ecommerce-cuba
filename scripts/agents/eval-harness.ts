@@ -11,6 +11,9 @@
  *     --aa                      # A/A: ambos brazos congelados
  *     --escalate                # añade ESCALATION_SEEDS y recalcula sobre N=10
  *     --epochs N                # override de épocas medidas (solo dev/smoke)
+ *     --gateworld               # GATE_WORLD sin modo gate: referencia scripted
+ *                               # publicada junto al gate (pre-registro 2026-07-02);
+ *                               # jamás imprime PASS (gateVerdict exige n≥5)
  *
  * Caché write-once de decisiones LLM por hash (transcripts commiteables):
  * re-runs del harness = $0; los runs del gate quedan congelados y auditables.
@@ -136,7 +139,8 @@ function parseArgs() {
   } else {
     seeds = [DEV_SEED];
   }
-  const spec: WorldSpec = gate ? { ...GATE_WORLD } : { ...SMOKE_WORLD };
+  const gateworld = has("--gateworld");
+  const spec: WorldSpec = gate || gateworld ? { ...GATE_WORLD } : { ...SMOKE_WORLD };
   const epochs = val("--epochs");
   if (epochs !== null) spec.measuredEpochs = Math.max(1, Number(epochs));
   if (!gate && !smoke && !seedsArg) {

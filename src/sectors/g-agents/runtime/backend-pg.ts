@@ -22,7 +22,7 @@ import {
   proposalKey,
   runProposalCap,
 } from "@/sectors/g-agents/write/caps";
-import type { MerchandiserBackend, ProposalResult } from "./backend";
+import { PROD_MARGIN_PCT, type MerchandiserBackend, type ProposalResult } from "./backend";
 
 /**
  * Backend de producción del merchandiser (blueprint §4.8). proposeWrite NUNCA
@@ -31,9 +31,6 @@ import type { MerchandiserBackend, ProposalResult } from "./backend";
  * (validación→caps→tier→mapping) y se detiene justo antes del INSERT — el
  * dry-run ejercita el código real, no una rama paralela.
  */
-
-// margen efectivo de negocio vigente (deuda F1: hardcodeado, desviación 2.C.5)
-const MARGIN_PCT = 0.6;
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -302,7 +299,7 @@ export function pgMerchandiserBackend(
       );
       const products = (r.rows as Record<string, unknown>[]).map((row) => ({
         ...row,
-        margin_pct: MARGIN_PCT,
+        margin_pct: PROD_MARGIN_PCT,
       }));
       const categories = await fetchCatalogContext({ limit: 8 }, pg);
       return JSON.stringify({ products, categories });

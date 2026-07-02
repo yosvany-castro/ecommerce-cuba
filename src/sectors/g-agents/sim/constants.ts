@@ -55,7 +55,7 @@ export function epochStart(t: number): Date {
 }
 
 /** Bump manual cuando cambie el modelo de mundo: invalida el caché de transcripts. */
-export const SIM_WORLD_VERSION = "sim-world-v2";
+export const SIM_WORLD_VERSION = "sim-world-v2.1"; // v2.1 (2026-07-02): cierre 2.C.5 — cambia la observación del agente ⇒ invalida transcripts/seeds previos
 
 export interface WorldSpec {
   universeSize: number;

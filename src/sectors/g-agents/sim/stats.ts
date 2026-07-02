@@ -68,11 +68,17 @@ export function gateVerdict(ratios: number[]): GateVerdict {
 }
 
 /**
- * Detector de colapso del frozen (A3 §5.3, endurecido en Fase D H2): caída
- * >50% entre épocas CONSECUTIVAS desde la baseline e1 (e0 orgánica queda
- * fuera: régimen distinto por diseño), y brazo frozen MUERTO (margen ≤0 en
- * cualquier época medida) ⇒ RUN INVÁLIDO — un frozen en cero daría un ratio
- * astronómico, jamás un PASS.
+ * Detector de colapso del frozen — RECALIBRADO Y PRE-REGISTRADO 2026-07-02
+ * (D1-H3: el detector original marcaba INVÁLIDO por dips legítimos de UNA
+ * época en mundos volátiles de 12 épocas — falsos positivos en 3/5 seeds del
+ * gate v1). Reglas:
+ *  1. Brazo MUERTO: margen ≤0 en cualquier época medida ⇒ inválido (el
+ *     exploit real que se caza: un frozen en cero daría ratio astronómico).
+ *  2. Colapso SOSTENIDO: caída bajo el 50% del nivel pre-caída mantenida DOS
+ *     épocas consecutivas ⇒ inválido.
+ * Un dip puntual que se recupera (o en la última época, sin segunda evidencia)
+ * ya NO invalida: el ratio compara SUMAS de margen — un dip de una época no
+ * puede fabricar un 2×, y el brazo muerto lo cubre la regla 1.
  */
 export function frozenCollapsed(
   marginByEpoch: number[],
@@ -82,8 +88,11 @@ export function frozenCollapsed(
   for (let t = measuredStart; t <= lastEpoch; t++) {
     if (!(marginByEpoch[t] > 0)) return true;
   }
-  for (let t = measuredStart - 1; t < lastEpoch; t++) {
-    if (marginByEpoch[t] > 0 && marginByEpoch[t + 1] < 0.5 * marginByEpoch[t]) return true;
+  for (let t = measuredStart - 1; t <= lastEpoch - 2; t++) {
+    const pre = marginByEpoch[t];
+    if (pre > 0 && marginByEpoch[t + 1] < 0.5 * pre && marginByEpoch[t + 2] < 0.5 * pre) {
+      return true;
+    }
   }
   return false;
 }

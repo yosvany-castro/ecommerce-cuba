@@ -54,13 +54,13 @@ describe("gateVerdict (pre-registrado, sin redondeos)", () => {
   });
 });
 
-describe("frozenCollapsed (Fase D H2: e1→e2 incluido + frozen muerto)", () => {
+describe("frozenCollapsed (recalibrado 2026-07-02, D1-H3: sostenido vs dip)", () => {
   // traj indexada por época; medidas 2..4 (e0 orgánica fuera del detector)
   test("frozen TODO-CERO ⇒ inválido (un brazo muerto daría ratio astronómico)", () => {
     expect(frozenCollapsed([0, 0, 0, 0, 0], 2, 4)).toBe(true);
   });
 
-  test("colapso e1→e2 (baseline→primera medida) SÍ dispara", () => {
+  test("colapso SOSTENIDO desde la baseline (e1→e2 y e3 siguen bajo 50%) ⇒ dispara", () => {
     expect(frozenCollapsed([5e6, 1e6, 0.4e6, 0.39e6, 0.38e6], 2, 4)).toBe(true);
   });
 
@@ -71,5 +71,17 @@ describe("frozenCollapsed (Fase D H2: e1→e2 incluido + frozen muerto)", () => 
   test("decadencia legítima (paso 0.59, smoke seed 123) NO dispara; e0→e1 fuera", () => {
     // ≈ smoke 123: e0 orgánica 3.6M (régimen distinto), luego 1.07M→1.06M→0.93M→0.55M
     expect(frozenCollapsed([3.6e6, 1.075e6, 1.063e6, 0.928e6, 0.552e6], 2, 4)).toBe(false);
+  });
+
+  test("dip de UNA época con recuperación (falso positivo del gate v1, seeds 2026/777 e3≈0.49) NO dispara", () => {
+    expect(frozenCollapsed([5e6, 1e6, 0.488e6, 0.95e6, 1e6], 2, 4)).toBe(false);
+  });
+
+  test("dip en la ÚLTIMA época (seed 31337 e13≈0.29) sin segunda evidencia NO dispara", () => {
+    expect(frozenCollapsed([5e6, 1e6, 1e6, 1e6, 0.29e6], 2, 4)).toBe(false);
+  });
+
+  test("dip que se recupera a medias (sigue bajo 50% del nivel pre-caída) SÍ dispara", () => {
+    expect(frozenCollapsed([5e6, 1e6, 0.45e6, 0.49e6, 1e6], 2, 4)).toBe(true);
   });
 });

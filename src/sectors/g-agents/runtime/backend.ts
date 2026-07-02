@@ -8,6 +8,14 @@ import type { PlacementProposal } from "@/sectors/g-agents/write/schema";
  * intercambiado (anti-H7).
  */
 
+/**
+ * Margen visible al agente vía read_catalog: constante de negocio, IGUAL en
+ * prod y sim (cierre pre-registrado de la desviación 2.C.5, 2026-07-02 — el
+ * sim exponía margin_pct por producto y prod siempre fue plano). El ledger
+ * del sim sigue LIQUIDANDO con el margen real por producto del mundo.
+ */
+export const PROD_MARGIN_PCT = 0.6;
+
 export interface ProposalResult {
   accepted: boolean;
   action: string;
