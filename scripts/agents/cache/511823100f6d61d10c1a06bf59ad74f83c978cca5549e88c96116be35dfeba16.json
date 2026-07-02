@@ -1,0 +1,135 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 123,
+    "epoch": 4,
+    "metricsHash": "6ff5721bac042c7638e14b3d0f74ccccabc6e17c6763cdec7f6586ea4d004143"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 50 vacío. El único carrusel popular activo (slot 20 v2) genera $903.14 revenue y 19 purchases en 14d (read_metrics 7d: 4393 served, 1099 seen, 127 ATC). Añadir un segundo carrusel popular global en slot 50 captura usuarios que scrollearon más abajo. Es aditivo puro: sin este placement, slot 50 no muestra nada. Limit=20 para cubrir variedad."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 60 vacío. mode=cohort ofrece popularidad personalizada por segmento de usuario, diferente señal del popular global en slot 20. Complementa al carrusel global sin canibalizar. La tienda tiene 9353 served/semana (read_metrics 7d) con tráfico suficiente para segmentación por cohorte. Aditivo puro."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 70 vacío. La atención del usuario decae con el slot, por eso limit=12 (menos productos, menor fatiga de scroll). Popular global con selección más curada. Aditivo puro: slot 70 no tiene contenido sin este placement. Apalanca el éxito del popular slot 20 (115.6 ATC/1k seen, read_metrics 7d)."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP cross_sell slot 20 tiene flag no_impression_logging (esperar). Añadir cross_sell en slot 30 como capa adicional. PDP genera 5880 seen/semana con 322 ATC (read_metrics 7d) — alta intención de compra. Limit=12 para test. Secundario tras cubrir home slots 50-70."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart cart_addons slot 20 tiene flag no_impression_logging (esperar). Añadir cart_addons en slot 30 para upselling. Carrito tiene 499 seen/semana, 16 ATC, $1013 revenue (read_metrics 7d). Limit=8 (pocos, carrito es superficie de atención limitada). Secundario tras home y PDP."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "2ecb9b3b-abc5-4152-96ac-4982dc779439",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "912df4db-2952-4465-bee2-ee7fe4d3c5a7",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "d375fa0f-aac5-41f6-8959-eb7bda6619fa",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "0252c156-d1dc-48b4-a19b-b84ba63ade89",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "placement_id": "f5f9ec07-b1a1-4692-bd74-0a20ce332a66",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las 5 propuestas fueron **aceptadas y aprobadas** (tier low). Aquí el resumen:\n\n---\n\n## Resumen\n\n**Qué propuse (5 placements nuevos):**\n\n| # | Superficie | Slot | Sección | Params | Status |\n|---|-----------|------|---------|--------|--------|\n| 1 | **Home** | **50** | popular global (limit=20) | Aditivo puro | ✅ approved low |\n| 2 | **Home** | **60** | popular cohort (limit=20) | Personalizado por segmento | ✅ approved low |\n| 3 | **Home** | **70** | popular global (limit=12) | Curado, menor fatiga | ✅ approved low |\n| 4 | **PDP** | **30** | cross_sell (limit=12) | Capa adicional de relacionados | ✅ approved low |\n| 5 | **Cart** | **30** | cart_addons (limit=8) | Upselling ligero en carrito | ✅ approved low |\n\n**Evidencia clave:** El slot 20 popular v2 existente genera **$903.14 revenue y 19 purchases en 14d** (115.6 ATC/1k seen). Los slots 30-40 estaban con `no_impression_logging` (intocables). Aproveché los slots vacíos **50, 60, 70** del home (aditivos puros —sin mí no muestran nada) y luego PDP/cart como secundarios. La categoría **accesorios_tech** lidera en compras (111/7d) y se beneficiará del popular global.\n\n**Qué espero ver en `since_change` la próxima vez:** Revenue incremental en home (suma de slots 50+60+70), ATC rate >50/1k seen en los nuevos carruseles, y que cross_sell/cart_addons en PDP/cart generen al menos 1-2 purchases adicionales cada uno sin canibalizar al default.",
+  "truncated": false,
+  "runId": "sim-run-123-e4",
+  "createdAt": "2026-07-02T04:59:53.352Z"
+}

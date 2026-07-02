@@ -1,0 +1,135 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 123,
+    "epoch": 2,
+    "metricsHash": "afcd2b47bf79e22e9c4e8c90b3e28f3399de9ee4091234af5a31e4fcc98310d9"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME tiene 0 carruseles en slots 20-90 (solo existe el hero_grid de sistema en slot 10). Store 7d: 9.671 seen, 98 purchases, $5.718 revenue. vs_holdout 14d: revenue_ratio=1,14 (14% lift con recomendaciones). Slot 20 es el de máxima atención bajo el hero y es 100% aditivo. Un popular global expone los productos top (ej. Samsung smartphone 77 purchases, Nike pesas 68 purchases) a todos los visitantes, generando revenue incremental inmediato."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo en home (slot 30). Store 14d: 53.524 seen — masa crítica suficiente para mode=cohort sin riesgo low_sample. Mientras slot 20 muestra popular global, slot 30 personaliza por segmento del usuario. Esto cubre a usuarios con preferencias distintas al mainstream (ej. joyeria $3.441 revenue 14d vs tecnologia $21.011). Atención decae ~15-20% por slot, pero la personalización compensa con mayor relevancia."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Tercer carrusel aditivo en home slot 40. Store 14d: 552 purchases de los cuales tecnologia=135, moda_mujer=160, deporte=87. Con mode=global el motor evita duplicados vs slot 20 (distintos productos ranqueados). Cada carrusel nuevo es margen incremental puro. Categorías como accesorios_tech ($966 revenue 14d) y joyeria ($3.441) se benefician al aparecer aquí sin competir con los top-10 del slot 20."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP ya sirve cross_sell default (impression_source). Store 7d muestra 7.408 seen en PDP con solo 21 purchases (0,28% conversión). Un placement cross_sell propio con limit=10 puede superar al default. El PDP es la superficie donde el usuario tiene intención de compra activa; mejorar el cross_sell puede duplicar la conversión actual. Secundario a los carruseles de home, pero complementario."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Carrito tiene cart_addons como fuente de impresiones pero sin placement propio. Cart 7d: solo 694 seen y 5 purchases — volumen bajo pero momento de alta intención (usuario a punto de comprar). Los addons de bajo precio (ej. cargador Spigen $36, teclado Logitech $14) pueden incrementar el ticket promedio. Un placement propio optimiza qué productos se muestran vs el default del sistema."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "789f6c4a-89da-4397-b336-2adac6951556",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "ee2a403b-0fda-4a0b-ba90-a4689f9b6299",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "9ba3ef49-9e9d-42db-8faf-000b6c5e9205",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las 5 propuestas fueron **aceptadas** (tier low, aprobadas). Resumen:\n\n---\n\n## Resumen final\n\n**Qué propuse (5 placements):**\n\n| # | Superficie | Slot | Tipo | Params | Estado |\n|---|-----------|------|------|--------|--------|\n| 1 | **home** | 20 | popular global | limit=20 | ✅ approved |\n| 2 | **home** | 30 | popular cohort | limit=20 | ✅ approved |\n| 3 | **home** | 40 | popular global | limit=20 | ✅ approved |\n| 4 | **pdp** | 20 | cross_sell | limit=10 | ✅ approved |\n| 5 | **cart** | 20 | cart_addons | limit=10 | ✅ approved |\n\n**Evidencia que usé:**\n- Store 7d: 9.671 seen, 98 purchases, $5.718 revenue — **0 carruseles en home**, todo por hacer\n- vs_holdout 14d: revenue_ratio = **1,14** (las recomendaciones dan +14% vs línea base)\n- Top categorías 14d: tecnologia ($21K), moda_mujer ($7,7K), deporte ($2,8K), joyeria ($3,4K)\n- PDP conversión 0,28% — margen de mejora con mejor cross_sell\n- Cart: solo 694 seen/7d — volumen bajo, pero alta intención de compra\n\n**Qué espero ver en since_change:**\n- **Home slot 20**: incremento visible en seen y revenue atribuible al carrusel popular global\n- **Home slot 30**: mejora en CTR/compra vs slot 20 por personalización cohort\n- **Home slot 40**: revenue incremental de categorías secundarias (accesorios_tech, joyeria)\n- **PDP**: aumento de la conversión del 0,28% actual a ~0,5%+ con mejor cross_sell\n- **Cart**: pocas compras (5/7d) pero cada add-on sumará al ticket promedio\n\nLos 3 carruseles de home expiran en 72h. Si funcionan (since_change positivo), habrá que re-proponerlos con la nueva evidencia.",
+  "truncated": false,
+  "runId": "sim-run-123-e2",
+  "createdAt": "2026-07-02T04:52:04.505Z"
+}

@@ -1,0 +1,81 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME tiene slots 20-90 vacíos (solo hero_grid en slot 10). 16,080 sesiones/7d pasan por home sin ver ningún carrusel de productos. Slot 20 es el de máxima atención bajo el hero. Un popular global (mode=global, limit=20) mostrará los productos más vistos y comprados del catálogo entero, generando margen aditivo puro. Hipótesis medible: este carrusel debe generar al menos 10-12 purchases incrementales/semana (sobre los 224 actuales del home) y aumentar el revenue del home en ~5%."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo en home, slot 30 (atención decreciente pero aditivo puro). Mode=cohort personaliza los populares por segmento de usuario, complementando el popular global del slot 20. En 14d, las categorías más visitadas (moda_mujer 40,877 seen, tecnología 33,288, deporte 35,030) sugieren segmentos de usuario diferenciados; cohort ajusta automáticamente a cada segmento. Hipótesis: este carrusel generará +8-10 purchases/semana y mejorará el CTR-seen en usuarios logueados vs. anónimos al menos 2%."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 20
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP sirve 40,166 sesiones/7d con seen_rate 0.613 y 594 add-to-carts — alto tráfico e intención de compra. Actualmente sin placements de agente (solo default cross_sell del sistema). Un cross_sell explícito en slot 20 (limit=20) puede mejorar sobre el default al ofrecer productos complementarios relevantes a usuarios que ya están viendo un producto. Hipótesis: incrementar add-to-carts en PDP al menos 3-5% (de 594 a ~620/semana) y generar revenue incremental directo."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "cf1960a8-a9f2-4a24-bea6-984ecdd936f6",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "477565da-6bb9-4a91-af12-e0b1b204aa01",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "e802e483-3d63-4159-85ad-40755536f81f",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron **aceptadas y aprobadas** (tier low). Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **Home slot 20 → popular global (limit=20)** — Carrusel de productos más populares del catálogo, justo bajo el hero. Primer contenido aditivo en un home que estaba completamente vacío.\n2. **Home slot 30 → popular cohort (limit=20)** — Segundo carrusel personalizado por segmento de usuario. Complementa al global con relevancia segmentada.\n3. **PDP slot 20 → cross_sell (limit=20)** — Mejora sobre el cross_sell default del sistema en la página de producto, donde hay alta intención de compra (40K sesiones/semana).\n\n**Con qué evidencia:**\n- HOME: 0 carruseles propios existentes, 16,080 sesiones/semana desatendidas después del hero. Revenue ratio 1.21x con solo hero_grid.\n- Categorías fuertes: tecnología ($10.4M/14d), moda_mujer ($5.1M), deporte ($2.6M) — los populares global/cohort capturarán automáticamente su tracción.\n- PDP: 40,166 sesiones/semana, 594 add-to-carts, sin placement de agente.\n\n**Qué espero ver en since_change (próxima revisión):**\n- **Home slot 20**: +10–12 purchases/semana incrementales y ~5% más revenue en home.\n- **Home slot 30**: +8–10 purchases/semana con mejor CTR en usuarios logueados vs. anónimos (~2%+).\n- **PDP slot 20**: +3–5% add-to-carts sobre los 594/semana actuales (~620/semana).",
+  "truncated": false,
+  "runId": "sim-run-42-e2",
+  "createdAt": "2026-07-02T05:27:26.962Z"
+}

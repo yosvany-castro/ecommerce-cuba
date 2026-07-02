@@ -1,0 +1,65 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 9102,
+    "epoch": 3,
+    "metricsHash": "7d2785e6371c3c2beb752e7901abcb8e4818ecc03c61da6260e3f04516bc8494"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 24,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME es aditivo puro; slots 40-90 vacíos. Slot 20 genera $2996.43 (14d) y slot 30 genera $8150.95 (14d) — juntos 118 purchases en 14d. El holdout 14d confirma lift 1.74x de revenue cuando hay placements vs no haberlos. Slot 40 es el siguiente con mayor atención. Limit=24 para mostrar variedad sin abrumar. Hipótesis: ≥8 purchases y ≥$200 revenue en 14d since_change, basado en que slot 30 (inferior) logró 83 purchases en 14d. CTR proxy no es obstáculo: el proxy es igual para todos los placements."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo en home (slot 50). mode=cohort personaliza por segmento del usuario, complementando el global del slot 40 — evita duplicación de productos y maximiza relevancia. Slot 30 (inferior) tuvo 97 ATC/1k seen vs 43.9 de slot 20, lo que indica que usuarios que scrollean más abajo tienen mayor intención de compra. Limit=20 enfocado en productos de joyería y moda_mujer, categorías con mayor revenue/seen ($136.5 y $91.4 respectivamente en 7d). Hipótesis: ≥5 purchases y ≥$120 revenue en 14d since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "5132411e-9766-4ffb-981a-89151133db10",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "1f8de16f-3f90-4a7f-bc76-ff5d133f3395",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas aceptadas en tier **low**. Cierro con el resumen:\n\n---\n\n## Resumen\n\n**Qué propuse:**\n1. **HOME slot 40** → `popular mode=\"global\" limit=24` — carrusel de productos populares globales\n2. **HOME slot 50** → `popular mode=\"cohort\" limit=20` — carrusel personalizado por segmento de usuario\n\n**Con qué evidencia:**\n- El home es **aditivo puro**: sin mis carruseles solo muestra el hero. Cada slot nuevo es margen 100% incremental.\n- Slot 30 (el carrusel más bajo existente) genera **$8,150.95 / 83 purchases en 14d** — los usuarios que scrollean tienen alta intención.\n- El **holdout a 14d** muestra lift de **1.74x revenue** cuando hay placements vs. no haberlos — validación de incrementalidad.\n- Joyería ($136.5 revenue/seen) y moda_mujer ($91.4 revenue/seen) son las categorías más valiosas. `mode=cohort` en slot 50 personaliza para capturarlas mejor.\n\n**Qué espero ver en `since_change` la próxima vez:**\n- Slot 40: ≥8 purchases, ≥$200 revenue en 14d\n- Slot 50: ≥5 purchases, ≥$120 revenue en 14d (más abajo, menos tráfico pero usuarios más calificados)\n\n**Qué descarté por las objeciones del critic:**\n- ❌ PDP slot 30 (cross_sell) — riesgo de canibalización con el slot 20 existente que ya cubre el 98% del tráfico\n- ❌ CART slot 30 (cart_addons) — tráfico ínfimo (1,688 served/semana), sin poder estadístico\n- ❌ HOME slot 60 — demasiados carruseles simultáneos impedirían atribución individual",
+  "truncated": false,
+  "runId": "sim-run-9102-e3",
+  "createdAt": "2026-07-02T05:18:54.128Z"
+}

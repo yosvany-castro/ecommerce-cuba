@@ -1,0 +1,111 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 9101,
+    "epoch": 2,
+    "metricsHash": "d65e92ddbd938cb80dd4fdfac2130778b7608b130402531c5392e896083dc10d"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME no tiene ningún carrusel aditivo — solo el hero_grid seed (slot 10) con flag no_impression_logging. Este es el primer carrusel, en slot 20, el de máxima atención post-hero. Las categorías joyeria generó $57,098.28 (5,709,828 cents) y 102 purchases en 14d, tecnologia $15,905.50 (1,590,550 cents) y 55 purchases, accesorios_tech $6,762.57 (676,257 cents) y 165 purchases. Un carrusel popular global captura estos bestsellers cross-categoría. vs_holdout revenue_ratio 0.76 (14d) indica que el default rinde peor que holdout — hay espacio claro de mejora."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo del home. mode=cohort personaliza por segmento de usuario, complementando el global del slot 20 sin canibalizar. Las audiencias están diferenciadas: juguetes tuvo 114 purchases/14d y 10,037 seen, joyeria 102 purchases/14d y 7,163 seen, deporte 30 purchases/14d y 7,880 seen. cohort puede surfear estos intereses según el perfil de cada visitante. El home sin carruseles es la oportunidad más grande — este es el segundo."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "La PDP tuvo 12,936 served y 7,709 seen en 7d (read_metrics surface=pdp window=7d), con 13 purchases y $2,253.71 feed revenue (225,371 cents). Actualmente no hay placement de agente en PDP — solo default cross_sell. Un cross_sell con limit=8 en slot 20 puede aumentar la conversión cruzada. Las categorías joyeria ($57K/14d) y tecnologia ($15.9K/14d) son ideales para cross-sell contextual por su alto ASP y margen 60%."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El carrito tuvo 1,084 served, 767 seen y 0 purchases en 7d (read_metrics surface=cart window=7d). Sin placements de agente. accesorios_tech es la categoría con más transacciones (165 purchases/14d) y tiene productos de bajo precio ideales para addons: cargadores desde $7.32 (732 cents, ID syn-9101-1500-54) hasta $11.85 (1,185 cents, ID syn-9101-1500-546), con margen 60%. Un cart_addons puede generar revenue incremental en una superficie que hoy produce $0."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "74d493cb-fad2-474a-835f-623a70b279f9",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "bccb7b9b-6700-4b1b-abf5-cff7b72f0183",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "d40dba61-9f66-4573-89db-bfdc0c2959f4",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "1d7fd6ae-eedb-45ba-b3a5-89aea63fa251",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 4 propuestas fueron aceptadas en tier **low**. Cierro con el resumen.\n\n---\n\n## Resumen de la ronda\n\n**4 placements creados, 0 rechazados.**\n\n| # | Superficie | Slot | Tipo | Modo | Estado |\n|---|-----------|------|------|------|--------|\n| 1 | **Home** | **20** | popular | global, limit=12 | ✅ approved (low) |\n| 2 | **Home** | **30** | popular | cohort, limit=12 | ✅ approved (low) |\n| 3 | **PDP** | **20** | cross_sell | limit=8 | ✅ approved (low) |\n| 4 | **Cart** | **20** | cart_addons | limit=8 | ✅ approved (low) |\n\n**Evidencia que las justifica:**\n- El home estaba **completamente vacío** — solo hero_grid sin logging. Dos carruseles aditivos (slot 20 y 30) capturan las categorías más fuertes: joyería ($57K/14d), tecnología ($15.9K/14d), accesorios_tech (165 purchases/14d).\n- El vs_holdout con revenue_ratio **0.76** (14d) mostraba que el default rinde peor que no mostrar nada — síntoma de home infrautilizado.\n- PDP con 12,936 served/7d y sin placement de agente → cross_sell para aumentar conversión.\n- Cart con **0 purchases/7d** y 1,084 served → cart_addons para desbloquear revenue del carrito.\n\n**Qué espero ver en since_change la próxima vez:**\n- Aumento en purchases y revenue en home (los carruseles son tráfico aditivo puro).\n- Mejora en revenue_ratio respecto al holdout.\n- Revenue positivo en cart (hoy $0) y cross-sell conversiones en PDP.\n- Habrá que re-proponer al expirar el TTL de 72h si los resultados acompañan.",
+  "truncated": false,
+  "runId": "sim-run-9101-e2",
+  "createdAt": "2026-07-02T05:02:58.936Z"
+}

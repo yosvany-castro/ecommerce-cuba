@@ -1,0 +1,41 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 9101,
+    "epoch": 3,
+    "metricsHash": "67b7bc3a5c66f2095146d0fb2a28867ce7d48876210b533e80ff9c9d568432f7"
+  },
+  "proposals": [
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 20 (popular, 74d493cb) genera $697.95 en 14d vs slot 30 (popular) genera $9,569.81 en 14d — ratio de 13.7x MENOS revenue/seen ($0.13 vs $1.81) pese a ser el slot de MAYOR atención bajo el hero (seen_rate 0.482 vs 0.349). Ambos son 'popular' y con seen comparables (5261 vs 5282). El underperformance de 13.7x sugiere que los productos mostrados no conectan con los usuarios en esta posición. Cambio a mode='cohort' para personalizar por segmento de usuario, con limit=12 para reducir carga cognitiva en primera posición. Hipótesis: revenue/seen sube de $0.13 a al menos $0.50 en el since_change de 72h. Revenue_ratio vs_holdout 14d = 0.57 (el feed rinde 57% del holdout). Si este fix funciona, el ratio debería mejorar.",
+      "action": "supersede",
+      "slot": 20
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "318844d5-3eb5-4ed5-8568-3819dca60aee",
+      "effective_tier": "medium",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Propuesta aceptada en **tier medium**, aprobada. Cierro con el resumen.\n\n---\n\n**Resumen de la ronda:**\n\n**Qué propuse:** 1 acción ejecutada (el crítico rechazó las otras 2 por el revenue_ratio 0.57 que cuestiona agregar más carruseles).\n\n**Acción ejecutada:**\n- **SUPERSEDE** home slot 20 (placement `74d493cb` → reemplazado por `318844d5`) — carrusel `popular` cambiado a `mode=\"cohort\", limit=12`. El slot 20 generaba apenas **$0.13/seen** vs el slot 30 que genera **$1.81/seen** (13.7x más) pese a estar en una posición inferior. La hipótesis es que la personalización por cohorte mejore el match producto-usuario.\n\n**Evidencia clave:**\n- Slot 20 (14d): 5,261 seen, 9 purchases, **$697.95** revenue\n- Slot 30 (14d): 5,282 seen, 90 purchases, **$9,569.81** revenue\n- Revenue_ratio vs holdout: 0.57 — el feed bajo el hero está dejando dinero sobre la mesa\n\n**Qué espero ver en since_change:** Al menos **$0.50/seen** en slot 20 (≈$2,600/14d vs los actuales $698) y una mejora en el revenue_ratio general del feed. Si funciona, en la próxima revisión podría expandir a slots 40+ con más confianza.",
+  "truncated": false,
+  "runId": "sim-run-9101-e3",
+  "createdAt": "2026-07-02T05:08:16.507Z"
+}

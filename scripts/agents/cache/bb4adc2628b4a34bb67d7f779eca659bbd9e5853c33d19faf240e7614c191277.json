@@ -1,0 +1,111 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 9102,
+    "epoch": 2,
+    "metricsHash": "be30f71c8650dbcf4b8732aacc1458cc624b361c4fc1e8bff475626d218acf1e"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home solo tiene hero_grid (slot 10, intocable). Slots 20-90 vacíos. Slot 20 es la máxima atención post-hero. Popular global captura best-sellers de toda la tienda: en 14d la tienda generó 384 purchases y $55,502 revenue (read_metrics home 14d). No hay flags que bloqueen. Es aditivo puro — cualquier revenue incremental es ganancia neta."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo del home. mode=cohort personaliza por segmento del usuario, complementando el carrusel global del slot 20. La tienda tiene 26,740 served en 14d (read_metrics home 14d), volumen suficiente para segmentación. Slot 30 mantiene alta atención. Aditivo puro."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP tiene 13,525 served/semana con 8,040 seen (59.4% seen_rate) pero solo 14 purchases (read_metrics pdp 7d). No hay placement de agente en PDP (placements: []). Creo cross_sell desde cero para aumentar conversión. Hipótesis: cross_sell contextual (productos relacionados al que se ve) puede elevar atc/purchase rate al ofrecer alternativas relevantes en el momento de decisión."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart tiene 1,031 served/semana con 69.4% seen_rate — usuarios con alta intención de compra. Solo 3 purchases en 7d (read_metrics cart 7d). Cart addons desde cero (placements: []) para up-sell pre-checkout. Aditivo puro en superficie sin placements previos."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "92b6bf90-277d-4237-9212-33554fe09a8e",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "80086f80-73f9-4ba6-a16a-f270847f887d",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "4cd5c222-e571-4429-89b6-27d0bf081490",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "898d7a72-aec9-4f08-89fc-45d083e5e666",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas aceptadas con tier `low` → aplicadas directamente. Aquí el resumen:\n\n---\n\n## 📋 RESUMEN — 4 PROPUESTAS EJECUTADAS\n\n| # | Superficie | Slot | Sección | Params | Placement ID | Estado |\n|---|-----------|------|---------|--------|-------------|--------|\n| 1 | **Home** | 20 | popular global | limit=12 | `92b6bf90-...` | ✅ approved (low) |\n| 2 | **Home** | 30 | popular cohort | limit=12 | `80086f80-...` | ✅ approved (low) |\n| 3 | **PDP** | 20 | cross_sell | limit=10 | `4cd5c222-...` | ✅ approved (low) |\n| 4 | **Cart** | 20 | cart_addons | limit=8 | `898d7a72-...` | ✅ approved (low) |\n\n### ¿Qué hice y por qué?\n\n1. **Home slot 20 — popular global**: El home estaba vacío (solo hero). Este es el carrusel más visible. Muestra los 12 best-sellers de toda la tienda, que en 14d generó 384 compras y $55.5k.\n2. **Home slot 30 — popular cohort**: Segundo carrusel, personalizado por segmento de usuario. Aprovecha los 26,740 served/14d para segmentación.\n3. **PDP slot 20 — cross_sell**: PDP tiene 13,525 served/semana y solo 14 compras (0.1% conversion). Cross_sell contextual para mejorar ese ratio.\n4. **Cart slot 20 — cart_addons**: Carrito con 69.4% seen_rate — usuarios comprometidos. Última oportunidad de up-sell antes del checkout.\n\n### ¿Qué espero ver en `since_change` la próxima vez?\n\n- **Home**: aumento en seen_rate y purchases vs el período sin carruseles. El slot 20 debería capturar la mayor atención (y revenue) por estar justo bajo el hero.\n- **PDP**: mejora en add_to_carts y purchases respecto al 0.1% actual, impulsado por cross-sells relevantes.\n- **Cart**: incremento en el ticket promedio por los addons ofrecidos pre-checkout.\n- **Slot 40 descartado**: el critic lo rechazó por ser redundante con slot 20 (mismo section_type y mode). Buena observación — lo dejaré para la próxima ronda si un carrusel extra se justifica con datos de `since_change`.",
+  "truncated": false,
+  "runId": "sim-run-9102-e2",
+  "createdAt": "2026-07-02T05:15:11.856Z"
+}

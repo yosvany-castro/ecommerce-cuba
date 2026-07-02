@@ -1,0 +1,65 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2.1",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 123,
+    "epoch": 3,
+    "metricsHash": "611d6f9dcaec187792b501ecde1eb986a3e628bacb33d70164d30d6d98e73682"
+  },
+  "proposals": [
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 20 actual (popular global) genera solo $132.13 revenue en 7d con 42.6 ATC/1k_seen, mientras que HOME slot 30 (popular global, mismo algoritmo) genera $2,817.25 con 120.5 ATC/1k_seen usando el mismo tráfico (~4,400 served c/u). Esto sugiere que ambos slots muestran contenido similar y compiten, penalizando al slot 20. Cambiar a mode='cohort' personaliza los productos según el segmento del usuario (nuevo vs recurrente, cohorte de sesión), diferenciando el contenido del slot 20 del slot 30 que seguiría en modo global. Espero que el ATC/1k_seen de slot 20 suba de 42.6 hacia ~80-100 y revenue_cents se incremente visiblemente en los próximos 7 días. Evidencia directa: 7d metrics home slot 20 (id e361394f) vs slot 30 (id 2187dbc1) con idéntico served (4400 vs 4391) pero 21x más revenue en slot 30.",
+      "action": "supersede",
+      "slot": 20
+    },
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {
+        "limit": 10,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 40 actual (popular global) genera $0 revenue en los últimos 7 días con solo 13 ATC y 0 purchases, pese a tener seen_rate de 0.514 (quienes llegan, ven). El tráfico es limitado (695 served en 7d, -84% vs slot 20). Cambiar a mode='cohort' personaliza los 10 productos mostrados según el perfil del usuario (nuevo/recurrente, cohorte de sesión), maximizando la relevancia para el pequeño volumen de usuarios que scrollan hasta esta posición. Reduzco limit a 10 para evitar sobrecarga cognitiva en una zona de atención baja. Evidencia: 7d metrics home slot 40 (id 789f6c4a): 695 served, 357 seen, 0 purchases, $0 revenue. Esta propuesta tiene baja espectativa de revenue pero es aditiva pura sin coste.",
+      "action": "supersede",
+      "slot": 40
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "1d8debee-bf33-4e3b-a425-f4b2494a68c3",
+      "effective_tier": "medium",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "63f2620b-78aa-4d41-981f-53e434040440",
+      "effective_tier": "medium",
+      "status": "approved"
+    }
+  ],
+  "finalText": "✅ También aceptada y aprobada con tier \"medium\".\n\n---\n\n## Resumen de la intervención\n\n**Diagnóstico inicial:**\nEn la ventana de 7 días, el home de la tienda tiene 3 carruseles de popular (slots 20, 30, 40) que son míos — aditivos puros. El **slot 20** está gravemente infrperformando: $132.13 de revenue vs el **slot 30** que genera **$2,817.25** con idéntico tráfico (~4,400 served). Ambos usan popular(global), se canibalizan. El **slot 40** genera $0 en 7d con solo 695 served.\n\n**Propuestas ejecutadas:**\n\n1. **HOME slot 20** → `popular(mode=\"cohort\", limit=20), tier=medium`  \n   *Evidencia:* slot 20 daba $132.13 vs slot 30 $2,817.25 con mismo tráfico (21x menos). Cambiar a cohort personaliza y diferencia del slot 30 (global).  \n   *Qué espero:* ATC/1k_seen suba de 42.6 hacia ~80-100 en since_change.\n\n2. **HOME slot 40** → `popular(mode=\"cohort\", limit=10), tier=medium`  \n   *Evidencia:* $0 revenue en 7d, solo 13 ATC, 695 served. Cohort mode + limit reducido optimiza para el pequeño volumen que llega.  \n   *Qué espero:* ATC/1k_seen repunte de 36.4 hacia ~50-70; al menos algo de revenue incremental.\n\n**No toqué:**\n- PDP cross_sell ($6,542.73 en 7d) — funciona excelente.\n- Cart addons ($1,391.52 en 7d) — decente, sin evidencia para cambiarlo.\n- Home slot 30 (estrella) y hero (intocable).\n\n**Próxima revisión:** Leer since_change en 3-7 días para ver si el cohort mode mejoró el ATC/1k y revenue de slots 20 y 40.",
+  "truncated": false,
+  "runId": "sim-run-123-e3",
+  "createdAt": "2026-07-02T04:56:25.287Z"
+}

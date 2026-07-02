@@ -1,0 +1,105 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 24,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 40 está vacío (margen puro perdido). Los slots 20 y 30 ya muestran popular global. mode='pdp_category' es contextual: muestra lo más popular de la categoría que el usuario está viendo en PDP. Categorías fuertes: moda_mujer ($1,433,496 rev/7d, 54 purchases), tecnologia ($1,383,500/7d, 51 purchases). Se espera: ~3,000 seen/7d (decaimiento desde slot 30 que hizo 3,328 seen/7d) y atc_per_1k_seen >= 60 (benchmark slot 20=62.3). en since_change se espera al menos 15 purchases atribuidas en 14d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "limit": 24,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 50, vacío hoy. mode='cohort' muestra popular dentro del segmento del usuario, añadiendo personalización que no ofrecen ni el popular global (slots 20,30) ni el pdp_category (slot 40). Dato de tendencia 14d: el default (que incluye estos placements) supera al holdout con revenue_ratio=1.46, lo que sugiere que la personalización agregada por cohort puede mejorar aún más. Se espera: ~2,700 seen/7d (decaimiento desde slot 40 estimado en ~3,000) y atc_per_1k_seen >= 55. en since_change se espera ver revenue incremental positivo."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "No hay placements de cart_addons actualmente. El carrito es superficie de alta intención: en 7d hubo 6,579 add-to-carts totales en la tienda (home 273+241+332=846, pdp 5,510, otras fuentes). El default de cart_addons ya existe (aparece en impression_sources), pero añadir un placement con TTL de 72h permite testear si supera al baseline. Se espera: al menos 5 add-to-carts desde addons/7d y revenue incremental positivo. Since_change mínimo: 3 purchases atribuidas en 14d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 24,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 60 vacío hoy. Tercer carrusel popular global, complementa slots 20 y 30. Aunque la atención decae en slot 60, es aditivo puro: cada impresión aquí es margen nuevo sin canibalizar conversiones existentes (slot 30 ya tiene 0.227 seen_rate vs 0.264 de slot 20, la atención decae gradualmente). El catalogo tiene 2,339+ productos activos en categorías principales, suficiente inventario para 3 carruseles globales sin solapamiento excesivo. Se espera: ~2,400 seen/7d, al menos 20 purchases/14d, revenue positivo. Since_change referencia: slot 30 genera $632,974/7d — incluso si slot 60 genera 20-30% de eso (~$126K-190K/7d), es incremental puro."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "ba1aef3d-573c-4f1c-8246-910d45ccc8a2",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "5618a9be-b7b2-41b1-9a92-3eb792926d57",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "5ebf7049-0997-452e-abce-b5521bbc8e1a",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "aa8740b3-2138-414e-b49d-b2c6a513deaa",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "✓ ¡Las 4 propuestas aceptadas!\n\n---\n\n## Resumen final\n\nEn esta ronda propuse **4 placements nuevos**, todos aceptados en tier **low**:\n\n| # | Superficie | Slot | Tipo | Modo | Placement ID |\n|---|-----------|------|------|------|-------------|\n| 1 | **Home** | 40 | popular | `pdp_category` | `ba1aef3d…` |\n| 2 | **Home** | 50 | popular | `cohort` | `5618a9be…` |\n| 3 | **Cart** | 20 | cart_addons | — | `5ebf7049…` |\n| 4 | **Home** | 60 | popular | `global` | `aa8740b3…` |\n\n**Evidencia que las justifica** (7d):\n- Home slots 20 y 30 ya generan **$488K y $633K** respectivamente → slots 40-90 vacíos = **margen puro perdido**.\n- Las categorías moda_mujer ($1.43M) y tecnologia ($1.38M) tienen alta demanda sin representación dedicada en home.\n- El default 14d supera al holdout con revenue_ratio=1.46 → la estrategia de rellenar el home funciona.\n- Cart no tenía ningún placement propio pese a ser una superficie de alta intención.\n\n**Qué espero ver en `since_change` la próxima vez:**\n- **Slot 40** (pdp_category): ~3,000 seen/7d, atc_per_1k ≥ 60, ≥15 purchases en 14d.\n- **Slot 50** (cohort): ~2,700 seen/7d, atc_per_1k ≥ 55, revenue incremental positivo.\n- **Cart addons**: ≥5 add-to-carts desde addons/7d, ≥3 purchases en 14d.\n- **Slot 60** (global): ~2,400 seen/7d, ~$126K-190K revenue/7d (20-30% del slot 30), ≥20 purchases en 14d.",
+  "truncated": false,
+  "runId": "sim-run-42-e3",
+  "createdAt": "2026-07-02T05:37:22.905Z"
+}
