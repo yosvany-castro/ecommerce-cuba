@@ -37,6 +37,10 @@ function client(): OpenAI {
     _client = new OpenAI({
       baseURL: "https://api.deepseek.com",
       apiKey: process.env.DEEPSEEK_API_KEY,
+      // SDK default is ~10 min — a hung DeepSeek must fail fast into the
+      // callers' graceful fallbacks (normalizer/reranker catch), not freeze
+      // an SSR render. ponytail: 60s flat; per-call budgets if ever needed.
+      timeout: Number(process.env.DEEPSEEK_TIMEOUT_MS ?? 60_000),
     });
   }
   return _client;
