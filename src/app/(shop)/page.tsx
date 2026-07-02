@@ -1,12 +1,7 @@
-import { cookies } from "next/headers";
 import { after } from "next/server";
-import { withPg } from "@/lib/db/helpers";
-import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
-import { composePage, logSlateDecision } from "@/sectors/f-slate/compose";
-import { resolveSections } from "@/sectors/f-slate/sections/resolve";
+import { getHomePage } from "@/storefront/pages/home";
 import { SlateRenderer } from "@/components/slate/SlateRenderer";
 import { RequestTiming } from "@/lib/timing";
-import { isHoldout } from "@/sectors/d-personalization/holdout";
 
 export const dynamic = "force-dynamic";
 
@@ -19,46 +14,13 @@ function logTimingSampled(timing: RequestTiming): void {
 
 export default async function HomePage() {
   const timing = new RequestTiming();
-  const ck = await cookies();
-  const anonymous_id = ck.get("anonymous_id")?.value ?? null;
-  const session_id = ck.get("session_id")?.value ?? null;
-
-  const session = await timing.time("auth", () => auth0.getSession().catch(() => null));
-  let user_id: string | null = null;
-  if (session?.user?.sub) {
-    const sub = session.user.sub as string;
-    const email = (session.user.email as string) ?? `${sub}@noemail.local`;
-    user_id = await timing.time("auth_upsert", () =>
-      withPg(async (pg) => (await getOrCreateUserByAuth0Sub(pg, sub, email)).id),
-    );
-  }
-
-  // D4: la home es una composición — composePage decide QUÉ secciones (con el
-  // seed actual = solo hero_grid, HTML equivalente al pre-slate) y el runner
-  // las llena (el hero ES el slate feed con su cursor de scroll infinito).
-  const identity = { user_id, anonymous_id, session_id };
-  const sections = await timing.time("feed_page", () =>
-    withPg(async (pg) => {
-      const page = await composePage({ surface: "home", identity }, pg);
-      const resolved = await resolveSections(page, identity, undefined, pg);
-      const hero = resolved.find((s) => s.section_type === "hero_grid");
-      await logSlateDecision(
-        page,
-        {
-          user_profile_id: null,
-          session_id,
-          slate_id: hero?.slate_id ?? null,
-          holdout: isHoldout(identity),
-        },
-        pg,
-      );
-      return resolved;
-    }),
-  );
-
+  // Todo el wiring (identidad+compose+resolve+log) vive en el DAL; aquí queda
+  // una sola fase de timing (el desglose auth/feed_page se recupera con un
+  // param opcional de timing en el DAL si F5 lo pide).
+  const page = await timing.time("storefront_home", () => getHomePage());
   after(() => logTimingSampled(timing));
 
-  const hasContent = sections.some((s) => s.outcome === "served" && s.items.length > 0);
+  const hasContent = page.sections.some((s) => s.outcome === "served" && s.items.length > 0);
   if (!hasContent) {
     return (
       <main className="p-8">
@@ -80,7 +42,7 @@ export default async function HomePage() {
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold mb-6">Catálogo</h1>
-      <SlateRenderer sections={sections} />
+      <SlateRenderer sections={page.sections} />
     </main>
   );
 }
