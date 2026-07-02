@@ -32,10 +32,13 @@ describe("generateFeed", () => {
     await withTestDb(async (pg) => {
       const femAdultaIds: string[] = [];
       for (let i = 0; i < 10; i++) {
+        // category es el eje de personalización del motor actual (cuotas por
+        // categorías vistas, exp-I/K): sin ella todos los productos caen al
+        // mismo bucket y el test medía ruido — producción SÍ la puebla (enrichment).
         const p = await seedProductWithEmbedding(pg, {
           title: `FemAdulta ${i}`,
           description: "vestidos blusas",
-          metadata: { gender_target: "femenino", age_target: { min: 26, max: 59 } },
+          metadata: { category: "ropa_mujer", gender_target: "femenino", age_target: { min: 26, max: 59 } },
         });
         femAdultaIds.push(p.id);
       }
@@ -43,7 +46,7 @@ describe("generateFeed", () => {
         await seedProductWithEmbedding(pg, {
           title: `MascNino ${i}`,
           description: "juguetes",
-          metadata: { gender_target: "masculino", age_target: { min: 4, max: 11 } },
+          metadata: { category: "juguetes", gender_target: "masculino", age_target: { min: 4, max: 11 } },
         });
       }
       await computeCohortCentroids(pg);
@@ -51,6 +54,14 @@ describe("generateFeed", () => {
       const anonymous_id = randomUUID();
       const session_id = randomUUID();
       for (let i = 0; i < 5; i++) {
+        // Espejo de producción: /api/track INSERTA el evento y luego dispara el
+        // hook. Las señales del motor actual (views-categories, popularidad)
+        // agregan la tabla events — solo el hook no basta (bug del test viejo).
+        await pg.query(
+          `INSERT INTO events (anonymous_id, session_id, event_type, occurred_at, payload)
+           VALUES ($1, $2, 'product_view', now() - interval '1 minute', $3::jsonb)`,
+          [anonymous_id, session_id, JSON.stringify({ product_id: femAdultaIds[i], source: "home" })],
+        );
         await processEventForPersonalization(
           {
             anonymous_id,
@@ -115,7 +126,7 @@ describe("generateFeed", () => {
           (
             await seedProductWithEmbedding(pg, {
               title: `Fem ${i}`,
-              metadata: { gender_target: "femenino", age_target: { min: 26, max: 59 } },
+              metadata: { category: "ropa_mujer", gender_target: "femenino", age_target: { min: 26, max: 59 } },
             })
           ).id,
         );
@@ -123,7 +134,7 @@ describe("generateFeed", () => {
           (
             await seedProductWithEmbedding(pg, {
               title: `Masc ${i}`,
-              metadata: { gender_target: "masculino", age_target: { min: 26, max: 59 } },
+              metadata: { category: "electronica", gender_target: "masculino", age_target: { min: 26, max: 59 } },
             })
           ).id,
         );
@@ -133,6 +144,11 @@ describe("generateFeed", () => {
       const u1_anon = randomUUID(),
         u1_session = randomUUID();
       for (let i = 0; i < 5; i++) {
+        await pg.query(
+          `INSERT INTO events (anonymous_id, session_id, event_type, occurred_at, payload)
+           VALUES ($1, $2, 'product_view', now() - interval '1 minute', $3::jsonb)`,
+          [u1_anon, u1_session, JSON.stringify({ product_id: femIds[i], source: "home" })],
+        );
         await processEventForPersonalization(
           {
             anonymous_id: u1_anon,
@@ -148,6 +164,11 @@ describe("generateFeed", () => {
       const u2_anon = randomUUID(),
         u2_session = randomUUID();
       for (let i = 0; i < 5; i++) {
+        await pg.query(
+          `INSERT INTO events (anonymous_id, session_id, event_type, occurred_at, payload)
+           VALUES ($1, $2, 'product_view', now() - interval '1 minute', $3::jsonb)`,
+          [u2_anon, u2_session, JSON.stringify({ product_id: mascIds[i], source: "home" })],
+        );
         await processEventForPersonalization(
           {
             anonymous_id: u2_anon,
@@ -169,8 +190,15 @@ describe("generateFeed", () => {
         { user_id: null, anonymous_id: u2_anon, session_id: u2_session, limit: 10 },
         pg,
       );
-      const s1 = new Set(f1.map((f) => f.product.id));
-      const s2 = new Set(f2.map((f) => f.product.id));
+      // La personalización por cuotas controla la CABEZA del feed; la cola
+      // comparte el backbone de popularidad a propósito (exp-I/K). En un
+      // mini-mundo de 20 productos donde todo lo visto es "popular", el
+      // Jaccard de los 10 completos satura (~0.67) sin decir nada del eje bajo
+      // prueba — la divergencia inter-usuario a feed completo se mide en el
+      // mundo realista (exp-k, guardrail master doc). Aquí: top-5 disjuntos.
+      const top5 = (f: typeof f1) => new Set(f.slice(0, 5).map((x) => x.product.id));
+      const s1 = top5(f1);
+      const s2 = top5(f2);
       const inter = [...s1].filter((x) => s2.has(x)).length;
       const uni = new Set([...s1, ...s2]).size;
       const jaccard = inter / uni;
