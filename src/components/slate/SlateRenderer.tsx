@@ -1,7 +1,7 @@
 import { ProductCard } from "@/components/ProductCard";
 import { InfiniteFeed } from "@/components/InfiniteFeed";
 import { SeenTracker } from "./SeenTracker";
-import type { ResolvedSection } from "@/sectors/f-slate/sections/types";
+import type { StorefrontSection } from "@/storefront/contract";
 
 /**
  * SlateRenderer (D4): maps a resolved composition to the FIXED catalog of
@@ -11,7 +11,7 @@ import type { ResolvedSection } from "@/sectors/f-slate/sections/types";
  * the same ProductCard. Unknown outcomes simply don't render — a degraded
  * section is invisible, never broken.
  */
-export function SlateRenderer({ sections }: { sections: ResolvedSection[] }) {
+export function SlateRenderer({ sections }: { sections: StorefrontSection[] }) {
   return (
     <>
       {sections
@@ -27,7 +27,7 @@ export function SlateRenderer({ sections }: { sections: ResolvedSection[] }) {
   );
 }
 
-function HeroGridSection({ section }: { section: ResolvedSection }) {
+function HeroGridSection({ section }: { section: StorefrontSection }) {
   return (
     <section data-testid="slate-section-hero">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -45,7 +45,7 @@ function HeroGridSection({ section }: { section: ResolvedSection }) {
   );
 }
 
-function CarouselSection({ section }: { section: ResolvedSection }) {
+function CarouselSection({ section }: { section: StorefrontSection }) {
   return (
     <section className="mt-8" data-testid={`slate-section-${section.section_type}`}>
       <h2 className="text-lg font-semibold mb-3">{section.title}</h2>

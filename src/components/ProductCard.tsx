@@ -4,19 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { track } from "@/lib/client/track";
 import { productImageUrl, isDataSaver } from "@/lib/image-url";
-
-export interface ProductCardData {
-  id: string;
-  title: string;
-  price_cents: number;
-  image_url: string | null;
-}
+import type { StorefrontCard } from "@/storefront/contract";
 
 export function ProductCard({
   product,
   reason,
 }: {
-  product: ProductCardData;
+  product: StorefrontCard;
   reason?: string;
 }) {
   const [hidden, setHidden] = useState(false);

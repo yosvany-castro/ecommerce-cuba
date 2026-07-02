@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withPg } from "@/lib/db/helpers";
 import { dbHealth } from "@/lib/db/health";
-import { composePage, logSlateDecision } from "@/sectors/f-slate/compose";
-import { resolveSections } from "@/sectors/f-slate/sections/resolve";
+import { cartPage } from "@/storefront/pages/cart";
+import { productSections } from "@/storefront/pages/product";
+import type { StorefrontSection } from "@/storefront/contract";
 import { RequestTiming } from "@/lib/timing";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -14,6 +15,9 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * anonymous truth: ids travel in the body) and the PDP cross-sell (lazy,
  * below the fold, doesn't block the product HTML).
  * The home is NOT served here (it is the SSR path).
+ * F2: el wiring vive en el DAL (núcleos cartPage/productSections); la identidad
+ * AQUÍ sale de req.cookies sin auth0 — semántica original del endpoint
+ * (superficies client-side, user_id siempre null).
  */
 const bodySchema = z
   .object({
@@ -52,34 +56,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
+  const identity = { user_id: null, anonymous_id, session_id };
   const timing = new RequestTiming();
-  const result = await timing.time("slate_resolve", () =>
+  const served = (ss: StorefrontSection[]) => ss.filter((s) => s.outcome === "served");
+  const out = await timing.time("slate_resolve", () =>
     withPg(async (pg) => {
-      const identity = { user_id: null, anonymous_id, session_id };
-      const page = await composePage(
-        { surface: body.surface, identity, surfaceArgs: body.surface_args },
+      if (body.surface === "cart") {
+        const page = await cartPage(identity, body.surface_args.cart_product_ids ?? [], pg);
+        return {
+          composition_id: page.composition_id,
+          surface: page.surface,
+          sections: served(page.sections),
+        };
+      }
+      const sections = await productSections(
+        identity,
+        body.surface_args.pdp_product_id ?? "",
+        body.surface_args.pdp_category ?? null,
         pg,
       );
-      const sections = await resolveSections(page, identity, body.surface_args, pg);
-      await logSlateDecision(page, { user_profile_id: null, session_id }, pg);
-      return { page, sections };
+      return { surface: "pdp" as const, sections: served(sections) };
     }),
   );
 
-  return NextResponse.json(
-    {
-      composition_id: result.page.composition_id,
-      surface: result.page.surface,
-      sections: result.sections
-        .filter((s) => s.outcome === "served")
-        .map((s) => ({
-          placement_id: s.placement_id,
-          section_type: s.section_type,
-          title: s.title,
-          display: s.display,
-          items: s.items,
-        })),
-    },
-    { headers: { "server-timing": timing.toServerTimingHeader(), "cache-control": "no-store" } },
-  );
+  return NextResponse.json(out, {
+    headers: { "server-timing": timing.toServerTimingHeader(), "cache-control": "no-store" },
+  });
 }

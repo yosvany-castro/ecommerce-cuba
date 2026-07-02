@@ -1,15 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ProductCard, type ProductCardData } from "@/components/ProductCard";
-
-interface SectionDTO {
-  placement_id: string;
-  section_type: string;
-  title: string;
-  display: string;
-  items: (ProductCardData & { reason?: string })[];
-}
+import { ProductCard } from "@/components/ProductCard";
+import type { StorefrontSection } from "@/storefront/contract";
 
 /**
  * Client-side surface sections (D5): lazy fetch of /api/slate/resolve AFTER
@@ -28,7 +21,7 @@ export function SurfaceSections({
   /** Cambia (p.ej. items del carrito) ⇒ re-resolver. */
   refreshKey?: string;
 }) {
-  const [sections, setSections] = useState<SectionDTO[]>([]);
+  const [sections, setSections] = useState<StorefrontSection[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,7 +33,7 @@ export function SurfaceSections({
           body: JSON.stringify({ surface, surface_args: surfaceArgs }),
         });
         if (!res.ok) return;
-        const body = (await res.json()) as { sections: SectionDTO[] };
+        const body = (await res.json()) as { sections: StorefrontSection[] };
         if (!cancelled) setSections(body.sections);
       } catch {
         /* sección invisible; la página anfitriona no se entera */
