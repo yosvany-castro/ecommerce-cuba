@@ -131,7 +131,7 @@ describe("buildMetricsReport (shape compacto para LLM)", () => {
     expect(report.store.organic_revenue_cents).toBe(168000);
 
     // vs_holdout: con muestra pero holdout flaco ⇒ ratio + flag (no un 0.0).
-    expect(report.vs_holdout).not.toBeNull();
+    expect(report.vs_holdout === null).toBe(false);
     expect(report.vs_holdout!.revenue_ratio).toBe(2.08);
     expect(report.vs_holdout!.flags).toContain("holdout_low_purchases");
     expect(report.vs_holdout!.default.revenue_per_1k_seen_cents).toBe(47839);

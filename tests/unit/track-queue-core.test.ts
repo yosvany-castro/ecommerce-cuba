@@ -77,7 +77,7 @@ describe("TrackQueueCore (C4)", () => {
     const mine = q.read().map((e) => e.client_event_id);
     expect(mine.sort()).toEqual(["shared", "x"]);
     expect(s.get(`${QUEUE_PREFIX}dead`)).toBeNull(); // huérfana consumida
-    expect(s.get(`${QUEUE_PREFIX}alive`)).not.toBeNull(); // viva intacta
+    expect(s.get(`${QUEUE_PREFIX}alive`) === null).toBe(false); // viva intacta
   });
 
   it("storage corrupto degrada a cola vacía, jamás explota", () => {
