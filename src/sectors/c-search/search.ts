@@ -12,7 +12,7 @@ import { shouldCallMock, FRESHNESS_THRESHOLD_HOURS } from "./decide/shouldCallMo
 import { getCategoryFreshness } from "./decide/freshness";
 import { persistSearch, type SearchMethod } from "./persist/searches";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
-import { fetchFromAggregator } from "@/sectors/b-catalog/mock/aggregator";
+import { activeProvider } from "@/sectors/b-catalog/provider";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 import { Tracer, NoopTracer, type ITracer } from "./debug/tracer";
@@ -278,7 +278,7 @@ export async function hybridSearch(
           ? parseInt(process.env.HYBRID_SEARCH_MOCK_LIMIT, 10)
           : undefined;
         const t0 = Date.now();
-        const mockResult = await fetchFromAggregator({
+        const mockResult = await activeProvider.fetch({
           category: normalized.categories?.[0] as MockCategory | undefined,
           query: normalized.search_terms,
           limit: limitOverride,
