@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 describe("hybridSearch mock fallback (REAL APIs, capped at 2 products per call)", () => {
-  test("count < 12 + confidence > 0.5 → mock invoked + smart mock genera productos relevantes", async () => {
+  test("count < 12 + confidence > 0.5 → ingesta ASÍNCRONA: local ya, externo en la siguiente búsqueda", async () => {
     await withTestDb(async (pg) => {
       const callsBefore = getCallCount();
       const result = await hybridSearch("auriculares bluetooth con cancelación de ruido", {
@@ -25,25 +25,59 @@ describe("hybridSearch mock fallback (REAL APIs, capped at 2 products per call)"
         anonymous_id: randomUUID(),
         user_id: null,
       });
+      // Contrato F4 T3: la búsqueda regresa lo LOCAL de inmediato (catálogo
+      // vacío ⇒ 0 productos) con el job de ingesta EN VUELO.
       expect(result.calledMock).toBe(true);
+      expect(result.products.length).toBe(0);
+      expect(result.ingestion === undefined).toBe(false);
+
+      const search = await pg.query(`SELECT called_mock FROM searches`);
+      expect(search.rows[0].called_mock).toBe(true);
+
+      // Determinismo en test: await del job (producción es fire-and-forget).
+      const out = await result.ingestion!;
+      expect(out.was_error).toBe(false);
+      expect(out.processed).toBeGreaterThan(0);
       expect(getCallCount() - callsBefore).toBeGreaterThanOrEqual(1);
 
       const mc = await pg.query(`SELECT count(*)::int AS c FROM mock_calls`);
       expect(mc.rows[0].c).toBeGreaterThanOrEqual(1);
 
-      const productCount = await pg.query(`SELECT count(*)::int AS c FROM products`);
-      expect(productCount.rows[0].c).toBeGreaterThan(0);
-
-      // Smart mock should generate relevant products: at least one product mentions audio/bluetooth keywords.
+      // Smart mock generó productos relevantes, ya ingestados al catálogo.
       const relevant = await pg.query(
         `SELECT count(*)::int AS c FROM products
          WHERE lower(title) ~ '(auricular|audifono|audio|headphone|earphone|bluetooth)'`,
       );
       expect(relevant.rows[0].c).toBeGreaterThan(0);
 
-      const search = await pg.query(`SELECT called_mock FROM searches`);
-      expect(search.rows[0].called_mock).toBe(true);
+      // El job invalidó la caché exacta ⇒ la MISMA query re-recupera y ahora
+      // sí incluye lo externo.
+      const again = await hybridSearch("auriculares bluetooth con cancelación de ruido", {
+        pg,
+        anonymous_id: randomUUID(),
+        user_id: null,
+      });
+      expect(again.hitCache).toBe(false);
+      expect(again.products.length).toBeGreaterThan(0);
     });
+  }, 240_000);
+
+  test("SEARCH_ASYNC_INGEST=false → modo síncrono legacy: la primera búsqueda incluye lo externo", async () => {
+    process.env.SEARCH_ASYNC_INGEST = "false";
+    try {
+      await withTestDb(async (pg) => {
+        const result = await hybridSearch("mochila escolar resistente", {
+          pg,
+          anonymous_id: randomUUID(),
+          user_id: null,
+        });
+        expect(result.calledMock).toBe(true);
+        expect(result.ingestion === undefined).toBe(true);
+        expect(result.products.length).toBeGreaterThan(0);
+      });
+    } finally {
+      delete process.env.SEARCH_ASYNC_INGEST;
+    }
   }, 240_000);
 
   test("count >= 12 + confidence > 0.5 → mock NOT invoked even with valid query", async () => {

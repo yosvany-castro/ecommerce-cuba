@@ -10,6 +10,10 @@ import { config } from "dotenv";
 import { resolve } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
+// El eval mide el contrato síncrono original (la búsqueda que dispara al
+// agregador DEBE incluir lo externo en SU resultado) — fijarlo explícito.
+process.env.SEARCH_ASYNC_INGEST = "false";
+
 import { withPgDirect } from "@/lib/db/helpers";
 import { hybridSearch } from "@/sectors/c-search/search";
 import { searchLike } from "@/sectors/b-catalog/repository/products";
