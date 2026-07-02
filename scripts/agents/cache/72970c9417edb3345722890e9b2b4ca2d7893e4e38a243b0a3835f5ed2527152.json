@@ -1,0 +1,65 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 123,
+    "epoch": 4,
+    "metricsHash": "7b8e342c530c03dbf20daafb4ffdc2fb3b3a9368ecfb9254eee505c9b6d17e46"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 80 está libre. Los carruseles home son aditivos puros. El slot 60 (popular global) genera $1,526,239 revenue en 14d con 135.6 ATC/1k y el slot 70 (popular global) $21,317 en 14d con 22 ATC/1k, probando que los carruseles populares convierten incluso en slots bajos. mode=cohort personaliza por segmento del usuario vs. la aproximación global única. Hipótesis medible: espero >= 8 ATC/1k_seen y >= $3,000 revenue_cents en los primeros 7d tras el cambio (since_change), incremental puro sobre un slot que hoy no existe."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 90 está libre. Último carrusel del home, atención mínima pero aditivo puro. El slot 70 (popular global, slot inmediato superior) genera $5,784 revenue en 7d con 14 ATC/1k (funnel con datos), lo que demuestra que incluso en cola de scroll los carruseles populares generan revenue incremental. mode=global asegura productos de demanda masiva. Hipótesis medible: espero >= 6 ATC/1k_seen y >= $1,500 revenue_cents en los primeros 7d tras el cambio (since_change), todo incremental puro sobre la línea base del home sin este slot."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "912df4db-2952-4465-bee2-ee7fe4d3c5a7",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "d375fa0f-aac5-41f6-8959-eb7bda6619fa",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas aceptadas en tier **low** ✅\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **Slot 80** (popular, mode=\"cohort\", limit=20) → `912df4db` — carrusel personalizado por segmento de usuario en el home\n2. **Slot 90** (popular, mode=\"global\", limit=20) → `d375fa0f` — carrusel de popular global como cola del home\n\n**Con qué evidencia:**\n- Los carruseles del home son **aditivos puros** (sin ellos solo hay hero). Cada uno genera margen incremental.\n- Slot 60 ya demostró que populares en home convierten fuerte incluso en posiciones medias: **$1,526,239 revenue / 14d con 135.6 ATC/1k**.\n- Slot 70, pese a ser el último con atención mínima, genera **$5,784 / 7d**.\n- **Tecnología** ($2.5M/14d), **accesorios_tech** ($300K/14d) y **moda_mujer** ($930K/14d) son categorías fuertes sin slot dedicado, que mode=\"cohort\" aprovechará segmentando.\n- Los slots 20-40, PDP y Cart tienen `no_impression_logging` → se dejaron intactos como manda el protocolo.\n\n**Qué espero ver en since_change la próxima vez:**\n- Slot 80: ≥ $3,000 revenue / 7d, ≥ 8 ATC/1k\n- Slot 90: ≥ $1,500 revenue / 7d, ≥ 6 ATC/1k\n- Ambos siendo 100% incrementales sobre el estado anterior sin esos slots",
+  "truncated": false,
+  "runId": "sim-run-123-e4",
+  "createdAt": "2026-06-18T11:38:55.500Z"
+}

@@ -8,7 +8,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export type Scope = "public" | "test";
+export type Scope = "public" | "test" | "thesis";
 
 export function getSupabaseClient(opts: { scope?: Scope; admin?: boolean } = {}): SupabaseClient {
   const { scope = "public", admin = false } = opts;

@@ -1,0 +1,146 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 12,
+    "metricsHash": "c3123cd50736aa90d451da5a55dbe3b270a2d42c509e03f8dea178d204ec39b1"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "accesorios_tech"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo cross_sell en home slot 50 para accesorios_tech. En 7d la categoría tiene 127 purchases / 778 seen = 16.3% purchase rate, la más alta de toda la tienda. Producto estrella Logitech powerbank (syn-2026-3000-379) tiene 642 purchases/7d, $12.30 precio, 50.8% margen. Home tiene tráfico real (16,740 served). Exponer esta categoría en un cross_sell dedicado puede capturar más conversiones. Espero que since_change muestre revenue incremental sobre la línea base de accesorios_tech."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "accesorios_tech"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo popular en home slot 30 para accesorios_tech. Datos 14d: 4,243 seen, 655 purchases (15.4% purchase rate). Moda_mujer (mayoría del tráfico) tiene solo 1.26% purchase rate. Mover tráfico hacia accesorios_tech desde una posición más alta (slot 30 vs 50) debería incrementar conversión general. Hipótesis: el revenue por mil seen de este placement superará el promedio de tienda de $271,420/1k seen."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo cart_addons en cart slot 20. Actualmente cart surface tiene 0 served, 0 seen, flag low_sample, y todos sus placements tienen no_impression_logging. El carrito es la última etapa antes de compra: addons pueden incrementar AOV. Productos de accesorios_tech como el powerbank ($12.30, margen 50.8%) son ideales como addon low-price. Sin regla para maximizar alcance inicial. Espero ver al menos add_to_carts y revenue desde cart en since_change."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "accesorios_tech"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo cross_sell en PDP slot 20 para accesorios_tech. PDP surface tiene flag low_sample (0 served, 0 seen en 7d) pero es la página de producto. Si un usuario ve un producto tech, mostrarle complementos tech (cross-sell) puede aumentar AOV. Referencia: Logitech powerbank (50.8% margen, 642 purchases/7d) como posible complemento. Espero ver en since_change revenue incremental desde PDP."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo popular genérico en home slot 90 como sección complementaria. Home actualmente tiene placements popular en slots 20,30,40,60,70,90 pero todos con flag no_impression_logging y sin datos de funnel. Un placement popular genérico al final del homepage puede capturar visitantes que scrollearon hasta abajo. Sin regla específica para servir como red de seguridad de productos populares generales. Hipótesis: aunque sea slot bajo, puede generar revenue incremental."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "3c4983d4-dc84-4370-8d0b-98ef445e4011",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "f972a4a0-eec6-4f65-81ff-3903787902fe",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "414e3853-ca34-4a42-aa33-ed0fa4db9cab",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "e2a7aee7-77ed-4149-b038-fd59a7becba7",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "a30fad22-3d3c-4565-a99d-6e759b938969",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las propuestas fueron aceptadas. Aquí el resumen:\n\n---\n\n## Resumen — 5 placements creados\n\n| # | Placement ID | Superficie | Slot | Sección | Regla | Tier |\n|---|---|---|---|---|---|---|\n| 1 | `3c4983d4...` | **home** | 50 | cross_sell | accesorios_tech | low ✅ |\n| 2 | `f972a4a0...` | **home** | 30 | popular | accesorios_tech | low ✅ |\n| 3 | `414e3853...` | **cart** | 20 | cart_addons | — | low ✅ |\n| 4 | `e2a7aee7...` | **pdp** | 20 | cross_sell | accesorios_tech | low ✅ |\n| 5 | `a30fad22...` | **home** | 90 | popular | — | low ✅ |\n\n**Evidencia principal:**\n- **accesorios_tech** es la categoría reina: 16.3% purchase rate en 7d (127 compras / 778 seen), contra ~1.3% de moda_mujer. Producto estrella (Logitech powerbank) con 642 purchases/semana y 50.8% margen.\n- Todos los placements previos no-hero tenían `no_impression_logging` — estaban ciegos. Estos nuevos tienen oportunidad de generar métricas reales.\n- Home tiene tráfico sólido (16,740 served/semana). Cart y PDP estaban en cero absoluto.\n\n**Qué espero ver en `since_change` la próxima vez:**\n- El **cross_sell y popular de accesorios_tech en home** (slots 50 y 30) deberían mostrar revenue incremental vs la línea base de la categoría, probablemente superando el revenue/1k seen promedio de $271,420.\n- El **cart_addons** debería generar las primeras métricas de cart (>0 served/seen), con add-to-carts desde addons.\n- El **PDP cross_sell** deberíaactivar tráfico en PDP surface, que hoy está en 0.\n- El **popular genérico en slot 90** debería capturar cola de scroll con algo de revenue marginal.\n\nLos placements expiran por TTL (72h); si funcionan, habrá que re-proponerlos con la evidencia de `since_change`.",
+  "truncated": false,
+  "runId": "sim-run-2026-e12",
+  "createdAt": "2026-06-17T15:44:46.405Z"
+}

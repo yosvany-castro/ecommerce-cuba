@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import { insertEvent } from "./events/insert";
+import { attributePurchaseAndExclude } from "./attribution";
 
 export interface CheckoutInput {
   user_id: string;
@@ -72,6 +73,25 @@ export async function createCheckoutOrder(
     );
 
     await pg.query("COMMIT");
+
+    // F1 (post-commit, best-effort): atribución compra↔impresión + exclusión
+    // 'purchased' 30d. Un fallo aquí JAMÁS falla una venta.
+    try {
+      await attributePurchaseAndExclude(pg, {
+        order_id: orderId,
+        user_id: input.user_id,
+        anonymous_id: input.anonymous_id,
+        session_id: input.session_id,
+        items: cartRows.rows.map((r: { product_id: string; price_cents: number; quantity: number }) => ({
+          product_id: r.product_id,
+          unit_price_cents: r.price_cents,
+          quantity: r.quantity,
+        })),
+      });
+    } catch (e) {
+      console.warn("[checkout] attribution failed (order unaffected):", e);
+    }
+
     return { order_id: orderId };
   } catch (e) {
     await pg.query("ROLLBACK");

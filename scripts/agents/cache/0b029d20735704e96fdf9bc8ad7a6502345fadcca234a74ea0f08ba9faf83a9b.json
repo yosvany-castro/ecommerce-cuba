@@ -1,0 +1,48 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 6,
+    "metricsHash": "50596fd993f155034ce280a06852ca4221fc3a0e2609c5721af4a18a9965b243"
+  },
+  "proposals": [
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "in",
+            "value": [
+              "joyeria"
+            ]
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Supersede del placement popular home slot30 (54dc6764) que lleva 42 días con flag no_impression_logging sin registrar datos. Se reemplaza por un popular con filtro categoría joyería basado en evidencia de 14d: joyería tiene 531 purchases / 4614 seen = 11.5% purchase rate vs 3.0% store avg, y $32,871 revenue desde hero_grid. Hipótesis: un placement con segmentación joyería podría generar impresiones medibles (evitando el flag) y alta conversión.",
+      "action": "supersede",
+      "slot": 30
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "70e6c88a-31d3-40a4-b274-469b0d210798",
+      "effective_tier": "medium",
+      "status": "approved"
+    }
+  ],
+  "finalText": "¡Aceptado! El sistema le asignó **tier medium** y **status approved** a mi propuesta. Ahora cierro con el resumen.\n\n---\n\n## Resumen Final\n\n**Qué propuse:** 1 acción — **supersede** del placement \"popular\" en **home slot 30** (id `54dc6764`, 42 días con `no_impression_logging`), reemplazándolo por un nuevo \"popular\" con regla `pdp_category in [\"joyeria\"]`.\n\n**Con qué evidencia:** Joyería domina la tienda en métricas de 14d: **531 purchases / 4,614 seen** (11.5% purchase rate vs 3.0% store avg), **$32,871.01 revenue** desde hero_grid. El placement anterior no registraba impresiones (`no_impression_logging`), lo que lo hacía inerte. La hipótesis es que un placement segmentado sí genere impresiones medibles.\n\n**Qué pasó:** ✅ Aceptado con tier **medium**, **approved**. Se aplicó supersede inmediato (expira en 72h por TTL).\n\n**Qué no pude hacer:** Los otros 12 placements (popular slots 20-90 en home, cross_sell en PDP, cart_addons en cart) tienen todos `no_impression_logging` — por protocolo, la única acción válida es esperar.\n\n**Qué espero ver en `since_change` la próxima vez:** Que el nuevo placement (id `70e6c88a`) registre impresiones (sin el flag) y que joyería mantenga su alta tasa de conversión (~11.5% purchase rate) en esta sección popular segmentada, generando revenue incremental sobre el holdout. Si funciona, habrá que re-proponerlo antes de que expire el TTL.",
+  "truncated": false,
+  "runId": "sim-run-7-e6",
+  "createdAt": "2026-06-11T11:02:38.026Z"
+}

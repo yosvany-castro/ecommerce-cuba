@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 4,
+    "metricsHash": "ea15b30326ea061d3efa15070d832c448af9ad40b210ea03572e3b485d0f500a"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "hero_grid (slot 10, id 4e3d50e5) genera revenue_ratio 1.53 vs holdout (7d) con 165 purchases y $11,670 revenue en 4,629 seen. Sin embargo el tráfico cayó 79% WoW (14d trend: 24,544→5,157 seen). Las categorías joyeria (72 purchases/730 seen, 9.9% purchase rate, $4,085 revenue 7d) y juguetes (59/517, 11.4%, $2,185) convierten ~10× más que moda_mujer (16/1,900, 0.8%). No tienen placement dedicado. Slot 40 está libre entre slots 30-50 (ambos con no_impression_logging). Crear un popular section aquí surfearía productos de alta conversión en un slot no saturado."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "hero_grid (slot 10, id 4e3d50e5) captura 4,629 seen/7d pero 5 placements popular (slots 20,30,50,60,70) tienen no_impression_logging sin funnel —no están contribuyendo. Joyeria genera $4,085 revenue con solo 730 seen (9.9% purchase rate) y juguetes $2,185 con 517 seen (11.4%) —ratio de conversión 10× superior a moda_mujer (0.8%). Slot 80 está libre. Un segundo popular section en home puede exponer estos productos de alta conversión a usuarios que hacen scroll, compensando la caída de tráfico 79% WoW (14d trend)."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP tiene 2 cross_sell (slot 30 id 43d36c33, slot 40 id 9f4e0428) ambos con no_impression_logging y funnel null —no están generando revenue. slot 20 está libre y es posición superior. El catálogo tiene 2,653 productos en 8 categorías con joyeria (530 purchases/7d) y moda_mujer (140) como top. Un cross_sell en slot 20 puede surfear recomendaciones de alta conversión en PDP aunque los placements previos tengan flags. Hipótesis: al menos 100 seen/día con purchase_rate >1% en since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "344a0d19-04c6-40d3-8599-48f1966e4dc2",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "5856325a-cc4f-409e-9dba-ed88ffb585b4",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "78193b1d-3de6-4c24-a105-be2d2a22dc96",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas (tier low, aprobadas). Cierro con el resumen.\n\n---\n\n## Resumen\n\n**Qué propuse:**\n1. **Home slot 40** → `popular` section — nuevo espacio entre slots 30 y 50 para surfear productos de alta conversión (joyeria 9.9% purchase rate, juguetes 11.4%) que actualmente no tienen placement dedicado.\n2. **Home slot 80** → `popular` section — segundo punto de exposición para compensar la caída de tráfico del 79% WoW y dar visibilidad a categorías que convierten 10× más que moda_mujer.\n3. **PDP slot 20** → `cross_sell` section — posición superior a los cross_sell existentes (ambos con `no_impression_logging`), para capturar tráfico en PDP con recomendaciones de categorías top como joyeria (530 purchases/7d).\n\n**Con qué evidencia:** hero_grid (id `4e3d50e5`) genera revenue_ratio 1.53 vs holdout con $11,670 revenue/7d, pero el tráfico cayó de 24,544 a 5,157 seen (14d trend), y 5 placements `popular` en home + 2 `cross_sell` en PDP + 2 `cart_addons` en cart tienen todos `no_impression_logging` (funnel null). Las categorías joyeria ($4,085/7d, 9.9% purchase rate) y juguetes ($2,185/7d, 11.4%) convierten ~10× más que moda_mujer (0.8%) pero no tienen sección dedicada.\n\n**Qué espero ver en `since_change` la próxima vez:** Que los 3 placements generen al menos 100–150 seen/día con purchase_rates superiores al 2–3%, reflejando que el tráfico de alta intención de compra en joyeria y juguetes se está capturando a través de los nuevos puntos de exposición en home y PDP.",
+  "truncated": false,
+  "runId": "sim-run-7-e4",
+  "createdAt": "2026-06-11T10:19:25.601Z"
+}

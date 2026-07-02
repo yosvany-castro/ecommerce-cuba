@@ -1,0 +1,15 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 11,
+    "metricsHash": "e06409bf1b66dcaacb9e7e5a80ce270de047f401ef7761aa385cfe052e8a5352"
+  },
+  "proposals": [],
+  "results": [],
+  "finalText": "El crítico lo rechaza nuevamente con argumentos contundentes. Analicemos el **inventario completo de posibilidades**:\n\n---\n\n## Diagnóstico final de viabilidad\n\n| Superficie | Slots | ¿Qué puedo hacer? | ¿Por qué? |\n|---|---|---|---|\n| **Home** | 10 (hero_grid) | ❌ No tocar | Regla dura |\n| **Home** | 20-90 | ❌ Esperar | Todos `no_impression_logging` |\n| **PDP** | 20-40 | ❌ Esperar | `no_impression_logging` |\n| **PDP** | 50-90 (vacíos) | ❌ Crítico rechaza | `low_sample` + 0 tráfico + tracking nulo en toda la superficie |\n| **Cart** | 20-50 | ❌ Esperar | `no_impression_logging` |\n| **Cart** | 60-90 (vacíos) | ❌ Mismo problema | `low_sample` + 0 tráfico |\n\n---\n\n## Resumen\n\n**0 acciones propuestas.** Aquí están las razones, con los números exactos:\n\n1. **hero_grid** (id `1189bf8c-c559-4ceb-a456-c3f99470c658`, slot 10) es el único placement con tracking funcional. Generó $156,710.04 en 14d con 25,750 seen. No se toca.\n\n2. **9 placements en home** (slots 20-90) tienen flag `no_impression_logging` y funnel `null` — la única acción válida es esperar. Todos llevan 70-126 días sin cambios.\n\n3. **5 placements en PDP** (slots 20-40) tienen `no_impression_logging`. La superficie completa reporta 0 served/0 seen/0 purchases en 14d. Misma situación con **4 placements en Cart**.\n\n4. **vs_holdout 7d ratio 0.53** — el feed actual (hero_grid) rinde la mitad que no mostrar nada. A 14d mejora a 0.89. Esto indica que el hero_grid está generando valor negativo vs orgánico.\n\n5. **No hay propuestas que sobrevivan al crítico** — todas fueron rechazadas porque cualquier placement nuevo caería en surfaces sin tracking de impresiones (`no_impression_logging` sistémico fuera de hero_grid), haciendo imposible medir su impacto.\n\n**¿Qué esperar en la próxima revisión?** Que el sistema resuelva el `no_impression_logging` en al menos un placement no-hero, o que aparezca tráfico en PDP/Cart. Mientras tanto, cualquier acción sería especulativa sin métricas de retorno.",
+  "truncated": false,
+  "runId": "sim-run-31337-e11",
+  "createdAt": "2026-06-17T16:13:35.376Z"
+}

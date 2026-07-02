@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 11,
+    "metricsHash": "6ec28983197694f12b438354c42a6aab9284f8a76421776bdc6a5ca20ae46dac"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Hero_grid (home/slot10) es el único placement con datos: 4,956 seen, 182 purchases, $9,711 revenue en 7d (read_metrics 7d). Seen_rate 0.32 implica que ~68% de los served no ven el hero. Un popular section en slot20 capturaría parte de ese tráfico descendente. Categoría accesorios_tech convierte al 18.7% (147 purchases/787 seen), la más alta de la tienda. Hipótesis: since_change mostrará seen >0 y revenue incremental >$0 en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 80,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Hay 532 add_to_carts en 7d (read_metrics 7d). Los 6 placements actuales en cart tienen flag no_impression_logging, pero slot80 es un slot no utilizado y cart_addons puede atrapar usuarios con alta intención de compra. La categoría accesorios_tech (18.7% conv, 147 purchases/7d) es ideal para addons en carrito. Hipótesis: aunque el tracking sea limitado, since_change mostrará revenue incremental por product_views post-exposición en sesiones de carrito."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo popular en home para diversificar. La categoría moda_mujer genera el mayor revenue absoluto: $6,045 en 7d (61% del feed, read_metrics 7d). Un popular section en slot40 ofrece otra vía de descubrimiento para productos de alta demanda. Hipótesis: since_change mostrará revenue incremental >$0 con contribución de moda_mujer y accesorios_tech."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "673d0ec2-a03c-491d-b46c-363bdde41522",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 80,
+      "placement_id": "b9b1af7c-6aee-4b6b-8c65-f4f39a1aa5d9",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "440a51f9-785f-4480-b39c-d3480b32be31",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las propuestas fueron aceptadas. Cierro con el resumen.\n\n---\n\n## Resumen de acciones ejecutadas\n\n**3 placements creados (todas aprobadas tier low, TTL 72h):**\n\n1. **home/slot20/popular** → Placement nuevo justo debajo del hero_grid para capturar tráfico de scroll. Evidencia: hero_grid genera 4,956 seen y $9,711 revenue en 7d, pero el 68% de los served no ven nada (seen_rate 0.32). Espero que since_change muestre seen >0 y revenue incremental.\n\n2. **cart/slot80/cart_addons** → Addons en carrito en slot libre. Evidencia: 532 ATC/semana. La categoría accesorios_tech (18.7% conversión) es ideal para cross-sell en carrito. Espero revenue incremental por product_views en sesiones de carrito.\n\n3. **home/slot40/popular** → Segundo popular en home para diversificar. Evidencia: moda_mujer aporta $6,045 revenue/semana (61% del feed). Espero contribución de revenue de moda_mujer y accesorios_tech.\n\n**Próxima iteración:** Revisar since_change de estos 3 placements para ver si superan el no_impression_logging y generan revenue medible. Si funcionan, re-proponer con evidencia de since_change.",
+  "truncated": false,
+  "runId": "sim-run-2026-e11",
+  "createdAt": "2026-06-17T15:41:53.787Z"
+}

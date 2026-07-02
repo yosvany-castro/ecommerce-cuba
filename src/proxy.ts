@@ -1,21 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth0 } from "@/lib/auth";
 import { ensureAnonymousId, ensureSession } from "@/sectors/a-tracking/identity";
-import { getPgClient } from "@/lib/db/pg";
 
+/**
+ * Request proxy (PageSlate foundation F2): COOKIE-ONLY identity + Auth0.
+ * ZERO database work here — the site renders even with the DB down, and no
+ * navigation pays connection/upsert latency. Identity rows are created by the
+ * first tracked event (/api/track → ensureIdentityRows).
+ */
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
 
-  // Identity layer: cookies + DB upserts on every request.
-  const pg = await getPgClient({ scope: "public" });
-  try {
-    const anonymousId = await ensureAnonymousId(req, res, pg);
-    // user_id is unknown at proxy time (Auth0 has not parsed yet) — pass null.
-    // Identity merge happens later in /api/identity/merge.
-    await ensureSession(req, res, pg, { anonymous_id: anonymousId, user_id: null });
-  } finally {
-    await pg.end();
-  }
+  ensureAnonymousId(req, res);
+  ensureSession(req, res);
 
   // Auth0 wraps on top — attaches session if cookie present, doesn't enforce.
   const authRes = await auth0.middleware(req);

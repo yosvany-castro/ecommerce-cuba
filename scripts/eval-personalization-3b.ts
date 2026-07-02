@@ -21,7 +21,7 @@ function ndcgAt10(
   const rels = feed
     .slice(0, 10)
     .map((f) => (holdoutIds.includes(f.product.id) ? 1 : 0));
-  const dcg = rels.reduce((s, rel, i) => s + rel / Math.log2(i + 2), 0);
+  const dcg = rels.reduce((s: number, rel, i) => s + rel / Math.log2(i + 2), 0);
   const ideal = Math.min(holdoutIds.length, 10);
   let idcg = 0;
   for (let i = 0; i < ideal; i++) idcg += 1 / Math.log2(i + 2);

@@ -1,0 +1,612 @@
+{
+  "generated_at": "2026-06-07T17:33:49.381Z",
+  "item_space": "e1_prod2vec",
+  "common_universe": 1998,
+  "eval_cases": 1107,
+  "pool_size": 200,
+  "k": 10,
+  "baseline": {
+    "relevance": 0.20171051938999868,
+    "revenue": 29702.210122848745,
+    "diversity": 0.13222667332688762,
+    "novelty": -4.254414157629085,
+    "sellerGini": 0.10277513227513202
+  },
+  "grid": {
+    "revenue": [
+      0,
+      0.5,
+      1
+    ],
+    "margin": [
+      0,
+      0.5
+    ],
+    "diversity": [
+      0,
+      0.5
+    ],
+    "sellerFairness": [
+      0,
+      0.5
+    ],
+    "relevance_fixed": 1,
+    "convProb": 0,
+    "novelty": 0
+  },
+  "points": [
+    {
+      "id": "cfg0",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.1067355330938524,
+        "revenue": 31923.29468302867,
+        "diversity": 0.06773299304863838,
+        "novelty": -3.999332789405436,
+        "sellerGini": 0.106748677248677,
+        "fairness": 0.893251322751323
+      }
+    },
+    {
+      "id": "cfg1",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.06068010621350123,
+        "revenue": 28610.987235827564,
+        "diversity": 0.17259802060495377,
+        "novelty": -3.8499859861973746,
+        "sellerGini": 0.09442328042328013,
+        "fairness": 0.9055767195767199
+      }
+    },
+    {
+      "id": "cfg2",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.0970252404547029,
+        "revenue": 31559.983578224554,
+        "diversity": 0.10197864463538348,
+        "novelty": -3.9979468266429294,
+        "sellerGini": 0.10911772486772459,
+        "fairness": 0.8908822751322754
+      }
+    },
+    {
+      "id": "cfg3",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05774990261645434,
+        "revenue": 28033.719433840786,
+        "diversity": 0.1948181673001273,
+        "novelty": -3.838476028811471,
+        "sellerGini": 0.09237566137566115,
+        "fairness": 0.9076243386243389
+      }
+    },
+    {
+      "id": "cfg4",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.10260720140940557,
+        "revenue": 30512.181588321328,
+        "diversity": 0.06808759895804466,
+        "novelty": -4.000480867047121,
+        "sellerGini": 0.1134814814814812,
+        "fairness": 0.8865185185185188
+      }
+    },
+    {
+      "id": "cfg5",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.06351602156769101,
+        "revenue": 28318.210542883382,
+        "diversity": 0.1734049389780939,
+        "novelty": -3.848526666876694,
+        "sellerGini": 0.09684920634920602,
+        "fairness": 0.903150793650794
+      }
+    },
+    {
+      "id": "cfg6",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.09771268185785109,
+        "revenue": 31331.255001207384,
+        "diversity": 0.09818413741728113,
+        "novelty": -3.978112955134233,
+        "sellerGini": 0.11626719576719542,
+        "fairness": 0.8837328042328045
+      }
+    },
+    {
+      "id": "cfg7",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05854400476551674,
+        "revenue": 27083.494649941054,
+        "diversity": 0.21020845407185929,
+        "novelty": -3.8485815123903255,
+        "sellerGini": 0.09983465608465575,
+        "fairness": 0.9001653439153443
+      }
+    },
+    {
+      "id": "cfg8",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.08099176276533945,
+        "revenue": 48498.096845269894,
+        "diversity": 0.10597134805169343,
+        "novelty": -3.918783095794025,
+        "sellerGini": 0.11106216931216902,
+        "fairness": 0.8889378306878309
+      }
+    },
+    {
+      "id": "cfg9",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.058528619112693435,
+        "revenue": 37686.10478960831,
+        "diversity": 0.16785505376683524,
+        "novelty": -3.869887987495632,
+        "sellerGini": 0.09396693121693096,
+        "fairness": 0.906033068783069
+      }
+    },
+    {
+      "id": "cfg10",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.07198506975750243,
+        "revenue": 49372.20021833878,
+        "diversity": 0.15988252113002993,
+        "novelty": -3.9075420721368377,
+        "sellerGini": 0.11393386243386211,
+        "fairness": 0.8860661375661378
+      }
+    },
+    {
+      "id": "cfg11",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05210006032096163,
+        "revenue": 37915.78670174411,
+        "diversity": 0.19664845856867663,
+        "novelty": -3.8730354419699924,
+        "sellerGini": 0.09376719576719549,
+        "fairness": 0.9062328042328045
+      }
+    },
+    {
+      "id": "cfg12",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.07723336237419606,
+        "revenue": 48496.93692888341,
+        "diversity": 0.10955743622681444,
+        "novelty": -3.91244630357252,
+        "sellerGini": 0.10914947089947058,
+        "fairness": 0.8908505291005294
+      }
+    },
+    {
+      "id": "cfg13",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05868186435370608,
+        "revenue": 38000.55422592773,
+        "diversity": 0.16893080400588634,
+        "novelty": -3.878171033728513,
+        "sellerGini": 0.10567195767195735,
+        "fairness": 0.8943280423280426
+      }
+    },
+    {
+      "id": "cfg14",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.06519839012200829,
+        "revenue": 48733.90611715389,
+        "diversity": 0.14511871025275044,
+        "novelty": -3.9013022610203296,
+        "sellerGini": 0.11088624338624309,
+        "fairness": 0.8891137566137569
+      }
+    },
+    {
+      "id": "cfg15",
+      "weights": {
+        "relevance": 1,
+        "revenue": 0.5,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05513371191743143,
+        "revenue": 37473.184466000865,
+        "diversity": 0.1874465815444319,
+        "novelty": -3.88115213349397,
+        "sellerGini": 0.10352645502645473,
+        "fairness": 0.8964735449735453
+      }
+    },
+    {
+      "id": "cfg16",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.06469762512164626,
+        "revenue": 51576.55648721299,
+        "diversity": 0.1703088010622119,
+        "novelty": -3.9052522132374063,
+        "sellerGini": 0.11142328042328008,
+        "fairness": 0.8885767195767199
+      }
+    },
+    {
+      "id": "cfg17",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05864587102027304,
+        "revenue": 46798.895387583165,
+        "diversity": 0.1810547141127064,
+        "novelty": -3.892895957719494,
+        "sellerGini": 0.10989682539682512,
+        "fairness": 0.8901031746031749
+      }
+    },
+    {
+      "id": "cfg18",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05561576679573901,
+        "revenue": 52523.960109701016,
+        "diversity": 0.22586278949528937,
+        "novelty": -3.897178883632442,
+        "sellerGini": 0.1095343915343912,
+        "fairness": 0.8904656084656088
+      }
+    },
+    {
+      "id": "cfg19",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.052910029593039525,
+        "revenue": 47378.20950059828,
+        "diversity": 0.23555898437398123,
+        "novelty": -3.9026062799423484,
+        "sellerGini": 0.10529894179894152,
+        "fairness": 0.8947010582010585
+      }
+    },
+    {
+      "id": "cfg20",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.06755325821658571,
+        "revenue": 50837.62852361634,
+        "diversity": 0.1445921291971455,
+        "novelty": -3.8753206425091964,
+        "sellerGini": 0.1096111111111108,
+        "fairness": 0.8903888888888892
+      }
+    },
+    {
+      "id": "cfg21",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.06024005026910243,
+        "revenue": 46744.806776419726,
+        "diversity": 0.16791274010860355,
+        "novelty": -3.881077892495473,
+        "sellerGini": 0.11613888888888854,
+        "fairness": 0.8838611111111114
+      }
+    },
+    {
+      "id": "cfg22",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05739758769900698,
+        "revenue": 52000.32907797997,
+        "diversity": 0.21203535712457916,
+        "novelty": -3.874835002644536,
+        "sellerGini": 0.11005423280423252,
+        "fairness": 0.8899457671957675
+      }
+    },
+    {
+      "id": "cfg23",
+      "weights": {
+        "relevance": 1,
+        "revenue": 1,
+        "margin": 0.5,
+        "diversity": 0.5,
+        "sellerFairness": 0.5,
+        "convProb": 0,
+        "novelty": 0
+      },
+      "metrics": {
+        "relevance": 0.05601269772308027,
+        "revenue": 46943.81015266889,
+        "diversity": 0.21626912342323257,
+        "novelty": -3.8965306231344363,
+        "sellerGini": 0.11678174603174565,
+        "fairness": 0.8832182539682544
+      }
+    }
+  ],
+  "frontier_ids": [
+    "cfg0",
+    "cfg1",
+    "cfg2",
+    "cfg3",
+    "cfg4",
+    "cfg5",
+    "cfg6",
+    "cfg7",
+    "cfg8",
+    "cfg9",
+    "cfg10",
+    "cfg11",
+    "cfg12",
+    "cfg13",
+    "cfg14",
+    "cfg15",
+    "cfg16",
+    "cfg17",
+    "cfg18",
+    "cfg19",
+    "cfg20",
+    "cfg22",
+    "cfg23"
+  ],
+  "guardrails": {
+    "relevance_min": 0.14119736357299906,
+    "sellerGini_max": 0.30277513227513203,
+    "feasible_ids": [],
+    "feasible_count": 0,
+    "feasible_empty": true
+  },
+  "kpi_pick": {
+    "id": "cfg18",
+    "weights": {
+      "relevance": 1,
+      "revenue": 1,
+      "margin": 0,
+      "diversity": 0.5,
+      "sellerFairness": 0,
+      "convProb": 0,
+      "novelty": 0
+    },
+    "metrics": {
+      "relevance": 0.05561576679573901,
+      "revenue": 52523.960109701016,
+      "diversity": 0.22586278949528937,
+      "novelty": -3.897178883632442,
+      "sellerGini": 0.1095343915343912
+    },
+    "on_frontier": true,
+    "guardrail_feasible": false,
+    "is_fallback": true
+  },
+  "knee_pick": {
+    "id": "cfg8",
+    "weights": {
+      "relevance": 1,
+      "revenue": 0.5,
+      "margin": 0,
+      "diversity": 0,
+      "sellerFairness": 0,
+      "convProb": 0,
+      "novelty": 0
+    },
+    "metrics": {
+      "relevance": 0.08099176276533945,
+      "revenue": 48498.096845269894,
+      "diversity": 0.10597134805169343,
+      "novelty": -3.918783095794025,
+      "sellerGini": 0.11106216931216902
+    },
+    "on_frontier": true,
+    "guardrail_feasible": false,
+    "relevance_delta_pct": -59.84752653938422,
+    "revenue_delta_pct": 63.2811048224395,
+    "relevance_norm": 0.5288085007422763,
+    "revenue_norm": 0.8417535531808974,
+    "objective": "min-max normalized: max min(relN, revN) across configs"
+  },
+  "relevance_finding": {
+    "max_config_relevance": 0.1067355330938524,
+    "max_config_relevance_id": "cfg0",
+    "baseline_relevance": 0.20171051938999868,
+    "best_config_vs_baseline_pct": -47.08479586655378,
+    "every_config_below_baseline_relevance": true
+  },
+  "tradeoff": {
+    "revenue_delta_pct": 76.8351913627343,
+    "relevance_delta_pct": -72.42792940897232,
+    "line": "+76.8% revenue@10 for −72.4% relevance@10 vs RRF",
+    "any_revenue_above_baseline": true
+  }
+}

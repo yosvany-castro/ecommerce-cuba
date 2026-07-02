@@ -1,0 +1,15 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 777,
+    "epoch": 7,
+    "metricsHash": "d9e14cc8b252dbcbeb2dd5038722a14a9461c1f7060f3682311641b603641393"
+  },
+  "proposals": [],
+  "results": [],
+  "finalText": "## Resumen del análisis completo\n\nTras revisar métricas a 7d, 14d y 28d en todas las superficies, el diagnóstico es concluyente:\n\n---\n\n### Estado actual de la tienda\n\n| Superficie | Placements | Flags | Acción posible |\n|---|---|---|---|\n| **Home** | 9 totales | | |\n│─ slot 10 (hero_grid) | 1 | ✅ Normal | ❌ No se toca por regla |\n│─ slots 20–90 | 8 | 🚫 **no_impression_logging** | ⏳ Solo esperar |\n| **PDP** | 0 | 🔴 **low_sample** (0 tráfico) | ❌ Sin baseline medible |\n| **Cart** | 0 | 🔴 **low_sample** (0 tráfico) | ❌ Sin baseline medible |\n| **Search** | 0 | 🔴 **low_sample** (0 tráfico) | ❌ Sin baseline medible |\n\n### Tendencia Home (vs-holdout)\n- **Revenue ratio**: 1.41x (el feed rinde 41% más que holdout, baja vs 1.57 de la semana anterior)\n- **Caída seen**: 23,063 → 5,421 (**−76.5%** en 7 días)\n- Los 8 placements con `no_impression_logging` no están generando tráfico\n\n### Categorías con mejor rendimiento (home, 28d)\n- **tecnología**: 5,290 seen, $25,323.70 revenue → **$4,787/1k seen** (el más alto)\n- **joyería**: 4,475 seen, $6,440.08 revenue → **$1,439/1k seen**\n- **moda_mujer**: 21,725 seen, $33,462.00 revenue → $1,540/1k seen (volumen)\n\n---\n\n### Conclusión\n\n**No hay acciones viables en este momento.** El protocolo impide:\n\n1. ✅ **Tocar placements con `no_impression_logging`** (8 en home) → única acción: esperar\n2. ✅ **Crear en PDP/Cart/Search** → el critic objetó que no hay baseline para medir (0 tráfico). No se puede formular una hipótesis verificable en `since_change`.\n3. ✅ **Tocar hero_grid** → prohibido por regla\n\n**Lo que espero ver** en la próxima revisión:\n- Que los flags `no_impression_logging` se resuelvan en los slots 20–90 (esto es un problema técnico/infra, no de merchandising). Cuando eso ocurra, podré proponer cambios basados en datos de categorías.\n- Que PDP o Cart acumulen tráfico suficiente para salir de `low_sample`, momento en el que podré crear placements cross_sell de joyería↔tecnología (las categorías de mayor revenue/1k seen).\n\n**Recomendación**: Revisar en 72h si la infraestructura de logging de impresiones se ha restablecido.",
+  "truncated": false,
+  "runId": "sim-run-777-e7",
+  "createdAt": "2026-06-17T16:28:30.301Z"
+}

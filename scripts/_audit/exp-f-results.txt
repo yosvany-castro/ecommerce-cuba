@@ -1,0 +1,21 @@
+[f] E0: 5000 vectors dim=1024 (L2-normalized) t=2s
+[f] anisotropía E0: cosine medio de pares aleatorios RAW=0.613 vs CENTERED=0.010 (isótropo ideal ≈ 0)
+[f] artefactos limpios listos (npmi=4991, e1=4995) t=23s
+[f] casos=1200 t=27s
+
+[f] RESULTADOS LIMPIOS (n=1200, todos los rankers 100% sin fuga):
+  pc-oracle       ndcg@10=0.052 recall@10=0.100 mrr=0.058
+  pc-real         ndcg@10=0.013 recall@10=0.026 mrr=0.019
+  text-mean       ndcg@10=0.012 recall@10=0.027 mrr=0.017
+  text-mean-ctr   ndcg@10=0.011 recall@10=0.028 mrr=0.016
+  text-modes      ndcg@10=0.013 recall@10=0.026 mrr=0.018
+  knn-clean       ndcg@10=0.040 recall@10=0.083 mrr=0.039
+  e1-clean-modes  ndcg@10=0.046 recall@10=0.100 mrr=0.042
+  fusion-v2       ndcg@10=0.041 recall@10=0.088 mrr=0.037
+  pc-real         vs pc-oracle: rel=-75.4% CI95=[-83.5%, -66.8%]
+  text-mean       vs pc-oracle: rel=-77.3% CI95=[-86.1%, -66.0%]
+  text-mean-ctr   vs pc-oracle: rel=-78.3% CI95=[-86.3%, -68.1%]
+  text-modes      vs pc-oracle: rel=-74.8% CI95=[-84.5%, -62.1%]
+  knn-clean       vs pc-oracle: rel=-23.6% CI95=[-42.6%, 0.2%]
+  e1-clean-modes  vs pc-oracle: rel=-13.2% CI95=[-34.0%, 14.6%]
+  fusion-v2       vs pc-oracle: rel=-22.2% CI95=[-41.0%, 2.0%]

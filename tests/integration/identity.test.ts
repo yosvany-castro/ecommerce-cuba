@@ -1,7 +1,12 @@
 import { describe, test, expect, beforeEach } from "vitest";
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { withTestDb, truncateTestTables } from "@/../tests/helpers/db";
-import { ensureAnonymousId, ensureSession } from "@/sectors/a-tracking/identity";
+import {
+  ensureAnonymousId,
+  ensureSession,
+  ensureIdentityRows,
+} from "@/sectors/a-tracking/identity";
 
 beforeEach(async () => {
   await truncateTestTables(["anonymous_sessions", "events", "users"]);
@@ -14,156 +19,121 @@ function makeReq(cookies: Record<string, string> = {}, url = "http://localhost:3
   return new NextRequest(url, { headers });
 }
 
-describe("ensureAnonymousId", () => {
-  test("first visit: generates uuid + Set-Cookie + persists in anonymous_sessions", async () => {
-    await withTestDb(async (pg) => {
-      const req = makeReq();
-      const res = NextResponse.next();
+// F2: the proxy is COOKIE-ONLY (zero DB). Identity rows are born with the
+// first tracked event via ensureIdentityRows on the track route's connection.
 
-      const id = await ensureAnonymousId(req, res, pg);
+describe("ensureAnonymousId (cookie-only)", () => {
+  test("first visit: generates uuid + Set-Cookie, NO database write", () => {
+    const res = NextResponse.next();
+    const id = ensureAnonymousId(makeReq(), res);
 
-      expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-      const setCookie = res.cookies.get("anonymous_id");
-      expect(setCookie?.value).toBe(id);
-      expect(setCookie?.httpOnly).toBeFalsy();   // cliente debe poder leerla
-      expect(setCookie?.sameSite).toBe("lax");
-      expect(setCookie?.secure).toBe(true);
-      expect(setCookie?.maxAge).toBe(365 * 24 * 60 * 60);
-
-      const row = await pg.query(`SELECT count(*)::int FROM anonymous_sessions WHERE anonymous_id = $1`, [id]);
-      expect(row.rows[0].count).toBe(1);
-    });
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    const setCookie = res.cookies.get("anonymous_id");
+    expect(setCookie?.value).toBe(id);
+    expect(setCookie?.httpOnly).toBeFalsy(); // cliente debe poder leerla
+    expect(setCookie?.sameSite).toBe("lax");
+    expect(setCookie?.secure).toBe(true);
+    expect(setCookie?.maxAge).toBe(365 * 24 * 60 * 60);
   });
 
-  test("returning visit: existing cookie is preserved, last_seen_at advances", async () => {
-    await withTestDb(async (pg) => {
-      const req1 = makeReq();
-      const res1 = NextResponse.next();
-      const id1 = await ensureAnonymousId(req1, res1, pg);
-      const t1 = (await pg.query(`SELECT last_seen_at FROM anonymous_sessions WHERE anonymous_id=$1`, [id1])).rows[0].last_seen_at;
+  test("returning visit: existing cookie is preserved without re-setting", () => {
+    const res1 = NextResponse.next();
+    const id1 = ensureAnonymousId(makeReq(), res1);
 
-      await new Promise((r) => setTimeout(r, 30));
-
-      const req2 = makeReq({ anonymous_id: id1 });
-      const res2 = NextResponse.next();
-      const id2 = await ensureAnonymousId(req2, res2, pg);
-      expect(id2).toBe(id1);
-      expect(res2.cookies.get("anonymous_id")).toBeUndefined();
-
-      const t2 = (await pg.query(`SELECT last_seen_at FROM anonymous_sessions WHERE anonymous_id=$1`, [id1])).rows[0].last_seen_at;
-      expect(new Date(t2).getTime()).toBeGreaterThan(new Date(t1).getTime());
-    });
+    const res2 = NextResponse.next();
+    const id2 = ensureAnonymousId(makeReq({ anonymous_id: id1 }), res2);
+    expect(id2).toBe(id1);
+    expect(res2.cookies.get("anonymous_id")).toBeUndefined();
   });
 
-  test("two distinct first visits produce two distinct uuids and two rows", async () => {
-    await withTestDb(async (pg) => {
-      const id1 = await ensureAnonymousId(makeReq(), NextResponse.next(), pg);
-      const id2 = await ensureAnonymousId(makeReq(), NextResponse.next(), pg);
-      expect(id1).not.toBe(id2);
-      const r = await pg.query(`SELECT count(*)::int FROM anonymous_sessions`);
-      expect(r.rows[0].count).toBe(2);
-    });
-  });
-
-  test("malformed cookie value is replaced, not trusted", async () => {
-    await withTestDb(async (pg) => {
-      const req = makeReq({ anonymous_id: "not-a-uuid" });
-      const res = NextResponse.next();
-      const id = await ensureAnonymousId(req, res, pg);
-      expect(id).not.toBe("not-a-uuid");
-      expect(id).toMatch(/^[0-9a-f-]{36}$/);
-      expect(res.cookies.get("anonymous_id")?.value).toBe(id);
-    });
+  test("malformed cookie value is replaced, not trusted", () => {
+    const res = NextResponse.next();
+    const id = ensureAnonymousId(makeReq({ anonymous_id: "not-a-uuid" }), res);
+    expect(id).not.toBe("not-a-uuid");
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(res.cookies.get("anonymous_id")?.value).toBe(id);
   });
 });
 
-describe("ensureSession", () => {
-  test("first call generates session_id and emits session_start event", async () => {
+describe("ensureSession (cookie-only)", () => {
+  test("first call issues session cookie with sliding activity", () => {
+    const res = NextResponse.next();
+    const sid = ensureSession(makeReq(), res);
+
+    expect(sid).toMatch(/^[0-9a-f-]{36}$/);
+    const cookie = res.cookies.get("session_id");
+    expect(cookie?.value).toBe(sid);
+    expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.maxAge).toBe(30 * 60);
+    expect(res.cookies.get("session_last_activity")).toBeDefined();
+  });
+
+  test("returning within 30 min keeps the session_id; expired window rotates it", () => {
+    const res1 = NextResponse.next();
+    const sid = ensureSession(makeReq(), res1);
+
+    const now = Math.floor(Date.now() / 1000);
+    const sameSid = ensureSession(
+      makeReq({ session_id: sid, session_last_activity: String(now) }),
+      NextResponse.next(),
+    );
+    expect(sameSid).toBe(sid);
+
+    const rotated = ensureSession(
+      makeReq({ session_id: sid, session_last_activity: String(now - 31 * 60) }),
+      NextResponse.next(),
+    );
+    expect(rotated).not.toBe(sid);
+  });
+});
+
+describe("ensureIdentityRows (first-writer, on the track connection)", () => {
+  test("creates the anonymous_sessions row and ONE session_start; idempotent on retries", async () => {
     await withTestDb(async (pg) => {
-      const req = makeReq();
-      const res = NextResponse.next();
-      const anonId = await ensureAnonymousId(req, res, pg);
+      const anonymous_id = randomUUID();
+      const session_id = randomUUID();
 
-      const sessionId = await ensureSession(req, res, pg, { anonymous_id: anonId, user_id: null });
+      await ensureIdentityRows(pg, { anonymous_id, session_id, user_id: null });
+      await ensureIdentityRows(pg, { anonymous_id, session_id, user_id: null });
 
-      expect(sessionId).toMatch(/^[0-9a-f-]{36}$/);
-      const cookie = res.cookies.get("session_id");
-      expect(cookie?.value).toBe(sessionId);
-      expect(cookie?.httpOnly).toBe(true);
-      expect(cookie?.maxAge).toBe(30 * 60);
-
-      const events = await pg.query(
-        `SELECT event_type, payload FROM events WHERE anonymous_id = $1 ORDER BY occurred_at`,
-        [anonId],
+      const anon = await pg.query(
+        `SELECT count(*)::int AS c FROM anonymous_sessions WHERE anonymous_id = $1`,
+        [anonymous_id],
       );
-      expect(events.rows).toHaveLength(1);
-      expect(events.rows[0].event_type).toBe("session_start");
-      expect(events.rows[0].payload).toEqual({});
+      expect(anon.rows[0].c).toBe(1);
+
+      const starts = await pg.query(
+        `SELECT count(*)::int AS c FROM events WHERE session_id = $1 AND event_type = 'session_start'`,
+        [session_id],
+      );
+      expect(starts.rows[0].c).toBe(1);
     });
   });
 
-  test("returning within 30 min: same session_id, no new session_start", async () => {
+  test("a NEW session of the same visitor gets its own session_start; last_seen_at advances", async () => {
     await withTestDb(async (pg) => {
-      const req1 = makeReq();
-      const res1 = NextResponse.next();
-      const anonId = await ensureAnonymousId(req1, res1, pg);
-      const sid = await ensureSession(req1, res1, pg, { anonymous_id: anonId, user_id: null });
+      const anonymous_id = randomUUID();
+      const s1 = randomUUID();
+      const s2 = randomUUID();
 
-      const now = Math.floor(Date.now() / 1000);
-      const req2 = makeReq({
-        anonymous_id: anonId,
-        session_id: sid,
-        session_last_activity: String(now),
-      });
-      const res2 = NextResponse.next();
-      const sid2 = await ensureSession(req2, res2, pg, { anonymous_id: anonId, user_id: null });
-      expect(sid2).toBe(sid);
+      await ensureIdentityRows(pg, { anonymous_id, session_id: s1, user_id: null });
+      const t1 = (
+        await pg.query(`SELECT last_seen_at FROM anonymous_sessions WHERE anonymous_id=$1`, [anonymous_id])
+      ).rows[0].last_seen_at;
 
-      const events = await pg.query(
-        `SELECT count(*)::int AS c FROM events WHERE anonymous_id=$1 AND event_type='session_start'`,
-        [anonId],
+      await new Promise((r) => setTimeout(r, 30));
+      await ensureIdentityRows(pg, { anonymous_id, session_id: s2, user_id: null });
+
+      const starts = await pg.query(
+        `SELECT count(*)::int AS c FROM events WHERE anonymous_id = $1 AND event_type = 'session_start'`,
+        [anonymous_id],
       );
-      expect(events.rows[0].c).toBe(1);
-    });
-  });
+      expect(starts.rows[0].c).toBe(2);
 
-  test("expired (>30 min idle): emits session_end for old + session_start for new + new session_id", async () => {
-    await withTestDb(async (pg) => {
-      const req1 = makeReq();
-      const res1 = NextResponse.next();
-      const anonId = await ensureAnonymousId(req1, res1, pg);
-      const oldSid = await ensureSession(req1, res1, pg, { anonymous_id: anonId, user_id: null });
-
-      const stale = Math.floor(Date.now() / 1000) - 31 * 60;
-      const req2 = makeReq({
-        anonymous_id: anonId,
-        session_id: oldSid,
-        session_last_activity: String(stale),
-      });
-      const res2 = NextResponse.next();
-      const newSid = await ensureSession(req2, res2, pg, { anonymous_id: anonId, user_id: null });
-      expect(newSid).not.toBe(oldSid);
-
-      const events = await pg.query(
-        `SELECT event_type, session_id FROM events WHERE anonymous_id=$1 ORDER BY occurred_at`,
-        [anonId],
-      );
-      expect(events.rows.map((r: { event_type: string }) => r.event_type)).toEqual(["session_start", "session_end", "session_start"]);
-      expect(events.rows[1].session_id).toBe(oldSid);
-      expect(events.rows[2].session_id).toBe(newSid);
-    });
-  });
-
-  test("each call refreshes session_last_activity cookie (sliding window)", async () => {
-    await withTestDb(async (pg) => {
-      const req1 = makeReq();
-      const res1 = NextResponse.next();
-      const anonId = await ensureAnonymousId(req1, res1, pg);
-      await ensureSession(req1, res1, pg, { anonymous_id: anonId, user_id: null });
-
-      const cookie = res1.cookies.get("session_last_activity");
-      expect(Number(cookie?.value)).toBeGreaterThan(Math.floor(Date.now() / 1000) - 5);
-      expect(cookie?.maxAge).toBe(30 * 60);
+      const t2 = (
+        await pg.query(`SELECT last_seen_at FROM anonymous_sessions WHERE anonymous_id=$1`, [anonymous_id])
+      ).rows[0].last_seen_at;
+      expect(new Date(t2).getTime()).toBeGreaterThan(new Date(t1).getTime());
     });
   });
 });

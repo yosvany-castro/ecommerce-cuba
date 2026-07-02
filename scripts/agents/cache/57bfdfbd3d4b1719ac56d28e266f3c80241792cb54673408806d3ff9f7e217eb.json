@@ -1,0 +1,115 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 2,
+    "metricsHash": "1641b57f42e2c16d99d4dbdc776a7eb6987258e3de17bb02d4090e8bba5515f2"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "La tienda tiene solo 1 placement (hero_grid con no_impression_logging) para 88,580 sesiones servidas en 14d. El seen_rate es 32.4% y la tendencia muestra caída de -76% en seen vs semana anterior (de 23,206 a 5,490). No existe sección de descubrimiento de productos populares. Un slot popular en home slot 20 permite a usuarios descubrir productos con alta demanda como el Zara blazer (5128 eventos, 362 compras/7d), mejorando el funnel de descubrimiento y potencialmente recuperando revenue. En 7d el revenue_ratio vs_holdout es 1.19, lo que sugiere que con más placements el feed puede superar al holdout."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "moda_mujer"
+          }
+        ]
+      },
+      "scope": "segment",
+      "scope_ref": "compradores_moda",
+      "ttl_hours": 72,
+      "rationale": "moda_mujer es la categoría top con 19,327,799 revenue_cents/14d (71.5% del feed total de 27,046,849 revenue_cents), 509 purchases y 7,094 seen. El producto estrella Zara blazer (syn-2026-3000-722) genera 362 compras/semana a 47,634 cents. Un slot popular específico para moda_mujer captura usuarios con alta intención de compra en esta categoría, segmentándolos cuando están navegando productos de moda mujer (pdp_category eq moda_mujer)."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo slot popular global más abajo (slot 60) para usuarios que scrollean más profundo. La categoría accesorios_tech tiene alta tasa de conversión (591 purchases de 4,028 seen = 14.7% en 14d) con producto estrella Logitech powerbank (4,819 eventos, 542 compras/7d, 1,230 cents). Y belleza genera 1,260,528 revenue_cents/14d con solo 2,588 seen (alto revenue por seen). Un slot inferior captura a usuarios más exploradores, dándoles acceso a estas categorías de alta conversión que no son obvias en hero_grid."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "eq",
+            "value": "moda_mujer"
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "moda_mujer es la categoría top con 19,327,799 revenue_cents/14d (71.5% del feed total), 509 purchases y 7,094 seen. El Zara blazer (producto top) genera 362 compras/semana. Un slot popular específico para moda_mujer (con regla pdp_category eq moda_mujer) captura usuarios navegando esa categoría, maximizando cross-sell de productos relacionados de alta demanda."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "e7f87795-a841-4790-bceb-b2bf50babbdc",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "2d6951d2-d877-4638-bad7-5bbf839b0915",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "3ab9d4e5-1f97-42ca-873b-876740f6d553",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas por el sistema con tier **low** y status **approved**. Aquí el resumen:\n\n---\n\n## Resumen final\n\n**Qué propuse (3 placements nuevos en home):**\n\n| Slot | Tipo | Targeting | Placement ID | Estado |\n|------|------|-----------|-------------|--------|\n| 20 | popular | global | `e7f87795...` | ✅ approved (low) |\n| 40 | popular | solo cuando `pdp_category = moda_mujer` | `3ab9d4e5...` | ✅ approved (low) |\n| 60 | popular | global | `2d6951d2...` | ✅ approved (low) |\n\n**Evidencia principal citada:**\n- Tienda con **1 solo placement** (hero_grid con `no_impression_logging`, intocable) para 88,580 sesiones/14d\n- **Caída del -76%** en seen vs semana anterior (23,206 → 5,490)\n- **vs_holdout 7d: 1.19** (feed funciona bien cuando se usa), pero **14d: 0.87** (decae sin suficientes placements)\n- `moda_mujer` domina: 19,327,799 revenue_cents/14d (71.5% del feed), 509 purchases\n- `accesorios_tech` tiene alta conversión (14.7% purchase rate) con producto estrella (Logitech powerbank: 542 compras/7d)\n\n**Qué espero ver en since_change:**\n- Slot 20: aumento en seen_rate general y purchases atribuidos al feed\n- Slot 40: incremento en revenue_cents y purchases de moda_mujer\n- Slot 60: mejora en revenue de categorías de alta conversión (accesorios_tech, belleza)\n\n**Nota**: Estos placements expiran por TTL (72h). Si funcionan, habrá que re-proponerlos con la evidencia de `since_change`.",
+  "truncated": false,
+  "runId": "sim-run-2026-e2",
+  "createdAt": "2026-06-11T09:59:19.761Z"
+}

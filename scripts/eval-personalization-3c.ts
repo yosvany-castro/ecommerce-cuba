@@ -15,7 +15,7 @@ import { recomputeNPMI } from "@/sectors/d-personalization/co-occurrence/npmi-re
 function ndcgAt10(feedIds: string[], holdoutIds: string[]): number {
   const set = new Set(holdoutIds);
   const rels = feedIds.slice(0, 10).map((id) => (set.has(id) ? 1 : 0));
-  const dcg = rels.reduce((s, r, i) => s + r / Math.log2(i + 2), 0);
+  const dcg = rels.reduce((s: number, r, i) => s + r / Math.log2(i + 2), 0);
   const ideal = Math.min(holdoutIds.length, 10);
   let idcg = 0;
   for (let i = 0; i < ideal; i++) idcg += 1 / Math.log2(i + 2);

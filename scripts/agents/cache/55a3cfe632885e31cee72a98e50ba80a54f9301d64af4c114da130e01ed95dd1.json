@@ -1,0 +1,59 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 11,
+    "metricsHash": "34634bc92d4de5e0cf626c0b0c87e781632eaf6bc5620fa1de6c09a1fdec69dd"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "moda_mujer generó 13.744 seen y 170 purchases en 14d ($45.997,65 revenue categoría #1). El revenue_ratio 14d cayó a 0,86 (default rinde 14% menos que holdout). Un cross_sell en home slot 80 expone productos de moda_mujer al tráfico de home (seen_rate 32,5%) que actualmente no está convirtiendo, aprovechando la categoría más fuerte para recuperar revenue."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El seen semanal cayó de 22.823 (prev 7d) a 5.460 (current 7d), reducción del 76%. La sección popular en slot 90 expande la superficie de descubrimiento en home. Con moda_mujer (170 purchases 14d) y joyeria ($14.051 revenue 14d) como categorías fuertes, este slot popular puede recuperar parte del tráfico perdido en el funnel inferior y mejorar el revenue_ratio de 0,86."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "7c20c786-1975-45de-bf3b-374e40df64fa",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "69d3e651-6650-44fd-b220-f7da28f17aed",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron aceptadas ✅. Aquí el resumen:\n\n---\n\n## Resumen final\n\n**¿Qué propuse?**\n1. **Home slot 80 — cross_sell**: Exponer productos de la categoría moda_mujer (170 purchases / $45,997 revenue en 14d) en sección de venta cruzada.\n2. **Home slot 90 — popular**: Ampliar superficie de descubrimiento en el funnel inferior, con productos populares, para contrarrestar la caída del 76% en seen semanal.\n\n**Evidencia clave**:\n- Revenue ratio 14d = **0.86** (default -14% vs holdout) — necesidad urgente de recuperar conversión.\n- moda_mujer es la categoría #1 con diferencia (13,744 seen, 170 purchases, $45,997 revenue 14d).\n- joyeria tiene alto AOV: $14,051 revenue en solo 49 purchases 14d.\n- Todos los placements existentes (slots 20-70) tienen `no_impression_logging` → no se podía actuar sobre ellos.\n\n**¿Qué espero ver en `since_change` la próxima vez?**\n- Que el slot 80 (cross_sell) genere revenue incremental en moda_mujer, reflejado en un revenue_ratio >1.0.\n- Que el slot 90 (popular) aumente seen_rate y purchases por encima de la línea base actual de 57 purchases/7d.\n- Si funcionan, habrá que re-proponerlos con los datos de since_change antes de que expiren por TTL (72h).",
+  "truncated": false,
+  "runId": "sim-run-7-e11",
+  "createdAt": "2026-06-17T15:11:07.064Z"
+}

@@ -1,0 +1,115 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 777,
+    "epoch": 2,
+    "metricsHash": "8dca6bd9d33a068d0afa35a74174a8559a1e7f6eab9f9e812081c465051c0a41"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "tecnologia"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "read_metrics home 7d: tecnologia genera 774,030 revenue_cents con 1,061 seen y 61 purchases, siendo la categoria de mayor revenue absoluta. Slot 20 (alta visibilidad) para capturar su alta monetizacion. vs_holdout revenue_ratio 7d=0.58 indica feed rinde menos que holdout; agregar placements diversificados debe mejorar el ratio. Tendencia 14d: seen bajo de 23,254 a 5,448 (-77%); un slot categorico dedicado recupera trafico calificado. Hipotesis: purchases suben de 61 a ~85 (+40%) en 7d post-lanzamiento."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "moda_mujer"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "read_metrics home 7d: moda_mujer tiene el mayor seen (1,251) y purchases (116) con 377,868 revenue_cents. Es la categoria con mas trafico y conversion. vs_holdout revenue_ratio 7d=0.58 refuerza necesidad de mas slots categorizados. Slot 30 capturara audiencia femenina actualmente sin representacion dedicada. Hipotesis: purchases suben de 116 a ~150 (+30%) en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "moda_infantil"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "read_metrics home 7d: moda_infantil genera 301,681 revenue_cents con solo 605 seen (498 cents/seen, el mas alto de todas las categorias). Purchases: 57. Alta eficiencia de revenue por exposicion. Slot 40 dara visibilidad a una categoria infraexpuesta. Tendencia 14d muestra caida de seen; un slot categorico diversificado mitiga riesgo. Hipotesis: seen sube de 605 a ~900 (+49%), purchases de 57 a ~80 en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "accesorios_tech"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "read_metrics home 7d: accesorios_tech genera 155,246 revenue_cents con 599 seen y 43 purchases. Complementa el slot 20 de tecnologia creando sinergia cross-category para usuarios tech. Es la cuarta categoria en revenue absoluto. vs_holdout revenue_ratio 7d=0.58 senala que el feed necesita mas diversification para competir con holdout. Hipotesis: purchases suben de 43 a ~56 (+30%) en 7d por exposicion adicional."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "c53c3ffe-0f84-4570-95ce-d4bbb030d79e",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "5c65f670-efe5-4ea4-956d-b4b51c7f4b81",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "f21b18e7-870a-4ac6-aa20-f569a360b95e",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "reason": "live cap reached for home (3 agent rows)"
+    }
+  ],
+  "finalText": "La cuarta propuesta fue rechazada por límite de capacidad (3 filas de agente máximo en home). No puedo corregirlo — es una limitación del sistema. Abandono esa acción.\n\n---\n\n## Resumen final\n\n| # | Propuesta | Placement ID | Status | Tier |\n|---|---|---|---|---|\n| 1 | **popular slot 20 → tecnología** | `c53c3ffe...` | ✅ approved | low |\n| 2 | **popular slot 30 → moda_mujer** | `5c65f670...` | ✅ approved | low |\n| 3 | **popular slot 40 → moda_infantil** | `f21b18e7...` | ✅ approved | low |\n| 4 | **popular slot 50 → accesorios_tech** | — | ❌ live cap (3 agent rows) | — |\n\n**Evidencia que sustentó las propuestas** (read_metrics home 7d):\n- **tecnología** → 774,030 revenue_cents, 61 purchases, 1,061 seen — mayor revenue absoluto\n- **moda_mujer** → 1,251 seen, 116 purchases, 377,868 revenue_cents — mayor volumen y conversión\n- **moda_infantil** → 498 cents/seen, el ratio revenue/exposición más alto de todas las categorías\n\n**Contexto de riesgo abordado**: vs_holdout revenue_ratio 7d = **0.58** (feed rinde 42% menos que holdout), y seen cayó **-77%** en tendencia 14d. Los nuevos slots categorizados buscan recuperar tráfico calificado y cerrar la brecha vs holdout.\n\n**Qué espero ver en since_change (próxima revisión)**:\n- Slot 20 (tecnología): purchases de 61→~85, revenue_cents de 774K→~1.08M\n- Slot 30 (moda_mujer): purchases de 116→~150, revenue_cents de 377K→~490K\n- Slot 40 (moda_infantil): seen de 605→~900, purchases de 57→~80\n- Revenue_ratio global mejorar de 0.58 hacia 0.75+ en 7d",
+  "truncated": false,
+  "runId": "sim-run-777-e2",
+  "createdAt": "2026-06-11T09:58:47.941Z"
+}

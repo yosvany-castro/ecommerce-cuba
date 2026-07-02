@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { track } from "@/lib/client/track";
 
 export interface CartItem {
   product_id: string;
@@ -35,14 +36,6 @@ function readLocal(): CartItem[] {
 function writeLocal(items: CartItem[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(localKey(), JSON.stringify(items));
-}
-
-async function trackEvent(body: Record<string, unknown>) {
-  return fetch("/api/track", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  }).catch(() => null);
 }
 
 interface CartContextValue {
@@ -91,11 +84,7 @@ export function CartProvider({ children, isLoggedIn }: { children: React.ReactNo
         writeLocal(next);
         setItems(next);
       }
-      await trackEvent({
-        event_type: "add_to_cart",
-        occurred_at: new Date().toISOString(),
-        payload: { product_id: productId, quantity: qty },
-      });
+      track("add_to_cart", { product_id: productId, quantity: qty }, { urgent: true });
       if (isLoggedIn) await refresh();
     },
     [isLoggedIn, refresh],
@@ -118,11 +107,7 @@ export function CartProvider({ children, isLoggedIn }: { children: React.ReactNo
         writeLocal(next);
         setItems(next);
       }
-      await trackEvent({
-        event_type: "remove_from_cart",
-        occurred_at: new Date().toISOString(),
-        payload: { product_id: productId, quantity: qty },
-      });
+      track("remove_from_cart", { product_id: productId, quantity: qty }, { urgent: true });
       if (isLoggedIn) await refresh();
     },
     [isLoggedIn, refresh],

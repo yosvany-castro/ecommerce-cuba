@@ -8,6 +8,12 @@ export interface RankedItem {
 export interface RankedList {
   source: string;
   items: RankedItem[];
+  /**
+   * Optional per-list weight (default 1): multiplies this list's reciprocal
+   * contributions. Used to keep a purpose-built list (e.g. cross-sell
+   * co-occurrence) from being diluted as more lists join the fusion.
+   */
+  weight?: number;
 }
 
 export interface FusedItem {
@@ -26,8 +32,9 @@ export interface FusedItem {
 export function rrfFuse(lists: RankedList[], k0 = RRF_K0): FusedItem[] {
   const acc = new Map<string, FusedItem>();
   for (const list of lists) {
+    const weight = list.weight ?? 1;
     for (const item of list.items) {
-      const reciprocal = 1 / (k0 + item.rank);
+      const reciprocal = weight / (k0 + item.rank);
       const cur = acc.get(item.id);
       if (cur) {
         cur.rrf_score += reciprocal;

@@ -11,7 +11,7 @@ import type { ChatInput, ChatOutput, LLMProvider } from "../types";
  * `cacheSystem` is silently ignored (server-side caching is automatic).
  */
 export const deepseekFlashProvider: LLMProvider = {
-  name: "deepseek-chat",   // actual API model; will track DEEPSEEK_MODELS.flash when string changes
+  name: DEEPSEEK_MODELS.flash,
   async chat(input: ChatInput): Promise<ChatOutput> {
     const res = await sendMessageDeepSeek({
       model: DEEPSEEK_MODELS.flash,
@@ -20,6 +20,8 @@ export const deepseekFlashProvider: LLMProvider = {
       maxTokens: input.maxTokens,
       temperature: input.temperature ?? 0,
       jsonMode: input.jsonMode ?? false,
+      // V4 defaults to thinking ENABLED; extraction must not burn reasoning tokens.
+      thinking: "disabled",
     });
     return {
       text: res.text,

@@ -1,0 +1,15 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 42,
+    "epoch": 7,
+    "metricsHash": "9fdcfa7688ab7ca8d48eb406e94009d89e54ce40dcc5cf7d94f0a41b3635da7d"
+  },
+  "proposals": [],
+  "results": [],
+  "finalText": "El critic detectó dos objeciones justas. Las corrijo:\n\n1. **Hero_grid**: los números que cité (26,219 seen, $48,544 rev) eran de la ventana 14d, no 7d. En 7d: hero_grid tiene **4,601 seen y $7,424.29 rev**.\n2. **Producto estrella**: los datos de producto vienen de `read_catalog`, no de `read_metrics` — debí aclarar la fuente.\n\nCorregido el diagnóstico, la conclusión se mantiene. Procedo con el cierre.\n\n---\n\n## Resumen final\n\n**Diagnóstico:** No hay acciones viables en este momento.\n\n**¿Por qué?**\n- **Hero_grid** (slot 10) — único con métricas reales, pero es intocable (regla dura).\n- **Home slots 20–90** — los 9 placements tienen `no_impression_logging`. Según el protocolo, la única acción válida sobre placements con ese flag es **esperar**. No puedo supersederlos, pausarlos ni reemplazarlos.\n- **PDP** y **Cart** — tienen `low_sample`. Ídem: solo esperar.\n- **Tendencia a la baja**: la tienda pasó de $46,296/semana a $8,203/semana (caída ~82% en revenue), y el ratio vs holdout a 14d es 0.97 (negativo). Pero sin poder intervenir en placements, no hay palanca que accionar.\n\n**¿Qué esperar para la próxima vez?**\n- Que los placements con `no_impression_logging` acumulen suficientes impresiones para salir del flag y poder evaluar su rendimiento real.\n- Que PDP y Cart salgan de `low_sample` para poder crear placements contextuales (cross_sell en cart, por ejemplo, para **accesorios_tech** que es la categoría con mejores conversiones).\n- Mientras tanto, hero_grid sigue siendo el único motor de revenue — y aunque no puedo tocarlo, su ratio vs holdout de 1.06 es positivo.",
+  "truncated": false,
+  "runId": "sim-run-42-e7",
+  "createdAt": "2026-06-11T10:30:49.051Z"
+}

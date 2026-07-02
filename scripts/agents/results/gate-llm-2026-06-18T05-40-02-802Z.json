@@ -1,0 +1,1972 @@
+{
+  "mode": "gate",
+  "aa": false,
+  "agent": "llm",
+  "gatedPolicy": {
+    "AGENT_MEDIUM_AUTOAPPLY": true
+  },
+  "deviations": [
+    "2.C.5: read_catalog del sim expone margin_pct per-product (prod: constante 0.6); read_metrics jamás reporta margen y el gate premia margen realizado del ledger"
+  ],
+  "spec": {
+    "universeSize": 3000,
+    "activeAtE0": 2400,
+    "users": 1000,
+    "measuredEpochs": 12
+  },
+  "seeds": [
+    42,
+    7,
+    2026,
+    31337,
+    777
+  ],
+  "worldVersion": "sim-world-v1",
+  "ratios": [
+    0.9780039581517675,
+    0.9994913227980078,
+    1.008585348251525,
+    1.009237518317627,
+    1.0323488076195244
+  ],
+  "verdict": {
+    "geomMean": 1.0053804329326472,
+    "ci95": [
+      0.9813246782653463,
+      1.0300258796207749
+    ],
+    "unanimous": false,
+    "pass": false,
+    "escalate": false
+  },
+  "invalid": true,
+  "results": [
+    {
+      "seed": 42,
+      "ratio": 0.9780039581517675,
+      "agentMarginCents": 24840534,
+      "frozenMarginCents": 25399216,
+      "agentGmvCents": 91182480,
+      "frozenGmvCents": 92965030,
+      "trajectories": {
+        "frozen": [
+          11064487.935421435,
+          4788886.44597451,
+          3115909.6986025684,
+          2377485.5702349655,
+          2001629.0517160364,
+          1929430.3522905097,
+          2080352.8904330384,
+          2171217.573069861,
+          1992255.41732772,
+          2006400.8684528104,
+          1738927.8267285607,
+          1654557.8518286601,
+          2355369.743091534,
+          1975679.5742306781
+        ],
+        "agent": [
+          11064487.935421435,
+          4788886.44597451,
+          3444564.77173711,
+          2164552.3166915355,
+          1869855.1048459685,
+          2015430.109465228,
+          2256047.0729556447,
+          2201246.789502414,
+          2100171.185961294,
+          1849208.2886759893,
+          1737065.4982631532,
+          1673285.2873786453,
+          1786103.8932686914,
+          1743003.872018529
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.8641200388663748,
+        "top20Share": 0.9090567455843668,
+        "frozenCollapse": false
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "cf1960a8-a9f2-4a24-bea6-984ecdd936f6",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "477565da-6bb9-4a91-af12-e0b1b204aa01",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "e802e483-3d63-4159-85ad-40755536f81f",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "ba1aef3d-573c-4f1c-8246-910d45ccc8a2",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "placement_id": "5618a9be-b7b2-41b1-9a92-3eb792926d57",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "5ebf7049-0997-452e-abce-b5521bbc8e1a",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "aa8740b3-2138-414e-b49d-b2c6a513deaa",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 5,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "fbee9a95-b450-4fb2-9e7e-e5862a049292",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 6,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "4c905dc2-fbba-4aa7-9c15-7de8cd6f1f0c",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "3247b2d6-da3f-4728-9cf9-fccc2534ab29",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "placement_id": "1588a5d2-3bdd-4129-96c1-884cea8a8be5",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 7,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 8,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "b4dfaa13-7adf-4d5e-9ce7-b6cb3a6eba95",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 9,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "9eb27814-53cd-4b96-9351-5a305e013ab6",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "90278732-9ac7-4fb7-8d57-9e312d5235e3",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "6ad210c6-7321-4bf3-8c04-591c0aae2301",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 10,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "e3d62a7e-3986-4c91-ba79-8f97deaac90d",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "a63f7238-3628-45cb-aa77-c9b6b9da5f81",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 11,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "e0bc4563-5ac6-4c23-b369-c6082777cdaa",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 12,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "4e2efc60-d804-4d5c-b47b-5ffef352a84a",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "fbc8dbf8-7025-4efc-8987-20796fca4de1",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 13,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "379f93ee-dea9-42a9-9cf4-df5e1134dfbe",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "8732ce0c-7d52-4b44-b23a-b1b746acf9f4",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        }
+      ]
+    },
+    {
+      "seed": 7,
+      "ratio": 0.9994913227980078,
+      "agentMarginCents": 31203952,
+      "frozenMarginCents": 31219833,
+      "agentGmvCents": 111256156,
+      "frozenGmvCents": 111740366,
+      "trajectories": {
+        "frozen": [
+          11865488.066631401,
+          4843592.360264099,
+          4664615.0538599305,
+          3084994.4244230515,
+          3198228.8632658157,
+          3014519.094699006,
+          2235243.1051037875,
+          2091039.6989852588,
+          2469831.751914823,
+          2150505.5596434255,
+          2000994.4785564418,
+          2109503.733619136,
+          2094013.53953084,
+          2106343.412460242
+        ],
+        "agent": [
+          11865488.066631401,
+          4843592.360264099,
+          4652476.393891585,
+          3420334.3067024327,
+          3148013.8391671656,
+          3195723.4174603065,
+          2046184.5806337618,
+          2316660.4063359695,
+          2191396.19233486,
+          2160779.3709892235,
+          1878085.07364263,
+          2248354.944398011,
+          1955631.8674570324,
+          1990311.5058962489
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.8772346577969554,
+        "top20Share": 0.9175970873786408,
+        "frozenCollapse": false
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category_filter\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "6145862e-9937-4994-be69-e768497531fe",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "08906ef2-21ad-40fb-aa5b-257c11ed6194",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 30,
+              "placement_id": "43d36c33-e390-4082-8b07-e6de4d29437b",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 20,
+              "placement_id": "ba3591cc-5248-4efe-808b-4c1abf956917",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "54dc6764-de6b-477e-86f1-747c3748f25e",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "placement_id": "725e5381-741f-4117-b081-28027dfe17e5",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 40,
+              "placement_id": "9f4e0428-7604-41fb-8be9-25e101483276",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 30,
+              "placement_id": "d92657a5-9140-41d6-bf6e-fb467f9550dd",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "0e17777e-a707-41f3-bb26-1138e9c3fc05",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "344a0d19-04c6-40d3-8599-48f1966e4dc2",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "5856325a-cc4f-409e-9dba-ed88ffb585b4",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 20,
+              "placement_id": "78193b1d-3de6-4c24-a105-be2d2a22dc96",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 5,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "2c1ab8ac-6a65-406c-84c5-4281cbeee9b6",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 6,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "supersede",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "70e6c88a-31d3-40a4-b274-469b0d210798",
+              "effective_tier": "medium",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 7,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 50,
+              "placement_id": "fa4403a6-7037-43e4-a551-e6412d3d303f",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 60,
+              "placement_id": "2c46e4fd-569a-49cf-9907-cb35e35a4fef",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 40,
+              "placement_id": "1dbc493f-1153-4907-ba48-51991ce0c67d",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 70,
+              "placement_id": "7c4a4977-f885-471d-9a37-bdaa1689de9e",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 8,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "ebe4bf6c-9491-4bff-9121-1145c6df9cf3",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 9,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 50,
+              "placement_id": "8ef3909d-c48b-43e6-a599-f4d42f66884f",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 80,
+              "placement_id": "29b94b6f-e2fa-4c0f-a85f-62fe8ebe730a",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "d6b73d77-deb5-45d1-9095-be58659346ea",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 10,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "d5482c45-ef4d-44eb-a5b0-2db2e4fd01bd",
+              "effective_tier": "medium",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "6afdf0f5-bea5-4756-af1e-f1073578d42f",
+              "effective_tier": "medium",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "95b46a0f-1654-4a9c-a2c3-6d994a2f1da7",
+              "effective_tier": "medium",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "reason": "live cap reached for home (3 agent rows)"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 20,
+              "placement_id": "f2c98d43-3951-4011-9ec2-71ca1f9c8cc1",
+              "effective_tier": "medium",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 11,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "7c20c786-1975-45de-bf3b-374e40df64fa",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "69d3e651-6650-44fd-b220-f7da28f17aed",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 12,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "3d51ea31-630a-4214-b9f2-80722b0610e9",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "505752ca-64fe-4e2f-ba74-7d827258f901",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 13,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "38c8e3a3-827e-476a-a457-c8870ad2cb7b",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "35122513-4b28-4f5c-b701-ece4ad2bce93",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "0329b11f-18d8-47c3-b78b-4e064c12b6da",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        }
+      ]
+    },
+    {
+      "seed": 2026,
+      "ratio": 1.008585348251525,
+      "agentMarginCents": 33708101,
+      "frozenMarginCents": 33421168,
+      "agentGmvCents": 131731107,
+      "frozenGmvCents": 130153029,
+      "trajectories": {
+        "frozen": [
+          11721101.567673568,
+          7273594.354694198,
+          6693476.214776121,
+          3266894.802625467,
+          2508427.456976217,
+          2291025.6383409994,
+          2479805.8038846366,
+          2499369.158754649,
+          2260171.465060621,
+          2259566.072461204,
+          2382165.5508816866,
+          2265387.9498627773,
+          2129949.656500186,
+          2384928.4443032085
+        ],
+        "agent": [
+          11721101.567673568,
+          7273594.354694198,
+          7182636.9861099515,
+          2961576.395379273,
+          2809730.728528137,
+          2536635.315237088,
+          2462021.725533671,
+          2224800.8217109726,
+          2188396.1821914613,
+          2416444.6858788477,
+          2238123.2653006045,
+          2257956.9592243754,
+          2248850.2392472383,
+          2180927.278179909
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.9147879707666455,
+        "top20Share": 0.9397013243167089,
+        "frozenCollapse": true
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "e7f87795-a841-4790-bceb-b2bf50babbdc",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "placement_id": "2d6951d2-d877-4638-bad7-5bbf839b0915",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "3ab9d4e5-1f97-42ca-873b-876740f6d553",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 30,
+              "placement_id": "126852ce-a28d-4ea9-9d01-e0f255f5ec16",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 30,
+              "placement_id": "d9179419-cd3f-4baa-8af5-84d19045f790",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 50,
+              "placement_id": "49d24e43-c39a-4f47-8227-472e837f1cee",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 5,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "12142a19-f64a-4c83-9f76-46955c2eb0ac",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 50,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 50,
+              "placement_id": "50d0fb75-f06d-4a6d-9b90-5047f8841d9c",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 40,
+              "placement_id": "5ecb55e3-b911-44cd-a6eb-b3117710a65f",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 6,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "5ebc4a9f-8124-4f97-8ad1-5f99e9c54df2",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "3ea970e3-bdb9-4214-9219-fe6d8594537e",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 7,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category_filter\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "dc3b7540-0ca6-4aa2-b012-6ad41eb0c41c",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 8,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "a761a319-7e5b-4611-9936-ae07e9ea573a",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 9,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 20,
+              "placement_id": "ab1f1f1b-5f45-4b80-a4d9-1c105238f7c0",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 60,
+              "placement_id": "807cd65e-34f0-4fb6-ae09-3058b879fed9",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 70,
+              "placement_id": "d625c7d0-cc24-4d31-85e2-0b8b7cb17bae",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 10,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 20,
+              "placement_id": "f3608701-ed8f-4c6c-aef6-d4868788b25d",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 40,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 40,
+              "placement_id": "acac505d-a880-45ea-ac40-ae62f822ca17",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 11,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "673d0ec2-a03c-491d-b46c-363bdde41522",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 80,
+              "placement_id": "b9b1af7c-6aee-4b6b-8c65-f4f39a1aa5d9",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "440a51f9-785f-4480-b39c-d3480b32be31",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 12,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "3c4983d4-dc84-4370-8d0b-98ef445e4011",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "f972a4a0-eec6-4f65-81ff-3903787902fe",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 20,
+              "placement_id": "414e3853-ca34-4a42-aa33-ed0fa4db9cab",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 20,
+              "placement_id": "e2a7aee7-77ed-4149-b038-fd59a7becba7",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "a30fad22-3d3c-4565-a99d-6e759b938969",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 13,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "15d4ed36-8a2a-4f6c-bef2-a9cd9b54ce85",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        }
+      ]
+    },
+    {
+      "seed": 31337,
+      "ratio": 1.009237518317627,
+      "agentMarginCents": 43345405,
+      "frozenMarginCents": 42948665,
+      "agentGmvCents": 230807985,
+      "frozenGmvCents": 228289137,
+      "trajectories": {
+        "frozen": [
+          11664900.66637268,
+          6196165.985633604,
+          5637366.658070224,
+          4846246.974514943,
+          3589118.205189079,
+          3679724.9334679805,
+          3646482.84362696,
+          3565690.7356386874,
+          3368649.6686651586,
+          3591079.194917307,
+          3368101.032357591,
+          3242350.383919408,
+          3428409.178976147,
+          985445.616937075
+        ],
+        "agent": [
+          11664900.66637268,
+          6196165.985633604,
+          5483329.80190304,
+          4933073.14694309,
+          4188715.6951524313,
+          3432808.5716634123,
+          3522697.2231964325,
+          3512995.0455275304,
+          3652741.139775197,
+          3150383.6089703576,
+          3344102.8557607094,
+          3301534.137817231,
+          3784361.358158754,
+          1038661.9250056102
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.879038704820446,
+        "top20Share": 0.9166103983794733,
+        "frozenCollapse": true
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category_filter\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "reason": "invalid params for popular: (root) Unrecognized key: \"category_filter\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "placement_id": "3d881ddf-8f63-413c-b623-4e3f43d32a6e",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "12ef8e0a-c1ad-4abf-a866-b732a250a5ed",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "7d4819c5-6548-44d8-8853-cbbc137f31c9",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "cart",
+              "slot": 20,
+              "reason": "invalid params for cart_addons: (root) Unrecognized key: \"strategy\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"strategy\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 20,
+              "placement_id": "a184bb50-9f0f-4422-bfcf-71ae57b9d079",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "a1d56409-de40-4fb7-bcfb-1f6045f93128",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "0b9e3213-649d-455a-9ca8-bcea5ae9fd3c",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 30,
+              "placement_id": "74850f36-2b3e-474b-b1e7-5786b96c0432",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "7564f67a-7cf9-4774-9771-5d0a73f3fde7",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 5,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "a333e2e7-17aa-4430-a4e4-b2f6ec967619",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 40,
+              "placement_id": "fffeea65-507a-4cda-91dc-aedef2a5de2d",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 6,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "7968be5d-d9a5-4679-a496-45d5decebeb2",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 20,
+              "placement_id": "fab00f85-58b3-49f6-94a7-5f6c803166d5",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 30,
+              "placement_id": "f2c756c3-8c28-468e-ad09-70dcc736bcf4",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 40,
+              "placement_id": "b456b273-6cf8-4a84-a169-09acc0c5c209",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "cart",
+              "slot": 50,
+              "placement_id": "e3dfec01-5da8-4ff0-a30b-907394bcdd06",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 7,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 8,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 30,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 30,
+              "placement_id": "073dea82-5380-4dc8-8e75-df7f5649dc07",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "pdp",
+              "slot": 40,
+              "placement_id": "65470beb-6f19-490b-bd5f-077216b0d518",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 9,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 10,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "d1a6c5b7-3cf7-43ce-a537-23c371b59091",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "reason": "cooldown: agent already touched home:90 <48h ago"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "059c6dd3-9ced-4eef-8c72-b140ced83b07",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 11,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 12,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "1ad78b00-0d5e-4641-8962-dde3d2b2979f",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 13,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        }
+      ]
+    },
+    {
+      "seed": 777,
+      "ratio": 1.0323488076195244,
+      "agentMarginCents": 18186220,
+      "frozenMarginCents": 17616352,
+      "agentGmvCents": 61181972,
+      "frozenGmvCents": 60094507,
+      "trajectories": {
+        "frozen": [
+          10253337.383138174,
+          4201013.548125797,
+          3391368.401063296,
+          1688493.8756246152,
+          1962203.0328872192,
+          1461986.297777101,
+          1200671.7927643908,
+          1279268.7058379643,
+          999920.0742285053,
+          1041517.5674748437,
+          1139014.5176918807,
+          1159860.118005623,
+          1080526.6524947374,
+          1211520.9942075114
+        ],
+        "agent": [
+          10253337.383138174,
+          4201013.548125797,
+          3391368.401063296,
+          1931208.0657962079,
+          1859788.9571336762,
+          1767414.39929448,
+          1123766.9386045595,
+          1196662.1700680684,
+          1201743.8680408336,
+          1005745.8202846298,
+          1099106.863234006,
+          1233515.8899123722,
+          1115703.4458842392,
+          1260195.1935194507
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.8444379552989758,
+        "top20Share": 0.8844822997072131,
+        "frozenCollapse": true
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 20,
+              "placement_id": "c53c3ffe-0f84-4570-95ce-d4bbb030d79e",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "5c65f670-efe5-4ea4-956d-b4b51c7f4b81",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 40,
+              "placement_id": "f21b18e7-870a-4ac6-aa20-f569a360b95e",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "reason": "live cap reached for home (3 agent rows)"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 3,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "86a21263-8948-4111-a1e0-7ef5dc719674",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "reason": "scope=segment requires scope_ref in known cohorts: femenino_bebe, femenino_nina, femenino_joven, femenino_adulta, femenino_mayor, masculino_bebe, masculino_nino, masculino_joven, masculino_adulto, masculino_mayor, unisex_indeterminado"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 60,
+              "placement_id": "9cb4d639-678b-4535-9db7-839c1852cce0",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 4,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 5,
+          "proposals": [
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": false,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "reason": "invalid params for cross_sell: (root) Unrecognized key: \"category\""
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 70,
+              "placement_id": "be365e9d-6709-4fdc-9649-fa06fad554fc",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 80,
+              "placement_id": "a30826a5-ac7d-454b-be71-769f2f098bb9",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 6,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 90,
+              "placement_id": "c631122e-73fd-4a5e-b99a-581a3e2ed4a5",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        },
+        {
+          "epoch": 7,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 8,
+          "proposals": [],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 9,
+          "proposals": [],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 10,
+          "proposals": [],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 11,
+          "proposals": [],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 12,
+          "proposals": [],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": false
+        },
+        {
+          "epoch": 13,
+          "proposals": [],
+          "cached": false,
+          "truncated": false,
+          "storeChanged": false
+        }
+      ]
+    }
+  ],
+  "wallSeconds": 1302.457
+}

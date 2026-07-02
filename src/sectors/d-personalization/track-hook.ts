@@ -13,6 +13,7 @@ import {
   updateProfileModeWithProduct,
 } from "./profile-mode";
 import type { CohortId } from "./cohorts/definitions";
+import { pinProductInSlate, bumpSlateVersion } from "./slate/store";
 import { captureCoOccurrence } from "./co-occurrence/capture";
 import { modesForEvents } from "./multimode/thresholds";
 import { recomputeModesForBucket } from "./multimode/recompute";
@@ -27,33 +28,35 @@ interface TrackInput {
   occurred_at: string;
 }
 
+/**
+ * Race-safe profile bootstrap (the ONLY place profiles are born since F2 —
+ * the feed reads but never creates). Two concurrent first events used to
+ * violate user_profiles_anon_uniq/user_uniq with SELECT-then-INSERT; the
+ * ON CONFLICT DO NOTHING + re-SELECT pattern makes both writers converge on
+ * the same row. (The partial unique indexes require the WHERE clause in the
+ * conflict target.)
+ */
 async function getOrCreateProfile(
   anonymous_id: string,
   user_id: string | null,
   pg: Client,
 ): Promise<string> {
   if (user_id) {
-    const r = await pg.query(
-      `SELECT id::text FROM user_profiles WHERE user_id = $1`,
+    await pg.query(
+      `INSERT INTO user_profiles (user_id, n_events) VALUES ($1, 0)
+       ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING`,
       [user_id],
     );
-    if (r.rows.length > 0) return r.rows[0].id;
-    const ins = await pg.query(
-      `INSERT INTO user_profiles (user_id, n_events) VALUES ($1, 0) RETURNING id::text`,
-      [user_id],
-    );
-    return ins.rows[0].id;
+    const r = await pg.query(`SELECT id::text FROM user_profiles WHERE user_id = $1`, [user_id]);
+    return r.rows[0].id;
   }
-  const r = await pg.query(
-    `SELECT id::text FROM user_profiles WHERE anonymous_id = $1`,
+  await pg.query(
+    `INSERT INTO user_profiles (anonymous_id, n_events) VALUES ($1, 0)
+     ON CONFLICT (anonymous_id) WHERE anonymous_id IS NOT NULL DO NOTHING`,
     [anonymous_id],
   );
-  if (r.rows.length > 0) return r.rows[0].id;
-  const ins = await pg.query(
-    `INSERT INTO user_profiles (anonymous_id, n_events) VALUES ($1, 0) RETURNING id::text`,
-    [anonymous_id],
-  );
-  return ins.rows[0].id;
+  const r = await pg.query(`SELECT id::text FROM user_profiles WHERE anonymous_id = $1`, [anonymous_id]);
+  return r.rows[0].id;
 }
 
 async function fetchProductInfo(
@@ -126,6 +129,17 @@ async function runPipeline(
     pg,
   );
 
+  // E1: un SHIFT real de cohorte (la intención modelada cambió — no el primer
+  // warmup) invalida el slate vivo: los cursors en vuelo regeneran su PRÓXIMA
+  // página con la intención nueva; lo visible jamás se reordena.
+  if (cohortChanged && prevState.current_cohort_id !== null) {
+    try {
+      await bumpSlateVersion(input.session_id, pg);
+    } catch (e) {
+      console.warn("[track-hook] slate bump on shift failed (ignored):", e);
+    }
+  }
+
   // Co-occurrence capture runs INDEPENDENT of warmup state — pairs accumulate
   // from the very first event in a session.
   if (
@@ -141,6 +155,17 @@ async function runPipeline(
       },
       pg,
     );
+  }
+
+  // Slate pin (C5): a clicked feed product stays reachable for the session
+  // even if a re-materialization would bury it (continuity anchor). Best
+  // effort — never blocks the event pipeline.
+  if (input.event_type === "product_view") {
+    try {
+      await pinProductInSlate(input.session_id, product_id, pg);
+    } catch (e) {
+      console.warn("[track-hook] slate pin failed (ignored):", e);
+    }
   }
 
   if (!newCohort) return; // warmup not complete — no vector update yet

@@ -1,0 +1,89 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "1bbd9678d67ce5a6",
+    "seed": 123,
+    "epoch": 3,
+    "metricsHash": "7565ec9530fe9d93bdff8b364ad19df25a2b48de23e61499b272fb3a0e063386"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME aditivo puro: slot 50 está vacío, es margen nuevo. Slot 30 (popular/global, mismo modo) genera 111.5 ATC/1k seen y $9,128.83 rev en 14d (read_metrics 14d, placement 2187dbc1). Slot 50 tiene menor atención que slot 30, pero extrapolando conservadoramente (~40% del rendimiento) espero >=20 ATC/1k seen y >=$1,500 rev/14d incremental. No canibaliza porque el home es aditivo: cada carrusel nuevo no desplaza a los existentes."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME aditivo, slot vacío. mode=cohort personaliza el popular al segmento del usuario, distinto de slots 20/30/50 (global). El vs_holdout (14d) muestra revenue_ratio=1.35 (read_metrics 14d), indicando que la personalización del sistema ya agrega 35% de revenue vs holdout. mode=cohort en home refuerza esa señal. Hipótesis: ATC/1k seen >=35 (entre slot 20=47.6 y la caída de atención esperada en slot 60) y revenue incremental >=$1,000/14d. Sin canibalización porque opera en dimensión distinta (cohort vs global)."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME aditivo, slot vacío. mode=pdp_category muestra los más populares de la categoría del PDP que el usuario acaba de visitar. Categorías fuertes en revenue 14d: tecnologia $37,437, moda_mujer $12,432, accesorios_tech $5,521 (read_metrics 14d categories). Crea puente contextual PDP→home que ningún placement actual explota. Hipótesis: si >=30% de sesiones de home vienen desde PDP, espero >=15 ATC/1k seen con revenue incremental >=$700/14d. Complementa slots 20/30/50 (global) y slot 60 (cohort) sin solapamiento."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "1d8debee-bf33-4e3b-a425-f4b2494a68c3",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "63f2620b-78aa-4d41-981f-53e434040440",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "2ecb9b3b-abc5-4152-96ac-4982dc779439",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas en **tier low** y aprobadas inmediatamente. Aquí el resumen:\n\n---\n\n## Resumen de acciones ejecutadas\n\n| # | Superficie | Slot | Sección | Modo | Placement ID | Estado |\n|---|-----------|------|---------|------|-------------|--------|\n| 1 | **HOME** | **50** | popular | global | `1d8debee...` | ✅ approved (low) |\n| 2 | **HOME** | **60** | popular | cohort | `63f2620b...` | ✅ approved (low) |\n| 3 | **HOME** | **70** | popular | pdp_category | `2ecb9b3b...` | ✅ approved (low) |\n\n**¿Qué hice y por qué?**\n\n1. **Slot 50 – popular/global** — Replico la fórmula del slot 30 (111.5 ATC/1k, $9,129 rev/14d) en un slot vacío. Es aditivo puro: aunque la atención decae en slot 50, cualquier conversión es incremental. Hipótesis: ≥20 ATC/1k, ≥$1,500/14d.\n\n2. **Slot 60 – popular/cohort** — Personalización por segmento de usuario. El vs_holdout (ratio 1.35x) demuestra que la segmentación ya agrega valor. Este placement lleva esa señal al home sin canibalizar los carruseles globales. Hipótesis: ≥35 ATC/1k, ≥$1,000/14d.\n\n3. **Slot 70 – popular/pdp_category** — Puente contextual PDP→home. Categorías fuertes (tecnologia $37.4K, moda_mujer $12.4K, accesorios_tech $5.5K en 14d) se sirven como popular según la última categoría visitada en PDP. Hipótesis: ≥15 ATC/1k, ≥$700/14d.\n\n**¿Qué espero ver en since_change la próxima vez?**\n\nQue los 3 carruseles nuevos en home (slots 50, 60, 70) generen revenue incremental con ATC/1k sostenido, similar al rendimiento de slot 20 (47.6) o mejor. Si alguno flaggea `low_sample` o `no_impression_logging`, habrá que esperar. Si alguno rinde muy por debajo de la hipótesis, lo pausaré.\n\n**No toqué** PDP cross_sell ($45.2K/14d – best performer) ni cart_addons (sólido), ni slot 40 (flag `no_impression_logging` — esperar), ni hero_grid (intocable).",
+  "truncated": false,
+  "runId": "sim-run-123-e3",
+  "createdAt": "2026-06-18T11:36:19.734Z"
+}

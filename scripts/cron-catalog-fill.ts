@@ -7,7 +7,7 @@ config({ path: ".env.local" });
 
 import { parseArgs } from "node:util";
 import { runCatalogFill } from "@/sectors/b-catalog/cron/catalog-fill";
-import { withPg } from "@/lib/db/helpers";
+import { withPgDirect } from "@/lib/db/helpers";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 
 const ALL_CATEGORIES: MockCategory[] = [
@@ -40,7 +40,7 @@ if (categories.length !== requested.length) {
 }
 
 async function main() {
-  const result = await withPg((pg) =>
+  const result = await withPgDirect((pg) =>
     runCatalogFill({
       categories,
       pagesPerCategory: parseInt(values.pages!, 10),

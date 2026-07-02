@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCart, type CartItem } from "./CartProvider";
+import { SurfaceSections } from "./slate/SurfaceSections";
 
 export function CartView() {
   const { items, loading, remove } = useCart();
@@ -54,6 +55,14 @@ export function CartView() {
           Continuar al checkout
         </Link>
       </div>
+      {/* D5: add-ons por co-ocurrencia sobre TODO el carrito (la verdad
+          anónima vive en localStorage: los ids viajan en el body). Se
+          re-resuelve cuando cambia la composición del carrito. */}
+      <SurfaceSections
+        surface="cart"
+        surfaceArgs={{ cart_product_ids: items.map((i) => i.product_id) }}
+        refreshKey={items.map((i) => i.product_id).sort().join(",")}
+      />
     </div>
   );
 }

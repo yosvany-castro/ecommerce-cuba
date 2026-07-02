@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-06-08T12:11:34.196Z",
+  "workstream": "W9",
+  "item_space": "e1_prod2vec",
+  "seed": 42,
+  "e1_universe": 9999,
+  "eval_cases": 2000,
+  "limit": 2000,
+  "pool_size": 200,
+  "rrf_k0": 60,
+  "quotas": {
+    "retrieval": 80,
+    "npmi": 50,
+    "popular": 40,
+    "exploration": 30
+  },
+  "variants": {
+    "full": {
+      "pool_recall": 0.7205,
+      "pool_recall_hits": 1441,
+      "ndcg10": 0.09521807478703066,
+      "recall_drop_vs_full": 0,
+      "ndcg10_drop_vs_full": 0,
+      "avg_pool_size": 173.157
+    },
+    "-retrieval": {
+      "pool_recall": 0.63,
+      "pool_recall_hits": 1260,
+      "ndcg10": 0.0886889589136962,
+      "recall_drop_vs_full": -0.09050000000000002,
+      "ndcg10_drop_vs_full": -0.006529115873334462,
+      "avg_pool_size": 106.9385
+    },
+    "-npmi": {
+      "pool_recall": 0.341,
+      "pool_recall_hits": 682,
+      "ndcg10": 0.025390214392149387,
+      "recall_drop_vs_full": -0.3795,
+      "ndcg10_drop_vs_full": -0.06982786039488127,
+      "avg_pool_size": 141.22
+    },
+    "-popular": {
+      "pool_recall": 0.701,
+      "pool_recall_hits": 1402,
+      "ndcg10": 0.09201068501705677,
+      "recall_drop_vs_full": -0.019500000000000073,
+      "ndcg10_drop_vs_full": -0.003207389769973895,
+      "avg_pool_size": 142.4975
+    },
+    "-exploration": {
+      "pool_recall": 0.7205,
+      "pool_recall_hits": 1441,
+      "ndcg10": 0.0991547613871578,
+      "recall_drop_vs_full": 0,
+      "ndcg10_drop_vs_full": 0.003936686600127137,
+      "avg_pool_size": 143.585
+    }
+  },
+  "source_only_recall": {
+    "retrieval": {
+      "recall": 0.291,
+      "hits": 582
+    },
+    "npmi": {
+      "recall": 0.582,
+      "hits": 1164
+    },
+    "popular": {
+      "recall": 0.1225,
+      "hits": 245
+    },
+    "exploration": {
+      "recall": 0.001,
+      "hits": 2
+    }
+  },
+  "npmi_orthogonality": {
+    "cases_with_last_viewed": 2000,
+    "test_in_npmi": 1164,
+    "test_in_retrieval": 582,
+    "test_in_npmi_not_retrieval": 820,
+    "npmi_recall_drop_vs_full": -0.3795,
+    "npmi_adds_recall": true,
+    "npmi_reaches_unique": true,
+    "npmi_orthogonal": true
+  },
+  "most_costly_source": "npmi"
+}

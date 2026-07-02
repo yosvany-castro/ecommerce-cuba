@@ -1,0 +1,101 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 3,
+    "metricsHash": "e4eab371dc21e80c9878872ff3338d10688ea6f148afdc7601a7157b980d4bf1"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "strategy": "popular_in_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart no tiene placements. Los 464 add_to_carts semanales del hero_grid (home slot 10, 7d metrics) representan usuarios con intención de compra que al llegar al carrito no ven ofertas complementarias. Cart_addons en slot 20 puede capturar ventas incrementales de categorías adyacentes (accesorios_tech: 3,684 seen, $447K revenue en 14d; juguetes: 3,735 seen). Hipótesis: >=200 seen/semana con revenue incremental positivo en since_change, aprovechando los 464 ATC como base de usuarios reachables."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "cross_sell",
+      "params": {
+        "strategy": "popular_in_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home solo tiene hero_grid (slot 10) como placement funcional. Los 3 placements popular (slots 20/40/60) tienen flag no_impression_logging desde hace 14d sin generar revenue. El store cayó 77% en seen (23,951->5,496) y 74% en revenue ($22.8M->$5.8M cents) en 14d. Cross_sell en slot 80 puede capturar tráfico que no interactúa con hero_grid, apalancando categorías fuertes: moda_mujer (14,395 seen, $18.4M revenue 14d) y tecnologia (2,651 seen, $8.9M). Hipótesis: >=500 seen/semana con revenue incremental positivo en since_change."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart no tiene placements. Los 464 add_to_carts semanales del hero_grid (home slot 10, 7d metrics) representan usuarios con intención de compra que al llegar al carrito no ven ofertas complementarias. Cart_addons en slot 20 puede capturar ventas incrementales de categorías adyacentes (accesorios_tech: 3,684 seen, $447K revenue 14d). Hipótesis: >=200 seen/semana con revenue incremental positivo en since_change."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home solo tiene hero_grid (slot 10) como placement funcional. Los 3 placements popular (slots 20/40/60) tienen flag no_impression_logging desde hace 14d sin generar revenue. El store cayó 77% en seen (23,951->5,496) y 74% en revenue ($22.8M->$5.8M cents) en 14d. Cross_sell en slot 80 puede capturar tráfico que no interactúa con hero_grid, apalancando moda_mujer (14,395 seen, $18.4M revenue 14d) y tecnologia (2,651 seen, $8.9M). Hipótesis: >=500 seen/semana con revenue incremental positivo en since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "reason": "invalid params for cart_addons: (root) Unrecognized key: \"strategy\""
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "reason": "invalid params for cross_sell: (root) Unrecognized key: \"strategy\""
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "a184bb50-9f0f-4422-bfcf-71ae57b9d079",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "a1d56409-de40-4fb7-bcfb-1f6045f93128",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas aceptadas con tier **low** y status **approved**. Aquí el resumen:\n\n---\n\n## Resumen final\n\n**Qué propuse:** 2 placements nuevos — `cart_addons` en cart slot 20 y `cross_sell` en home slot 80.\n\n**Con qué evidencia:** Cart slot 20 se justifica con los 464 ATC semanales del hero_grid (home slot 10, 7d) que llegan al carrito sin ofertas complementarias, y categorías fuertes como accesorios_tech ($447K/14d). Home slot 80 se justifica con la caída del 77% en seen del store (14d), los 3 placements `popular` rotos (no_impression_logging), y la dependencia total en hero_grid.\n\n**Qué espero ver en since_change:** Cart_addons ≥200 seen/semana con revenue incremental; cross_sell home ≥500 seen/semana con revenue incremental positivo, ambos capturando tráfico desatendido.\n\n**Qué descarté:** PDP cross_sell (datos no propios de la superficie, en low_sample); 3 popular slots (no_impression_logging → solo esperar).\n\n**Próximo ciclo:** Si los TTL expiran y funcionan, re-proponer con evidencia de since_change para escalar a tier superior o renovar.",
+  "truncated": false,
+  "runId": "sim-run-31337-e3",
+  "createdAt": "2026-06-11T10:04:43.929Z"
+}

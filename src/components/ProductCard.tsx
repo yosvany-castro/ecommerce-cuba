@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { track } from "@/lib/client/track";
+import { productImageUrl, isDataSaver } from "@/lib/image-url";
 
 export interface ProductCardData {
   id: string;
@@ -21,36 +23,43 @@ export function ProductCard({
 
   if (hidden) return null;
 
-  async function onDismiss(e: React.MouseEvent) {
+  function onDismiss(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    // Outbox semantics (C4/C5): el dismiss se oculta SIEMPRE y se encola con
+    // persistencia + client_event_id — jamás revert por fallo de red (el bug
+    // anterior: con la red caída la card "rebotaba" y el gesto se perdía).
     setHidden(true);
-    try {
-      await fetch("/api/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event_type: "dismiss",
-          occurred_at: new Date().toISOString(),
-          payload: { product_id: product.id, reason: "not_interested" },
-        }),
-      });
-    } catch {
-      setHidden(false);
-    }
+    track("dismiss", { product_id: product.id, reason: "not_interested" }, { urgent: true });
   }
 
   return (
     <div className="relative" data-testid="product-card">
       <Link
         href={`/products/${product.id}` as never}
+        // prefetch off: cada card prefetcheada era un request RSC (y antes de
+        // F2, una conexión pg) especulativo — el peor multiplicador de red del
+        // grid en datos medidos. La navegación real sigue siendo instantánea
+        // via bfcache/router cache al volver.
+        prefetch={false}
         className="block border rounded-lg p-4 hover:shadow"
       >
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={product.image_url}
+            src={
+              productImageUrl(product.image_url, "grid", {
+                saver: isDataSaver(
+                  typeof document !== "undefined"
+                    ? document.cookie.match(/(?:^|;\s*)data_saver=([^;]+)/)?.[1]
+                    : undefined,
+                  typeof navigator !== "undefined" &&
+                    Boolean((navigator as { connection?: { saveData?: boolean } }).connection?.saveData),
+                ),
+              }) ?? undefined
+            }
             alt={product.title}
+            loading="lazy"
             className="w-full h-40 object-cover mb-2 rounded"
           />
         ) : (

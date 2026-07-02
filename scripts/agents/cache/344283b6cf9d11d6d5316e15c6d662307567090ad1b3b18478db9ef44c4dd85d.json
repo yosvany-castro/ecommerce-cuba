@@ -1,0 +1,168 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v2",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 123,
+    "epoch": 4,
+    "metricsHash": "d885245a59ed4400a963d9aaceeb45bd87cf31ba264340b1511aabe73f1b557b"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "category": "tecnologia"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "tecnologia es la categoría #1 en revenue 7d (revenue_cents=392209, 9 purchases, 1119 seen en ventana 7d). El único placement activo es hero_grid (slot 10) con revenue_cents=170604. El revenue_ratio vs_holdout 14d es 0.91, indicando que el feed rinde 9% menos que el holdout. Crear un popular slot 20 para tecnologia puede capturar seen adicional. Hipótesis: aumentar seen de tecnologia ≥5% (de 1119 a ~1175) en los próximos 7d."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "field": "pdp_category",
+        "op": "eq",
+        "value": "tecnologia"
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "tecnologia tiene el mayor revenue por seen 7d ($3.50/seen aprox, revenue_cents=392209 / seen=1119). accesorios_tech tiene 8 purchases en 7d (47 en 14d), la mayor frecuencia de compra. Cross-sell de accesorios en PDP tecnologia puede incrementar unidades por sesión. Hipótesis: lograr ≥2 cross-sell purchases desde PDP tecnologia en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {
+        "category": "accesorios_tech"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart tiene 713 served, 521 seen, 16 add_to_carts, 2 purchases, revenue_cents=82892 en 7d. accesorios_tech tiene 8 purchases en 7d (revenue_cents=24723) con alta rotación (47 compras en 14d), ideal para addons de bajo ticket. Hipótesis: aumentar add_to_carts en cart de 16 a ≥20 en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "category": "moda_mujer"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "moda_mujer es #2 en revenue 7d (revenue_cents=59366, 3 purchases, 867 seen) y #2 en revenue 14d (revenue_cents=523196, 19 purchases, 4747 seen). Con 19 compras en 14d tiene conversión saludable. Los slots home 30 y 40 tienen flag no_impression_logging. Hipótesis: lograr ≥3 purchases de moda_mujer desde home en los próximos 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "tecnologia es la categoría #1 en revenue 7d (revenue_cents=392209, 9 purchases, 1119 seen en ventana 7d). El único placement activo es hero_grid (slot 10) con revenue_cents=170604. El revenue_ratio vs_holdout 14d es 0.91, indicando que el feed rinde 9% menos que el holdout. Crear popular en slot 20 (libre) expone productos populares, incluyendo tecnologia que domina en revenue. Hipótesis: aumentar seen total home en ≥3% en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart tiene 713 served, 521 seen, 16 add_to_carts, 2 purchases, revenue_cents=82892 en 7d. accesorios_tech tiene 8 purchases en 7d (revenue_cents=24723) con alta rotación (47 compras en 14d). Cart_addons en slot 30 (libre entre slots 20 y 40 que tienen no_impression_logging) puede capturar compras de impulso. Hipótesis: aumentar add_to_carts en cart de 16 a ≥20 en 7d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "moda_mujer es #2 en revenue 7d (revenue_cents=59366, 3 purchases, 867 seen) y #2 en revenue 14d (revenue_cents=523196, 19 purchases, 4747 seen). Con 19 compras en 14d tiene buena conversión. Los slots home 30 y 40 tienen flag no_impression_logging. Crear popular en slot 50 expone categorías fuertes sin slot. Hipótesis: lograr ≥3 purchases de moda_mujer en 7d."
+    }
+  ],
+  "results": [
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "63f2620b-78aa-4d41-981f-53e434040440",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "reason": "invalid params for cart_addons: (root) Unrecognized key: \"category\""
+    },
+    {
+      "accepted": false,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "reason": "invalid params for popular: (root) Unrecognized key: \"category\""
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "2ecb9b3b-abc5-4152-96ac-4982dc779439",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "placement_id": "912df4db-2952-4465-bee2-ee7fe4d3c5a7",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "d375fa0f-aac5-41f6-8959-eb7bda6619fa",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 correcciones fueron aceptadas ✅. **Las 4 propuestas sobrevivieron.** Resumen final:\n\n---\n\n## Resumen\n\n**Qué propuse (4 acciones, todas aprobadas tier low):**\n\n1. **Home slot 20 — popular** (id: `2ecb9b3b...`) — Slot libre arriba de la zona con `no_impression_logging`. Evidencia: tecnología lidera revenue 7d con $3,922 (revenue_cents=392209) y el revenue_ratio vs_holdout es 0.91. Espero ver ≥3% más seen en home en since_change.\n\n2. **PDP slot 20 — cross_sell con regla pdp_category=tecnologia** (id: `63f2620b...`) — Slot libre antes de los cross_sell con flag. Evidencia: tecnología tiene $3.50 revenue/seen, accesorios_tech 8 compras 7d. Espero ≥2 cross-sell purchases desde PDP tecnología.\n\n3. **Cart slot 30 — cart_addons** (id: `912df4db...`) — Slot libre entre addons flaggeados. Evidencia: cart tiene solo 16 add_to_carts/7d, accesorios_tech 47 compras/14d. Espero aumentar add_to_carts de 16 a ≥20.\n\n4. **Home slot 50 — popular** (id: `d375fa0f...`) — Slot libre en home. Evidencia: moda_mujer #2 en revenue 14d ($5,231, revenue_cents=523196) con 19 purchases. Espero ≥3 purchases de moda_mujer.\n\n**Próxima revisión:** Verificar en since_change si los placements generaron impresiones (evitando el flag `no_impression_logging`), y si las hipótesis de revenue y purchases se cumplieron para decidir si re-propongo con TTL extendido.",
+  "truncated": false,
+  "runId": "sim-run-123-e4",
+  "createdAt": "2026-06-18T11:18:13.156Z"
+}

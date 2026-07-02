@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 13,
+    "metricsHash": "6e60daead027b5c41477c0b1fb7a07f5cc7ac9bf236d56665c9367949417121f"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot80 popular nuevo. En 7d home tuvo 16,120 served vs hero_grid (slot10) 14,280 served. Diferencia = 1,840 served/semana (11.4%) que acceden a home pero no pasan por hero_grid. Slot80 popular puede capturarlos exponiendo categorías de alta rotación. Moda_mujer domina con 13,175 seen y $39,621.96 rev a 14d (read_metrics home 14d). Espero ≥50 seen/semana y ≥$200 rev/semana incrementales en since_change."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot90 cross_sell nuevo orientado a joyería. Según read_metrics home 14d, joyería tiene el revenue/seen más alto: $24,608.94 rev con solo 5,317 seen ($4.63/seen). Un cross_sell en slot90 expone estos productos de alto valor a tráfico que scrollea completo. Espero ≥$150 rev/semana incrementales y validar si el slot captura impresiones (vs no_impression_logging de otros cross_sell en home)."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot70 nuevo como popular (slot70 actualmente tiene placement popular de otra versión con no_impression_logging, este es nuevo). A 14d la tienda tuvo 28,603 seen con revenue_ratio 0.96 (default vs holdout). La categoría joyería tiene $24,608.94 rev/14d con solo 5,317 seen. Un popular fresco en slot70 puede reactivar exposición de categorías como joyería y tecnologia ($3,653.31 rev/14d, 866 seen). Espero ≥40 seen/semana."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "38c8e3a3-827e-476a-a457-c8870ad2cb7b",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "35122513-4b28-4f5c-b701-ece4ad2bce93",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "0329b11f-18d8-47c3-b78b-4e064c12b6da",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas (tier low, 72h TTL). Cierro con el resumen.\n\n---\n\n## Resumen de la ronda\n\n**Diagnóstico base** (read_metrics home 7d y 14d):\n\n1. **Caída severa**: seen cayó 78% (23,513 → 5,090) y revenue 81% ($62,438.98 → $11,752.93) entre previous_7d y current_7d. El revenue_ratio a 14d es 0.96 (default por debajo del holdout).\n2. **hero_grid** (slot 10) es el **único** placement con datos de impresión — intocable por regla.\n3. **Todos los demás placements** (popular slots 20-70, cross_sell en home + PDP, cart_addons) tienen flag `no_impression_logging` → solo cabe esperar.\n4. **Joyería** es la categoría estrella: $4.63/seen (5,317 seen, $24,608.94 rev a 14d).\n5. **Moda_mujer** es el volumen: 13,175 seen, $39,621.96 rev a 14d.\n\n**Qué propuse y con qué evidencia:**\n\n| # | Acción | Evidencia desde read_metrics |\n|---|--------|------------------------------|\n| 1 | **Home slot 80 popular** | Home 16,120 served/7d vs hero_grid 14,280 → 1,840 served (11.4%) sin cubrir. Moda_mujer: 13,175 seen, $39,621.96 rev (14d). |\n| 2 | **Home slot 90 cross_sell** | Joyería: 5,317 seen, $24,608.94 rev, $4.63/seen — el mejor ratio de toda la tienda (14d). |\n| 3 | **Home slot 70 popular** (nuevo) | Joyería ($24,608.94 rev/14d) y tecnología ($3,653.31 rev/14d, 866 seen) están subexpuestas. El slot 70 existente tiene flag; este es fresco. |\n\n**Qué espero ver en since_change la próxima vez:**\n- Slot 80 → ≥50 seen/semana, ≥$200 rev/semana de moda_mujer\n- Slot 90 → ≥$150 rev/semana de joyería, y confirmar si cross_sell nuevo logra logging (vs el flag de los actuales)\n- Slot 70 → ≥40 seen/semana de joyería/tecnología\n- Si funcionan, habrá que re-proponerlas antes del TTL (72h) con la evidencia de since_change para escalar a tier higher.",
+  "truncated": false,
+  "runId": "sim-run-7-e13",
+  "createdAt": "2026-06-17T15:21:09.413Z"
+}

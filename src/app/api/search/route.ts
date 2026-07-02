@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
+import { RequestTiming } from "@/lib/timing";
 import { hybridSearch } from "@/sectors/c-search/search";
 
 export async function GET(req: NextRequest) {
@@ -30,14 +31,20 @@ export async function GET(req: NextRequest) {
     user_id = await withPg(async (pg) => (await getOrCreateUserByAuth0Sub(pg, sub, email)).id);
   }
 
-  const result = await withPg((pg) => hybridSearch(q, { pg, anonymous_id, user_id }, { trace: debug }));
-  return NextResponse.json({
-    products: result.products,
-    count: result.products.length,
-    hit_cache: result.hitCache,
-    called_mock: result.calledMock,
-    method: result.method,
-    normalized: result.normalized,
-    ...(debug ? { trace: result.trace } : {}),
-  });
+  const timing = new RequestTiming();
+  const result = await timing.time("search", () =>
+    withPg((pg) => hybridSearch(q, { pg, anonymous_id, user_id }, { trace: debug })),
+  );
+  return NextResponse.json(
+    {
+      products: result.products,
+      count: result.products.length,
+      hit_cache: result.hitCache,
+      called_mock: result.calledMock,
+      method: result.method,
+      normalized: result.normalized,
+      ...(debug ? { trace: result.trace } : {}),
+    },
+    { headers: { "server-timing": timing.toServerTimingHeader() } },
+  );
 }

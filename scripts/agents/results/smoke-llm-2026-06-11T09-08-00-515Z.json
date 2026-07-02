@@ -1,0 +1,79 @@
+{
+  "mode": "smoke",
+  "aa": false,
+  "agent": "llm",
+  "gatedPolicy": {
+    "AGENT_MEDIUM_AUTOAPPLY": true
+  },
+  "spec": {
+    "universeSize": 1500,
+    "activeAtE0": 1200,
+    "users": 300,
+    "measuredEpochs": 1
+  },
+  "seeds": [
+    123
+  ],
+  "worldVersion": "sim-world-v1",
+  "ratios": [
+    0.7966495766360909
+  ],
+  "verdict": null,
+  "invalid": false,
+  "results": [
+    {
+      "seed": 123,
+      "ratio": 0.7966495766360909,
+      "agentMarginCents": 847227,
+      "frozenMarginCents": 1063488,
+      "agentGmvCents": 2463138,
+      "frozenGmvCents": 3190628,
+      "trajectories": {
+        "frozen": [
+          3602216.747107468,
+          1075615.7313451928,
+          1063487.7007689662
+        ],
+        "agent": [
+          3602216.747107468,
+          1075615.7313451928,
+          847227.0265752866
+        ]
+      },
+      "sanity": {
+        "giniSales": 0.7506967778906515,
+        "top20Share": 0.8097731239092496,
+        "frozenCollapse": false
+      },
+      "frontiers": [
+        {
+          "epoch": 2,
+          "proposals": [
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 30,
+              "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+              "effective_tier": "low",
+              "status": "approved"
+            },
+            {
+              "accepted": true,
+              "action": "create",
+              "surface": "home",
+              "slot": 50,
+              "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+              "effective_tier": "low",
+              "status": "approved"
+            }
+          ],
+          "cached": true,
+          "truncated": false,
+          "storeChanged": true
+        }
+      ]
+    }
+  ],
+  "wallSeconds": 4.601
+}

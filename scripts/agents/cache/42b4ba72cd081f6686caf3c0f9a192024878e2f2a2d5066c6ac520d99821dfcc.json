@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 7,
+    "epoch": 9,
+    "metricsHash": "8289b11743a8173fd7f08c79ce122796312baf3814e359a14a492f93a63c9d5e"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 50,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart_addons para moda_mujer. La categoría moda_mujer generó $49,280 en revenue (14d, home+orgánico), 199 purchases, dominando el 67% del feed revenue total. En cart, los usuarios tienen alta intención de compra. Productos estrella: 'Duradero Guess cartera' ($36, 39 purchases/7d) y 'Estiloso Zara vestido' ($155, 66 purchases/7d). Hipótesis medible: espero que since_change muestre revenue_cents >0 y atc_per_1k_seen >= 30 en los primeros 7 días, comparable al hero_grid que tiene 57.4 atc_per_1k_seen."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 80,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cross_sell de joyería en PDP. Joyería generó $16,327 revenue (14d) con solo 3,653 seen, representando un AOV estimado de ~$272 (vs $327 de media general). Productos fuertes: 'Swarovski collar' ($275, 26 purchases/7d) y 'Pandora collar' ($818, 17 purchases/7d). Colocar cross_sell en PDP expone estos productos de alto margen a usuarios navegando cualquier categoría. Hipótesis medible: espero en since_change revenue_cents >0 y al menos 5 purchases/7d desde este placement."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Popular section en home slot 90 para moda_mujer. La categoría generó $49,280 en 14d (199 purchases), pero los placements actuales de popular en home (slots 20-90) tienen flag no_impression_logging, indicando posible problema de configuración. Crear uno fresco en slot 90 podría resolverlo. Producto top: 'Estiloso Zara vestido' ($155, 66 purchases/7d). Hipótesis medible: espero que since_change muestre seen >0 y revenue_cents >0 en primeros 7 días, indicando que el logging funciona."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 50,
+      "placement_id": "8ef3909d-c48b-43e6-a599-f4d42f66884f",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 80,
+      "placement_id": "29b94b6f-e2fa-4c0f-a85f-62fe8ebe730a",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "d6b73d77-deb5-45d1-9095-be58659346ea",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron **aceptadas y aprobadas** en tier low. Aquí está el resumen final:\n\n---\n\n**Resumen de la ronda de placements:**\n\n1. **cart_addons → cart slot 50** ✅ Aprobado\n   - *Evidencia:* moda_mujer generó $49,280 en 14d (67% del revenue total), 199 purchases. Productos estrella con 39 y 66 purchases/semana.\n   - *Espero en since_change:* revenue_cents >0, atc_per_1k_seen ≥30.\n\n2. **cross_sell → pdp slot 80** ✅ Aprobado\n   - *Evidencia:* joyería generó $16,327 en 14d con solo 3,653 seen (AOV ~$272). Productos como collar Swarovski ($275, 26 compras).\n   - *Espero en since_change:* revenue_cents >0, ≥5 purchases en 7 días.\n\n3. **popular → home slot 90** ✅ Aprobado\n   - *Evidencia:* moda_mujer es la categoría #1 con $49,280 revenue. Todos los popular previos tenían `no_impression_logging`, este placement nuevo podría resolverlo.\n   - *Espero en since_change:* seen >0 y revenue_cents >0 (confirmar que el logging funcione).\n\n**Diagnóstico general:** La tienda depende casi exclusivamente del hero_grid (único placement con datos). Los demás placements tienen `no_impression_logging` — dejé todos intactos (regla: esperar). El revenue_ratio vs_holdout a 14d es 0.9, lo que sugiere que el holdout ganó la quincena pasada, aunque la última semana el default repuntó a 2.78. Si estos nuevos placements logran tracking, podremos evaluar su contribución real en la próxima revisión.",
+  "truncated": false,
+  "runId": "sim-run-7-e9",
+  "createdAt": "2026-06-17T15:04:17.024Z"
+}

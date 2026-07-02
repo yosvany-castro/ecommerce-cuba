@@ -1,0 +1,58 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home es aditivo puro y slots 20-50 tienen todos flag no_impression_logging (sin datos de funnel), dejando solo el hero_grid (slot 10) como único carrusel medible. El hero genera $1,451/7d con 5,172 seen (28¢/seen). Añadir popular global en slot 60 captura tráfico que hoy no tiene descubrimiento de producto más allá del hero. Joyeria aporta $6,990/7d y tecnologia $6,537/7d — estas categorías fuertes no tienen representación en carrusel propio. Con 45,440 served/7d en home, un carrusel a 28¢/seen conservador sumaría ~$1,200+ incremental si captura el 10% del tráfico del hero. Sin canibalización porque no hay carruseles funcionales debajo del hero."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo en home para segmentación. mode=cohort muestra productos populares dentro del segmento del usuario, incrementando relevancia vs global. Hipótesis medible: espero que cohort tenga ATC_per_1k_seen >= 35 (vs hero_grid que tiene 42.2) por estar más abajo pero con mejor personalización. Datos de catálogo muestran que productos con alta conversión (collar Pandora 77 purchases/7d, funda Spigen 79 purchases/7d) pertenecen a categorías (joyeria, accesorios_tech) que se benefician de exposición segmentada. Sin riesgo de canibalización con slot 60 porque mode=cohort es complementario a mode=global."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "c53f299a-b683-4819-8798-c7599bc10ed1",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "9796acc1-44ab-4312-a8a6-a7d799f25762",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron **aceptadas** (tier: low, status: approved). Aquí está el resumen:\n\n---\n\n## Resumen final\n\n**¿Qué propuse?**\n1. **Home slot 60 — popular global (limit=20)** → `c53f299a-...`\n2. **Home slot 70 — popular cohort (limit=20)** → `9796acc1-...`\n\n**¿Con qué evidencia?**\n- El hero_grid (único carrusel funcional del home) genera $1,451/7d con 28¢ revenue por seen.\n- Todos los slots 20-50 tienen `no_impression_logging` — son invisibles a métricas.\n- Joyeria ($6,990/7d) y tecnologia ($6,537/7d) son categorías fuertes sin slot dedicado.\n- Productos como Pandora collar (77 purchases/7d) y Spigen funda (79 purchases/7d) validan demanda.\n\n**¿Qué descarté y por qué?**\n- **PDP slot 30** y **Cart slot 30**: el critic objetó que se apoyaban en placements flaggeados y priorizaban superficies secundarias (PDP 46K served, Cart 3.2K) sobre home (45K served, aditivo puro).\n- **Home slot 80 pdp_category**: el critic señaló que mode=pdp_category no tiene contexto válido en home.\n- **3 carruseles consecutivos** (60-70-80): riesgo de canibalización y fatiga atencional.\n\n**¿Qué espero ver en `since_change` la próxima vez?**\n- Para slot 60 (global): al menos **$1,000+ revenue incremental/7d** y **ctr_seen ≥ 0.28** (benchmark del hero) con ATC_per_1k_seen ≥ 35.\n- Para slot 70 (cohort): **ATC_per_1k_seen ≥ 35** (personalización debe compensar la posición más baja) y revenue incremental.\n- Ambos son **low tier** → expiran en 72h. Si funcionan, habrá que re-proponerlos con la evidencia recogida.",
+  "truncated": false,
+  "runId": "sim-run-42-e10",
+  "createdAt": "2026-06-19T04:59:46.392Z"
+}

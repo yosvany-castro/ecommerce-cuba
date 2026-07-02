@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth0 } from "@/lib/auth";
+import { auth0, requireAdmin } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 import { getCoOccurrenceTopAdmin } from "@/sectors/d-personalization/admin/co-occurrence-top";
 
@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function CoOccurrenceTopPage() {
   const session = await auth0.getSession().catch(() => null);
   if (!session?.user?.sub) {
-    redirect("/auth/login?returnTo=/admin/co-occurrence/top");
+    redirect("/auth/login?returnTo=/admin/co-occurrence/top" as Parameters<typeof redirect>[0]);
   }
+  if (!(await requireAdmin())) redirect("/");
 
   const rows = await withPg((pg) => getCoOccurrenceTopAdmin({ limit: 50 }, pg));
 

@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 42,
+    "epoch": 8,
+    "metricsHash": "445340109f27fa9d2b867194df9ec851b10927468685ce07cb2e26f2b9b7cf23"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 30 actualmente solo tiene popular (cf1960a8). Cart_addons es un section_type no probado en home. hero_grid (slot 10) genera revenue_per_1k_seen=214,051 cents y ratio 1.69x vs holdout en 14d (home/14d/vs_holdout). accesorios_tech tiene 201 purchases/14d desde 7,182 seen (2.8% conv) con productos de alto margen (ej. syn-42-3000-36: $54.07, 151 purchases/7d, 46% margen), ideales para addons. Hipótesis medible: cart_addons en home generará al menos 5 purchases/72h con revenue incremental >0 en since_change vs baseline hero_grid. TTL 72h permite test rápido."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "b4dfaa13-7adf-4d5e-9ce7-b6cb3a6eba95",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Propuesta aceptada ✅ — placement `b4dfaa13` creado con tier low.\n\n---\n\n## Resumen\n\n1. **Propuse** crear `cart_addons` en **home slot 30** — un section_type nuevo en home, en un slot que solo tenía `popular` (cf1960a8), permitiendo coexistencia.\n\n2. **Evidencia**: hero_grid tiene revenue_per_1k_seen=214,051¢ y ratio 1.69x vs holdout (14d), demostrando que placements en home generan revenue incremental. accesorios_tech tiene 201 purchases/14d (2.8% conv) con productos como syn-42-3000-36 ($54.07, 46% margen) ideales para addons.\n\n3. **Lo que no hice**: descarté crear en PDP/Cart (ambos con `low_sample` sin baseline), descarté tocar placements con `no_impression_logging` (slots 20-90 existentes), y descarté las 3 propuestas originales por objeciones del critic.\n\n4. **Hipótesis**: espero que cart_addons en home genere ≥5 purchases en 72h con revenue incremental positivo en `since_change`, aprovechando la intención de compra que ya canaliza hero_grid (90 purchases/7d, $10,676 revenue).\n\n5. **Próxima revisión**: si el TTL expira y `since_change` muestra revenue >0, re-propongo con evidencia; si no hay movimiento o aparece flag, lo dejo expirar y busco otra vía.",
+  "truncated": false,
+  "runId": "sim-run-42-e8",
+  "createdAt": "2026-06-11T10:34:35.701Z"
+}

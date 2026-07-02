@@ -1,0 +1,49 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 2026,
+    "epoch": 3,
+    "metricsHash": "872ee32e17906ee8dfa5fad7feb4867b8ed18876a56c4e259c2fb9df5ace8819"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": {
+        "all": [
+          {
+            "field": "pdp_category",
+            "op": "in",
+            "value": [
+              "moda_mujer",
+              "belleza"
+            ]
+          }
+        ]
+      },
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP tiene 0 placements (read_metrics pdp 7d: placements vacío, store served=0). accesorios_tech tiene 15.1% de conversión en home (575 purchases/3.798 seen, read_metrics home 14d) y belleza 7.3% (208/2.844). Crear cross_sell en PDP slot 30 para mostrar accesorios_tech/belleza solo en PDPs de moda_mujer y belleza (rule pdp_category in [moda_mujer, belleza]), donde el potencial de cross-category es máximo. Hipótesis: ≥15 purchases/semana del cross_sell con revenue promedio ≥$15 en primeros 14d."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "126852ce-a28d-4ea9-9d01-e0f255f5ec16",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Propuesta aceptada en tier `low` con TTL de 72h. Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse:** 1 placement → cross_sell en **PDP slot 30**, segmentado con regla `pdp_category IN [moda_mujer, belleza]`, para mostrar productos de **accesorios_tech** y **belleza** como cross-sell.\n\n**Con qué evidencia:**\n- PDP tiene **0 placements** (read_metrics pdp 7d).\n- `accesorios_tech` convierte al **15.1%** en home (575 compras / 3,798 seen, 14d).\n- `belleza` convierte al **7.3%** (208 / 2,844, 14d).\n- 2 propuestas fueron **rechazadas por el critic**: cart_addons (riesgo de abandono de carrito) y popular en PDP (evidencia circular inválida).\n\n**Qué espero ver en `since_change` la próxima vez:**\n- Al menos **≥15 purchases/semana** atribuibles al placement cross_sell.\n- Revenue promedio **≥$15** por compra desde el cross_sell.\n- Que **no canibalice** las ventas orgánicas del producto principal en PDP (vs_holdout estable o mejorando).\n- Si funciona, re-proponer con datos de `since_change` para extender TTL o subir de tier.",
+  "truncated": false,
+  "runId": "sim-run-2026-e3",
+  "createdAt": "2026-06-11T10:02:45.613Z"
+}

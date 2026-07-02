@@ -13,13 +13,13 @@ describe("dismiss event schema", () => {
     const out = validatePayload("dismiss", {
       product_id: validId,
       reason: "not_interested",
-    });
+    }) as { product_id: string; reason?: string };
     expect(out.product_id).toBe(validId);
     expect(out.reason).toBe("not_interested");
   });
 
   test("valid payload without reason parses", () => {
-    const out = validatePayload("dismiss", { product_id: validId });
+    const out = validatePayload("dismiss", { product_id: validId }) as { product_id: string; reason?: string };
     expect(out.product_id).toBe(validId);
   });
 

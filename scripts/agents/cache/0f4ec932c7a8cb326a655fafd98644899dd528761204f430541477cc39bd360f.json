@@ -1,0 +1,80 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 4,
+    "metricsHash": "097fb83eadf845fb0e3a1ac8657733d101907f5a1870642324aa20a8e108af80"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo popular en HOME slot 30 (slot libre entre 20 y 90, múltiplo 10). Los slots 20, 40 y 60 existentes tienen no_impression_logging y debo esperar. Moda_mujer domina el feed: desde hero_grid (única fuente con datos) genera 2.816 seen, 62 purchases y $27.205 revenue en 7d (read_metrics home 7d). Eso representa el 53,4% de purchases del feed. Un popular en slot 30 puede capturar tráfico que hero_grid no cubre. Hipótesis medible para since_change (72h): espero >=8 purchases incrementales y >=$3.500 revenue, que equivale al ~13% del revenue semanal de moda_mujer."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo cart_addons en CART slot 30 (slot libre entre 20-90, múltiplo 10). El cart_addons existente en slot 20 tiene no_impression_logging (esperar). Accesorios_tech genera 18 purchases y $666 revenue en 7d desde hero_grid (read_metrics cart 7d). Productos como Anker powerbank ($38,77, 69 purchases/7d en el sitio) y Anker funda ($12,48) son económicos con alta frecuencia de compra → ideales para add-to-cart. Hipótesis medible para since_change (72h): espero >=3 purchases incrementales de accesorios_tech y >=$120 revenue."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Creo popular en HOME slot 90 (slot válido: 20-90, múltiplo 10). Captura usuarios con alta intención de compra que scrollean hasta el final de la página. Hero_grid genera 116 purchases y $40.903 revenue en 7d (read_metrics home 7d). El holdout (sin placements) produce $10.470 revenue/1k seen vs $7.980 del default (ratio 0,76), lo que sugiere que hay espacio para mejor colocación. Slot 90 no compite con ningún otro placement. Hipótesis medible para since_change (72h): espero >=3 purchases incrementales y >=$500 revenue."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "0b9e3213-649d-455a-9ca8-bcea5ae9fd3c",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "placement_id": "74850f36-2b3e-474b-b1e7-5786b96c0432",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "7564f67a-7cf9-4774-9771-5d0a73f3fde7",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas en tier **low**. Cierro con el resumen.\n\n---\n\n## Resumen\n\n| # | Acción | Placement | ID | Status |\n|---|---|---|---|---|\n| 1 | `create` popular | HOME slot 30 | `0b9e3213-...` | ✅ approved (low) |\n| 2 | `create` cart_addons | CART slot 30 | `74850f36-...` | ✅ approved (low) |\n| 3 | `create` popular | HOME slot 90 | `7564f67a-...` | ✅ approved (low) |\n\n**Evidencia que usé:**\n- **Propuesta 1** (HOME slot 30): Moda_mujer genera 2.816 seen, 62 purchases y **$27.205 revenue** en 7d (66% del revenue total del feed). Los slots popular 20/40/60 tienen `no_impression_logging` — no puedo tocarlos. Un hueco libre en slot 30 captura tráfico de la categoría estrella.\n- **Propuesta 2** (CART slot 30): El `cart_addons` existente en slot 20 tiene `no_impression_logging`. Accesorios_tech muestra 18 purchases/7d con productos económicos (Anker powerbank $38,77 con 69 compras/semana) ideales para add-to-cart.\n- **Propuesta 3** (HOME slot 90): El holdout supera al default en revenue/1k seen ($10.470 vs $7.980, ratio 0,76), lo que indica que los placements actuales no están optimizados. Slot 90 captura usuarios de alta intención al final de la página.\n\n**Lo que espero ver en `since_change` (72h):**\n1. HOME slot 30 → ≥8 purchases y ≥$3.500 revenue incrementales de moda_mujer\n2. CART slot 30 → ≥3 purchases y ≥$120 revenue de accesorios_tech\n3. HOME slot 90 → ≥3 purchases y ≥$500 revenue incremental\n\nSi funcionan, habrá que re-proponerlas con la evidencia de `since_change` antes de que expiren por TTL.",
+  "truncated": false,
+  "runId": "sim-run-31337-e4",
+  "createdAt": "2026-06-11T10:15:19.310Z"
+}

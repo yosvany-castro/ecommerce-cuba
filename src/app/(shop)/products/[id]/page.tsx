@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
+import { cookies, headers } from "next/headers";
+import { productImageUrl, isDataSaver } from "@/lib/image-url";
 import { getById } from "@/sectors/b-catalog/repository/products";
 import { ProductTracker } from "@/components/ProductTracker";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { SurfaceSections } from "@/components/slate/SurfaceSections";
+import { AfterAddSuggestions } from "@/components/slate/AfterAddSuggestions";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +16,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   if (!UUID_RE.test(id)) return notFound();
   const product = await getById(id);
   if (!product) return notFound();
+  const ck = await cookies();
+  const hd = await headers();
+  const saver = isDataSaver(ck.get("data_saver")?.value, hd.get("save-data") === "on");
+  const heroSrc = productImageUrl(product.image_url, "pdp", { saver });
 
   return (
     <main className="p-8 max-w-3xl mx-auto">
       <ProductTracker productId={product.id} />
       <div className="grid md:grid-cols-2 gap-6">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.title} className="w-full rounded" />
+        {heroSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={heroSrc} alt={product.title} className="w-full rounded" />
         ) : (
           <div className="w-full h-80 bg-gray-100 rounded" />
         )}
@@ -29,6 +38,21 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <AddToCartButton productId={product.id} />
         </div>
       </div>
+      {/* D5: cross-sell por co-ocurrencia, lazy bajo el fold — no toca el
+          <100ms del HTML del producto; si falla, no se pinta nada. */}
+      {/* E4: al AGREGAR AL CARRO, las sugerencias del carrito aparecen aquí
+          mismo (el segundo de máxima intención), resueltas por el motor. */}
+      <AfterAddSuggestions />
+      <SurfaceSections
+        surface="pdp"
+        surfaceArgs={{
+          pdp_product_id: product.id,
+          pdp_category:
+            ((product.metadata as Record<string, unknown> | null)?.category as
+              | string
+              | undefined) ?? null,
+        }}
+      />
     </main>
   );
 }

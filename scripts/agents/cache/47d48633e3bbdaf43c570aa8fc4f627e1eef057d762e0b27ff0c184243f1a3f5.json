@@ -1,0 +1,59 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 123,
+    "epoch": 2,
+    "metricsHash": "919ba75bdef6ba3d4b266ef62c4354b908ce3bbc32409adc57299b8065afc7dd"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home tiene solo hero_grid (slot 10) flaggeado con no_impression_logging. En 14d la tendencia es crítica: seen cayó de 7,416 a 1,685 (-77%), purchases de 393 a 95 (-76%), revenue de $19,400 a $3,641 (-81%). El revenue_ratio vs holdout en 7d es 0.44 (previo 7d era ~0.97). Las categorías con mejor tracción orgánica son moda_mujer (402 seen, 31 purchases, $759), tecnologia (367 seen, 15 purchases, $1,578), juguetes (221 seen, 22 purchases, $320) y deporte (231 seen, 17 purchases, $593). Una sección popular en slot 30 expondría productos trending de estas categorías a usuarios que no convierten con hero_grid, diversificando las oportunidades de clic y compra."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Como complemento al slot 30 popular, un segundo bloque popular en slot 50 permite capturar categorías secundarias con buen rendimiento: juguetes ($320, 22 purchases en 7d) y accesorios_tech (269 seen, aunque revenue bajo $111). Catalog data muestra juguetes con 1,442 eventos y 80 purchases en 7d, y accesorios_tech con 1,971 eventos y 63 purchases. Este segundo slot asegura que productos de media-low popularidad tengan visibilidad sin saturar la sección principal. Dado que seen cayó de 7,416 a 1,685, maximizar puntos de exposición es prioritario."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "e361394f-79fd-4b62-9933-82bb814aecce",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "2187dbc1-e5ab-4de2-9df0-15e896f9ae4d",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Aceptadas ambas. Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **Popular en home slot 30** ✅ aprobado (tier low, TTL 72h)\n2. **Popular en home slot 50** ✅ aprobado (tier low, TTL 72h)\n3. ~~Cross_sell en PDP slot 20~~ ❌ descartado (critic: se apoyaba en flag `low_sample`)\n4. ~~Cart_addons en cart slot 20~~ ❌ descartado (critic: misma infracción)\n\n**Con qué evidencia:**\n- Home 14d: seen cayó de **7,416 → 1,685** (-77%), revenue de **$19,400 → $3,641** (-81%)\n- vs_holdout ratio en 7d: **0.44** (la semana previa era ~0.97)\n- Categorías con mejor tracción: moda_mujer ($759, 31 compras), tecnologia ($1,578, 15 compras), juguetes ($320, 22 compras), deporte ($593, 17 compras)\n- Hero_grid (único placement) tiene flag `no_impression_logging` — no podemos tocarlo\n\n**Qué espero ver en `since_change` la próxima vez:**\n- Aumento en **seen** de home al tener 2 puntos de exposición adicionales\n- Que el revenue_ratio vs holdout mejore de 0.44 hacia 1.0+, al capturar usuarios que hoy ignoran el hero_grid\n- Las categorías moda_mujer y tecnologia deberían incrementar su contribución a revenue vía feed\n- Si funcionan, habrá que re-proponerlas antes de que expiren (TTL 72h) con los since_change como evidencia",
+  "truncated": false,
+  "runId": "sim-run-123-e2",
+  "createdAt": "2026-06-11T09:07:18.321Z"
+}

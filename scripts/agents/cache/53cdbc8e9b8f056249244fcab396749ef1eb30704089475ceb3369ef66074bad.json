@@ -1,0 +1,59 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 42,
+    "epoch": 13,
+    "metricsHash": "ed84275a35789c253629ede9cd8552639f4e6795ac6434c8892df9cc2a263776"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "En ventana 14d, moda_mujer domina con 11.378 seen, 148 purchases y 3.943.951 cents revenue (38% seen, 47% compras, 56% revenue total). Hero_grid slot 10 es el único placement con datos (282 purchases, $44.894 revenue, ctr_seen=1,0). Un popular section en slot 80 capturaría tráfico de scroll profundo con los productos más vendidos de la categoría líder. Hipótesis: ≥5 purchases/semana."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Tecnologia genera 382.000 cents revenue/1K seen (el más alto de todas las categorías) con solo 906 seen y 346.089 cents revenue en 14d. accesorios_tech suma 3.038 seen con 35 purchases. Un cross_sell en slot 90 mostraría productos tech de alto AOV a usuarios que scrollan hasta el final. Hipótesis: ≥2 purchases/semana."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "379f93ee-dea9-42a9-9cf4-df5e1134dfbe",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "8732ce0c-7d52-4b44-b23a-b1b746acf9f4",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron **aceptadas** (tier low, status approved). Cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **Popular en home slot 80** (id: `379f93ee-...`) — Sección de productos populares al final de la página para capturar tráfico de scroll profundo, basado en que **moda_mujer** genera 11.378 seen, 148 purchases y 3.943.951¢ revenue en 14d (categoría dominante con 56% del revenue total).\n2. **Cross_sell en home slot 90** (id: `8732ce0c-...`) — Sección de venta cruzada al final de página con productos de alto AOV, basado en que **tecnologia** tiene 382.000¢ revenue/1K seen (el más alto de todas las categorías) con solo 906 seen y 346.089¢ revenue en 14d.\n\n**Evidencia clave:** revenue_ratio vs holdout de 1,19 en 7d (hero_grid funciona), pero tendencia negativa (-77% seen WoW). Todos los placements en slots 20-70 sufrían `no_impression_logging`, por lo que no podía actuar sobre ellos. Slots 80 y 90 estaban libres.\n\n**Qué espero ver en since_change la próxima vez:**\n- Slot 80: ≥5 purchases/semana, ctr_seen ≥ 0,8 si el tracking lo permite.\n- Slot 90: ≥2 purchases/semana para validar que el cross-sell tech captura conversion residual.\n- Si el sistema no registra impresiones (hereda `no_impression_logging`), since_change será null y deberé reconsiderar si hay un problema de tracking estructural.",
+  "truncated": false,
+  "runId": "sim-run-42-e13",
+  "createdAt": "2026-06-11T10:55:48.722Z"
+}

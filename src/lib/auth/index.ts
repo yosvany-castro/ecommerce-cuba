@@ -28,3 +28,36 @@ export async function getOrCreateUserByAuth0Sub(
   );
   return { id: r.rows[0].id };
 }
+
+/**
+ * Admin gate (PageSlate foundation F3). Until now every /admin page and
+ * /api/admin route only checked that an Auth0 session EXISTED — any logged-in
+ * user could read admin surfaces, and any future placement write-path would
+ * have been stored-UI injection for all users.
+ *
+ * Allowlist via ADMIN_EMAILS (comma-separated, case-insensitive). Empty or
+ * unset ⇒ NOBODY is admin (fail-closed).
+ *
+ * Returns the admin's email, or null when the caller is not an admin
+ * (callers decide redirect vs 401/403 per surface).
+ */
+export function isAdminEmail(
+  email: string | null | undefined,
+  rawAllowlist: string | undefined,
+): boolean {
+  const allowlist = (rawAllowlist ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowlist.length === 0) return false; // fail-closed: sin lista no hay admins
+  if (!email) return false;
+  return allowlist.includes(email.trim().toLowerCase());
+}
+
+export async function requireAdmin(req?: Request): Promise<string | null> {
+  const session = req
+    ? await auth0.getSession(req as never).catch(() => null)
+    : await auth0.getSession().catch(() => null);
+  const email = (session?.user?.email as string | undefined) ?? null;
+  return isAdminEmail(email, process.env.ADMIN_EMAILS) ? email!.trim().toLowerCase() : null;
+}

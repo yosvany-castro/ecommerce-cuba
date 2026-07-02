@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 777,
+    "epoch": 6,
+    "metricsHash": "b2ffba9b46e42e86332e8f320030c130277d2c04b587f46f3361c0a3b30ab79f"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home surface tiene 16,920 served y 5,585 seen en 7d (read_metrics window_days=7). Tecnología es la categoría con mayor conversión: 45 purchases y $3,329 revenue en 7d, tasa de conversión 5.5% (45/820 seen). En 14d: 310 purchases y $23,085 revenue (read_metrics window_days=14). Los placements cross_sell existentes (slot 50 id=86a21263, slot 70 id=be365e9d) tienen flag no_impression_logging y funnel null, por lo que no están generando revenue. Crear cross_sell en home slot 90 permite recomendar productos de tecnología al tráfico existente de home sin conflicto con placements existentes. Espero ver al menos 3 purchases atribuidas y revenue positivo en since_change."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "c631122e-73fd-4a5e-b99a-581a3e2ed4a5",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "✅ **Propuesta aceptada** — tier `low`, status `approved`, placement creado.\n\n---\n\n## Resumen\n\n**Qué propuse:** Crear un `cross_sell` en **home slot 90** (placement `c631122e-73fd-4a5e-b99a-581a3e2ed4a5`) con TTL 72h.\n\n**Con qué evidencia:** \n- Home surface tiene tráfico real: 16,920 served / 5,585 seen en 7d.  \n- Tecnología es la categoría más conversora del store: **310 purchases / $23,085 revenue en 14d** (tasa conv. 6.9%).  \n- Los cross_sell existentes (slots 50 y 70) están inertes por flag `no_impression_logging`.  \n\n**Qué espero en el próximo since_change:** Al menos **3 purchases atribuidas** y **revenue positivo** desde el nuevo cross_sell, aprovechando el tráfico de home para surfear la demanda de tecnología.\n\n**Restricciones respetadas:** No toqué hero_grid, no toqué placements con flags (solo esperé), cité números exactos de `read_metrics`, slot dentro de 20-90.\n\n**Próximo paso:** Si funciona en 72h, re-proponer con la evidencia de `since_change` para renovar TTL o escalar a mayor slot.",
+  "truncated": false,
+  "runId": "sim-run-777-e6",
+  "createdAt": "2026-06-17T16:25:09.324Z"
+}

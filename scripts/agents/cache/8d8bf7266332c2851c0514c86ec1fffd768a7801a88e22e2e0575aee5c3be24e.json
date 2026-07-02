@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 31337,
+    "epoch": 12,
+    "metricsHash": "e81fa6db285150bd34b2b1a9453bcd3343a03e5db58adc7ebf6ab28566c8bddf"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "cross_sell",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home 14d (read_metrics): joyeria tiene seen=2882, purchases=68, revenue_cents=710129, ctr_seen=1. Solo 2882 seen vs 17297 de moda_mujer — joyeria esta infraexpuesta a pesar de generar 710129 USD. Slot 90 tiene 2 placements popular (ids d1a6c5b7, 7564f67a) pero ningun cross_sell. Probar cross_sell en slot 90 como nuevo section_type no presente ahi, para testear si el flag no_impression_logging es por placement individual o por seccion. Hipotesis: si logging funciona, espero >=200 seen en 7d. Si no, es problema sistemico de plataforma."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "1ad78b00-0d5e-4641-8962-dde3d2b2979f",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "✅ La propuesta fue **aceptada** — tier `low`, status `approved`, placement id `1ad78b00-0d5e-4641-8962-dde3d2b2979f`.\n\n---\n\n**Resumen final (5 líneas):**\n\n1. **Propuse** crear un placement `cross_sell` en **home slot 90** — el único slot de home sin esa sección — para testear si sortea el `no_impression_logging` que afecta a las otras 14 placements.\n\n2. **Evidencia**: joyería en home 14d genera **$710,129 revenue con solo 2,882 seen** ($246/seen, ctr_seen=1), frente a moda_mujer que con 17,297 seen genera $16,628,411 — joyería está claramente infraexpuesta.\n\n3. **La propuesta fue aprobada** (tier `low`, TTL 72h). En la próxima revisión using `since_change` debo verificar si el placement logra impresiones (>0 seen) o si confirma el problema sistémico.\n\n4. **Lo que descarté**: crear en PDP/cart (rechazado por `low_sample` + `no_impression_logging`); crear otro `popular` en home carecía de valor diferencial; pausar placements flaggeados viola el protocolo.\n\n5. **Próximo paso**: en 72h (TTL) leeré `read_metrics` y evaluaré `since_change` del nuevo placement — si logra impresiones, joyería tendrá su primer canal de exposición fuera de hero_grid y podré escalar la estrategia.",
+  "truncated": false,
+  "runId": "sim-run-31337-e12",
+  "createdAt": "2026-06-17T16:19:15.236Z"
+}

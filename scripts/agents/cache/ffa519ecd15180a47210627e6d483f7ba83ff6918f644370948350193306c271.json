@@ -1,0 +1,38 @@
+{
+  "key": {
+    "worldVersion": "sim-world-v1",
+    "promptVersion": "a58c31b9ec9225f1",
+    "seed": 42,
+    "epoch": 5,
+    "metricsHash": "474e2b69e4872a8a1f7710eeba03b5c6afa0fa5f5978dc5d43dce1eebfbbae27"
+  },
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {},
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 70 está vacante (no hay placement asignado). El único placement con datos es hero_grid slot 10: CTR_seen=1, 100 purchases, $8,338 revenue en 7d. El feed vs_holdout tiene revenue_ratio=0.37 en 7d, indicando infra-rendimiento. Categorías con demanda comprobada (14d): moda_mujer $31,980 rev + 170 purchases, accesorios_tech 351 purchases. Un popular section en slot 70 (posición media entre 60-80) capturará productos top actualmente no servidos en esa zona. Hipótesis medible: espero >=50 seen/semana desde este placement con CTR_seen >=0.8 en since_change para justificar continuidad."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "fbee9a95-b450-4fb2-9e7e-e5862a049292",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Propuesta aceptada ✅ y aplicada en **tier low** (se aplica automáticamente con TTL 72h).\n\n---\n\n## Resumen\n\n1. **Qué propuse:** Crear un placement `popular` en **home / slot 70** (vacante), alcance global, TTL 72h.\n\n2. **Con qué evidencia:**\n   - Slot 70 era el único vacío (slots 10-90): hero_grid (slot 10) es el único con datos — CTR_seen=1, 100 purchases, $8,338 revenue en 7d.\n   - Feed vs holdout con revenue_ratio=0.37 en 7d → el feed rinde un 63% menos que el holdout.\n   - Categorías fuertes en 14d: moda_mujer ($31,980 rev, 170 compras) y accesorios_tech (351 compras) — el `popular` surfeará productos top de estas categorías sin estar servidos actualmente en zona media-baja del home.\n   - No había placements propios previos (`agent:*`) que evaluar.\n\n3. **Qué espero ver en since_change:** ≥50 seen/semana con CTR_seen ≥0.8 para validar que el placement capta atención y justifica su permanencia. Si funciona, habrá que re-proponerlo al expirar el TTL.\n\n4. **Acciones no tomadas (por protocolo):**\n   - Slots 20-90 con `no_impression_logging` → solo esperar.\n   - PDP y Cart con `low_sample` → solo esperar.\n   - hero_grid → prohibido tocar.\n\n5. **Resultado:** Placement `fbee9a95-b450-4fb2-9e7e-e5862a049292` creado y activo en tier low.",
+  "truncated": false,
+  "runId": "sim-run-42-e5",
+  "createdAt": "2026-06-11T10:22:11.034Z"
+}

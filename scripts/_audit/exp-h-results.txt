@@ -1,0 +1,42 @@
+
+━━━ v2 n=2000 users=800 seed=42 ━━━ t=0s
+  generado: events=34665 t=2s
+  artefactos limpios: npmi=1968 e1=1982 t=10s
+  casos=885 (de 888 test rows) t=10s
+  RANKER          ndcg@10  hit@10  realizedRev@10(¢)
+  pc-oracle      0.337    0.541   1590
+  pc-real        0.024    0.042   89
+  e1-modes       0.000    0.000   0
+  knn-clean      0.004    0.011   16
+  fusion-v2      0.008    0.014   16
+  Δndcg10 fusion-v2 vs pc-real: rel=-66.5% CI95=[-85.0%, -40.8%]
+  Δndcg10 fusion-v2 vs pc-oracle: rel=-97.6% CI95=[-98.9%, -96.0%]
+  Δndcg10 e1-modes vs pc-real: rel=-100.0% CI95=[-100.0%, -100.0%]
+
+━━━ v2 n=5000 users=2000 seed=42 ━━━ t=17s
+  generado: events=84395 t=30s
+  artefactos limpios: npmi=4859 e1=4913 t=52s
+  casos=1500 (de 2207 test rows) t=55s
+  RANKER          ndcg@10  hit@10  realizedRev@10(¢)
+  pc-oracle      0.274    0.435   1406
+  pc-real        0.012    0.021   70
+  e1-modes       0.000    0.000   0
+  knn-clean      0.000    0.001   3
+  fusion-v2      0.004    0.007   26
+  Δndcg10 fusion-v2 vs pc-real: rel=-69.8% CI95=[-87.0%, -45.0%]
+  Δndcg10 fusion-v2 vs pc-oracle: rel=-98.7% CI95=[-99.5%, -97.8%]
+  Δndcg10 e1-modes vs pc-real: rel=-100.0% CI95=[-100.0%, -100.0%]
+
+━━━ v2 n=10000 users=4000 seed=42 ━━━ t=88s
+  generado: events=174165 t=149s
+  artefactos limpios: npmi=9760 e1=9833 t=198s
+  casos=1500 (de 4522 test rows) t=202s
+  RANKER          ndcg@10  hit@10  realizedRev@10(¢)
+  pc-oracle      0.237    0.373   1021
+  pc-real        0.017    0.025   67
+  e1-modes       0.000    0.001   1
+  knn-clean      0.001    0.003   3
+  fusion-v2      0.004    0.009   16
+  Δndcg10 fusion-v2 vs pc-real: rel=-76.4% CI95=[-87.5%, -62.5%]
+  Δndcg10 fusion-v2 vs pc-oracle: rel=-98.3% CI95=[-99.2%, -97.2%]
+  Δndcg10 e1-modes vs pc-real: rel=-98.3% CI95=[-100.0%, -94.3%]
