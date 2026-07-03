@@ -1,0 +1,80 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 24,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home tiene carruseles activos solo en slots 10/20/30. Slot 70 no aparece ocupado en read_metrics (placements listados hasta slot 60). Es aditivo puro: cada carrusel nuevo es margen incremental. El slot 30 (popular global) genera $44,421/14d con 348 purchases y seen_rate 27.9% (read_metrics 14d). Un carrusel popular adicional en slot 70 puede capturar tráfico no expuesto a los slots superiores."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "No existe ningún placement cross_sell en PDP según read_metrics (sin placements listados en superficie pdp). Es superficie completamente inexplorada. read_metrics 14d: 409,790 seen sessions, 42,323 ATCs en tienda. Las categorías con mayor revenue/seen (tecnologia $199/seen, joyeria $138/seen, moda_mujer $57/seen) son ideales para cross-sell contextual en PDP."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart tiene slots 20 y 30 con no_impression_logging desde hace ~90 días. Slot 40 no aparece listado. read_metrics 7d: 7,924 ATCs totales en tienda y 353 purchases. El revenue_ratio vs_holdout es 4.69x (7d) y 1.43x (14d). Los cart_addons pueden capturar upselling en el momento de mayor intención de compra. limit=10 conservador para arrancar sin saturar."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "7c4a4977-f885-471d-9a37-bdaa1689de9e",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "ebe4bf6c-9491-4bff-9121-1145c6df9cf3",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "placement_id": "8ef3909d-c48b-43e6-a599-f4d42f66884f",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas y aprobadas en tier low. Cierro con el resumen.\n\n---\n\n## Resumen\n\n**3 propuestas ejecutadas, todas aceptadas (low-tier, approved):**\n\n| # | Acción | Superficie | Slot | Sección | Placement ID |\n|---|--------|-----------|------|---------|-------------|\n| 1 | **create** | home | 70 | popular (global, limit=24) | `7c4a4977-...` |\n| 2 | **create** | pdp | 20 | cross_sell (limit=12) | `ebe4bf6c-...` |\n| 3 | **create** | cart | 40 | cart_addons (limit=10) | `8ef3909d-...` |\n\n**Evidencia que las justifica:**\n- **Home slot 70**: Los slots activos del home (10/20/30) generan $67,179 rev/14d. Slot 70 es aditivo puro — sin él, ese espacio no existe. Me baso en el slot 30 que genera $44,421/14d con popular global como benchmark de lo que puede aportar un carrusel popular adicional.\n- **PDP cross_sell**: Cero placements existentes en PDP. La tienda tiene 409,790 seen sessions/14d y categorías con revenue/seen altísimo (tecnología $199, joyería $138) ideales para cross-sell contextual.\n- **Cart cart_addons**: Los slots 20/30 llevan ~90 días con no_impression_logging. Slot 40 es nuevo. Con 7,924 ATCs/semana y revenue_ratio 4.69x vs holdout, hay oportunidad de upselling en el momento de máxima intención.\n\n**Lo que espero ver en since_change:**\n- Home/slot 70: seen_rate >15% y revenue incremental positivo (comparado vs línea base sin el carrusel)\n- PDP/slot 20: al menos 5-10 purchases/semana atribuibles, con ATC rate >2%\n- Cart/slot 40: al menos 1-2 add-to-carts por cada 100 seen sessions en cart",
+  "truncated": false,
+  "runId": "sim-run-7-e11",
+  "createdAt": "2026-07-02T09:57:12.674Z"
+}

@@ -116,12 +116,12 @@ function FiltersSection({ trace }: { trace: SearchTrace }) {
 function FreshnessSection({ trace }: { trace: SearchTrace }) {
   const f = trace.freshness;
   return (
-    <Card title="Freshness check">
+    <Card title="Freshness check (por query)">
       <ul className="text-sm">
         <li>
-          Categoría: <strong>{f.category_checked ?? "(none)"}</strong>
+          Query hash: <strong>{f.query_hash ? f.query_hash.slice(0, 12) : "(none)"}</strong>
         </li>
-        <li>Last refresh: {f.last_refreshed_at ?? "—"}</li>
+        <li>Última llamada al agregador: {f.last_called_at ?? "—"}</li>
         <li>Hours old: {f.hours_old !== null ? f.hours_old.toFixed(1) : "—"}</li>
       </ul>
     </Card>

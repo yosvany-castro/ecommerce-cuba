@@ -35,7 +35,7 @@ describe("Tracer", () => {
     expect(trace.cache.exact_hit).toBe(false);
     expect(trace.cache.semantic_hit).toBe(false);
     expect(trace.mock_fallback.invoked).toBe(false);
-    expect(trace.freshness.category_checked).toBeNull();
+    expect(trace.freshness.last_called_at).toBeNull();
   });
 });
 

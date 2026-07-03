@@ -20,7 +20,7 @@ export class Tracer implements ITracer {
       retrieval: { bm25: [], cosine: [], fused: [] },
       cache: { exact_hit: false, semantic_hit: false },
       filters_applied: {},
-      freshness: { category_checked: null, last_refreshed_at: null, hours_old: null },
+      freshness: { query_hash: "", last_called_at: null, hours_old: null },
       decision: { should_call_mock: false, reason: "not evaluated" },
       mock_fallback: { invoked: false },
       embedding: null,

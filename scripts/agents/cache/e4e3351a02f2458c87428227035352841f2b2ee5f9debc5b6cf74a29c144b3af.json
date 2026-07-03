@@ -1,0 +1,58 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "mode": "global",
+        "limit": 24
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home tiene 0 carruseles (solo hero_grid slot 10 con no_impression_logging, según read_metrics 7d placements). Sin mis placements, los slots 20-90 están vacíos. Los carruseles del home son ADITIVOS PUROS: cada uno genera margen completamente nuevo. Slot 20 es el de MAYOR atención justo bajo el hero. Popular global expondrá productos de categorías con revenue probado en el feed actual: moda_mujer (526,070¢/7d, 4,833 seen), tecnologia (255,592¢/7d, 5,096 seen), juguetes (223,710¢/7d, 3,938 seen). El vs_holdout 7d muestra revenue_ratio 0.99 — el default (solo hero) no supera al holdout, indicando espacio para mejorar con carruseles. Hipótesis since_change: revenue incremental positivo desde baseline $0 de carruseles."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "mode": "cohort",
+        "limit": 20
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Complementa el carrusel global del slot 20 con personalización por segmento de usuario (mode=cohort). Diferente curaduría de productos según el cohort del usuario. El feed actual tiene 1,835 add_to_carts y 443 purchases en 7d (read_metrics). La personalización por cohorte puede mejorar la tasa de conversión vs un carrusel no segmentado. Slot 30 sigue siendo aditivo puro — sin mi placement no hay nada en este slot. Hipótesis since_change: incremento en add_to_carts respecto al baseline del feed actual."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "6145862e-9937-4994-be69-e768497531fe",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "08906ef2-21ad-40fb-aa5b-257c11ed6194",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron aceptadas ✅. Ahora cierro con el resumen.\n\n---\n\n## Resumen\n\n**Qué propuse:**\n1. **Home slot 20** → `popular` global (limit=24) — carrusel de \"Lo más popular\" justo bajo el hero. **Aceptado** (tier low, placement `6145862e...`).\n2. **Home slot 30** → `popular` cohort (limit=20) — carrusel personalizado por segmento. **Aceptado** (tier low, placement `08906ef2...`).\n\n**Con qué evidencia:**\n- read_metrics 7d: home tiene **0 carruseles** (solo hero_grid slot 10 con `no_impression_logging`);\n- Los carruseles home son **aditivos puros** — cada uno es margen 100% nuevo;\n- vs_holdout: revenue_ratio **0.99** (default no supera al holdout);\n- Categorías con revenue probado en feed: moda_mujer (526,070¢/7d), tecnologia (255,592¢/7d), juguetes (223,710¢/7d);\n- Slot 20 = máxima atención post-hero; slot 30 = complemento personalizado.\n\n**Qué espero ver en `since_change` la próxima vez:**\n- Revenue incremental positivo desde el baseline $0 (slot 20);\n- Aumento en add_to_carts atribuible al carrusel cohort (slot 30);\n- Si funcionan, re-proponerlas con los since_change como evidencia y considerar extender a slot 40 o mejorar PDP/cart.",
+  "truncated": false,
+  "runId": "sim-run-7-e2",
+  "createdAt": "2026-07-02T08:03:49.151Z"
+}

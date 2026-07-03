@@ -11,6 +11,7 @@ import { activeProvider } from "@/sectors/b-catalog/provider";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 import { singleFlight } from "./decide/single-flight";
+import { recordQueryAggregatorCall } from "./decide/freshness";
 
 /** Lectura por-llamada (testeable en ambos modos). Default: asíncrona. */
 export function asyncIngestEnabled(): boolean {
@@ -60,6 +61,10 @@ async function runIngest(
       }
     }
     await pg.query(`DELETE FROM product_query_cache WHERE query_hash = $1`, [input.hash]);
+    // F4 T4: registra la llamada por-query (freshness + negative cache) — así la
+    // siguiente búsqueda idéntica no re-dispara el agregador aunque el catálogo
+    // local siga con <12 hits. Incluye el caso 0 resultados (negative legítimo).
+    await recordQueryAggregatorCall(input.hash, res.products.length, pg);
     return { fetched: res.products.length, processed, failed, was_error: false };
   } catch {
     try {

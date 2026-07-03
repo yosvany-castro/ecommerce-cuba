@@ -1,0 +1,56 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "La superficie PDP tiene 39,274 served y 24,288 seen en 7d (window 2026-04-16 a 2026-04-23), con alta intención de compra (2,654 add_to_carts, 116 purchases). cross_sell está en impression_sources del PDP, lo que sugiere que el tracking funciona para esta sección (a diferencia de home/popular que no está en la lista). El placement existente en slot 20 tiene no_impression_logging desde hace 28 días, lo que deja un gap no cubierto. Crear un cross_sell fresco en slot 30 permite capturar ventas cruzadas en una superficie con tráfico significativo (39K served/semana) sin canibalizar el slot 20."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 60,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "La superficie CART tiene 2,814 served y 1,923 seen en 7d (window 2026-04-16 a 2026-04-23). Aunque el tráfico es bajo, la intención es la más alta de todas las superficies. cart_addons está en impression_sources del CART, lo que sugiere tracking funcional. Los 4 placements existentes (slots 20-50) tienen no_impression_logging desde hace 28-70 días. Crear cart_addons en slot 60 ofrece una oportunidad de upselling en carrito sin riesgo de canibalización (slot más bajo que los existentes). Con 63 add_to_carts y 8 purchases directas desde cart en 7d, cualquier mejora incremental en revenue es puro margen aditivo."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "6ad210c6-7321-4bf3-8c04-591c0aae2301",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 60,
+      "placement_id": "e3d62a7e-3986-4c91-ba79-8f97deaac90d",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron aceptadas en tier **low**. Ahora cierro con el resumen.\n\n---\n\n## Resumen de acciones ejecutadas\n\n**Propuesta 1 — ✅ Aprobado (low)**\n- **Crear** `cross_sell` en **PDP slot 30**, limit=12, global, TTL=72h\n- **Rationale:** PDP tiene 39,274 served/semana con alta intención de compra (2,654 ATC, 116 purchases). `cross_sell` está en la lista `impression_sources` del sistema, a diferencia de `popular`. El placement existente en slot 20 tiene `no_impression_logging` desde hace 28d, dejando un gap. Este nuevo cross_sell en slot 30 captura ventas cruzadas frescas en tráfico significativo.\n- **Qué esperar en *since_change*:** ≥10 purchases atribuidas al placement y revenue incremental positivo medible desde el funnel.\n\n**Propuesta 2 — ✅ Aprobado (low)**\n- **Crear** `cart_addons` en **CART slot 60**, limit=8, global, TTL=72h\n- **Rationale:** CART tiene 2,814 served/semana con la intención más alta de compra. `cart_addons` está en `impression_sources` del CART. Los 4 placements previos (slots 20-50) llevan 28-70d con `no_impression_logging`. Este slot 60 es aditivo puro, sin riesgo de canibalización. Con 63 ATC y 8 purchases directas desde cart en 7d, cualquier mejora incremental es margen neto.\n- **Qué esperar en *since_change*:** Al menos 1-2 purchases atribuidas y revenue incremental en el funnel del placement.\n\n**Lo que NO hice (y por qué):**\n- No toqué los `popular` del home (slots 20-90) porque todos tienen `no_impression_logging` — el protocolo exige esperar. Además, `popular` no está en `impression_sources` del home, lo que sugiere que no hay pipeline de tracking independientemente del placement.\n- No toqué el hero (slot 10) — INTOCABLE por regla.\n- No hice supersede ni pause de placements ajenos.",
+  "truncated": false,
+  "runId": "sim-run-42-e8",
+  "createdAt": "2026-07-02T07:06:49.409Z"
+}

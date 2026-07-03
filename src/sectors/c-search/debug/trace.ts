@@ -19,8 +19,8 @@ export interface SearchTrace {
     price_range?: string;
   };
   freshness: {
-    category_checked: string | null;
-    last_refreshed_at: string | null;
+    query_hash: string;
+    last_called_at: string | null;
     hours_old: number | null;
   };
   retrieval: {

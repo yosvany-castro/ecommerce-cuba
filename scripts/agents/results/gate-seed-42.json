@@ -1,0 +1,11 @@
+{
+  "seed": 42,
+  "ratio": 2.0935614217051666,
+  "agentMarginCents": 55314785,
+  "frozenMarginCents": 26421381,
+  "frozenCollapse": false,
+  "giniSales": 0.6945688314070617,
+  "top20Share": 0.7546789860222696,
+  "worldVersion": "sim-world-v2.1",
+  "savedAt": "2026-07-02T07:57:30.038Z"
+}

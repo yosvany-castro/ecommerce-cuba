@@ -77,9 +77,9 @@ async function main() {
   console.log(header("FILTROS APLICADOS"));
   console.log(JSON.stringify(t.filters_applied, null, 2));
 
-  console.log(header("FRESHNESS"));
-  console.log(`Categoría:       ${t.freshness.category_checked ?? "(none)"}`);
-  console.log(`Last refresh:    ${t.freshness.last_refreshed_at ?? "—"}`);
+  console.log(header("FRESHNESS (por query)"));
+  console.log(`Query hash:      ${t.freshness.query_hash ? t.freshness.query_hash.slice(0, 12) : "(none)"}`);
+  console.log(`Última llamada:  ${t.freshness.last_called_at ?? "—"}`);
   console.log(
     `Hours old:       ${t.freshness.hours_old !== null ? t.freshness.hours_old.toFixed(1) : "—"}`,
   );

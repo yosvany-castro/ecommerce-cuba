@@ -1,0 +1,58 @@
+{
+  "proposals": [
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {
+        "limit": 15,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "SLOT 20 (bajo hero, máxima atención) rinde muy por debajo de SLOT 30 (más abajo). Métricas 7d: slot20→ 22.5 ATC/1k, 5 purchases, $164.51 rev; slot30→ 81.5 ATC/1k, 41 purchases, $5,565 rev. Un slot superior no debe rendir 3.6x peor en ATC/1k. La causa probable es mode='global' mostrando productos genéricos. mode='cohort' personaliza por segmento (ej: compradores de joyería ven tops de joyería). Catálogo confirma que joyería (490 compras/7d) y juguetes (492 compras/7d) tienen alta rotación segmentada. Hipótesis: ATC/1k debe duplicarse a >45.",
+      "action": "supersede",
+      "slot": 20
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME es aditivo puro: sin mis placements solo existe hero. Slot 30 prueba que carruseles home convierten: 3,533 seen / 41 purchases / $5,565 rev en 7d. La atención decae ~14% por slot (slot20=4,092 seen, slot30=3,533). Slot 40 proyecta ~3,000 seen. Incluso con ATC/1k conservador de ~50 (vs 81.5 de slot30), serían ~150 ATC adicionales y ~15-20 purchases netas. mode='cohort' evita canibalización con slot 30 al personalizar por segmento. Hipótesis: >2,000 seen y >15 purchases en 14d desde cambio."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "43d36c33-e390-4082-8b07-e6de4d29437b",
+      "effective_tier": "medium",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "ba3591cc-5248-4efe-808b-4c1abf956917",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas aceptadas. Cierro con resumen.\n\n---\n\n## Resumen de la ronda\n\n**Qué propuse y con qué evidencia:**\n\n1. **SUPERSEDE slot 20** (popular, mode=\"cohort\") → **Aceptado (tier medium, approved)**  \n   *Evidencia:* Slot 20 rinde 22.5 ATC/1k vs slot 30 con 81.5 ATC/1k — un slot superior no debe rendir 3.6x menos. Cambio a mode=\"cohort\" personaliza por segmento del usuario.\n\n2. **CREATE slot 40** (popular, mode=\"cohort\") → **Aceptado (tier low, approved)**  \n   *Evidencia:* Home es aditivo puro; slot 30 ya prueba que los carruseles convierten en profundidad (~3,533 seen/7d). Modo cohort diferencia de slot 30 y evita canibalización.\n\n**Qué espero ver en since_change la próxima vez:**\n- **Slot 20:** ATC/1k debe duplicarse de ~22.5 a >45, y purchases pasar de 5/7d a >12/7d.\n- **Slot 40:** Mínimo 2,000 seen y 15+ purchases en 14d desde creación. Si no cumple, no renovar al expirar TTL.",
+  "truncated": false,
+  "runId": "sim-run-7-e3",
+  "createdAt": "2026-07-02T08:12:34.433Z"
+}

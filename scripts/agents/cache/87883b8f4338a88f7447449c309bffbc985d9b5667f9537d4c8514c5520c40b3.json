@@ -1,0 +1,81 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 168,
+      "rationale": "HOME slot 80 VACÍO según read_metrics (7d/14d). Es carrusel aditivo puro — margen neto vs no tener nada. El home solo tiene hero_grid (slot 10, intocable, $10k revenue/14d) y placements en slots 20-70 con flag no_impression_logging. Este carrusel popular global muestra el top 20 de productos más vistos (p.ej. syn-42-3000-1968 Zara tacones 14k views/7d, syn-42-3000-1801 Sony smartwatch $992 10k views). Hipótesis: en since_change de 14d espero al menos 500 seen/semana, ATC/1k > 30, y revenue incremental positivo vs baseline de slot vacío."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 168,
+      "rationale": "HOME slot 90 VACÍO según read_metrics. Segundo carrusel aditivo puro. mode='cohort' personaliza por segmento del usuario, complementando al slot 80 (global). Alcance: la tienda tiene 37k seen/7d con revenue_ratio 1.09 vs holdout (ligeramente positivo). Con categorías fuertes como deporte (272 purchases/14d), tecnologia ($25.4k revenue/14d) y moda_mujer ($24k/14d), la personalización por cohort puede mejorar relevancia incluso en zona baja. Hipótesis: en since_change 14d espero seen_rate > 0.35 (vs 0.32 del hero), ATC/1k > 25 por la personalización, revenue incremental positivo."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 168,
+      "rationale": "PDP slot 20 VACÍO (sin placements propios según read_metrics 7d/14d). El cross_sell default existe pero no está optimizado. La PDP es superficie de alto tráfico (el hero_grid solo genera 26k seen/14d, y la tienda completa 206k seen/14d). Categorías con productos de alto AOV ideales para cross_sell: tecnologia Sony smartwatch $992 (16 purchases/7d), joyeria Swarovski aretes $889 (7 purchases/7d), moda_mujer Zara tacones $324 (10 purchases/7d). Hipótesis: cross_sell en PDP slot 20 puede incrementar ATC rate respecto al default. Espero en since_change 14d: al menos 0.5 add_to_cart per 100 served, revenue incremental positivo."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "a63f7238-3628-45cb-aa77-c9b6b9da5f81",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "e0bc4563-5ac6-4c23-b369-c6082777cdaa",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "4e2efc60-d804-4d5c-b47b-5ffef352a84a",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas ✅. Aquí está el resumen final:\n\n---\n\n## Resumen de acciones ejecutadas\n\n### 1. HOME slot 80 — popular global (limit=20)\n- **ID:** `a63f7238...` | Tier: low | Status: approved | TTL: 168h\n- **Evidencia:** Slot vacío. Carrusel aditivo puro. La tienda tiene 37k seen/7d y un revenue_ratio de 1.09 vs holdout.\n- **Qué espero en since_change:** ≥500 seen/semana, ATC/1k > 30, revenue incremental neto.\n\n### 2. HOME slot 90 — popular cohort (limit=12)\n- **ID:** `e0bc4563...` | Tier: low | Status: approved | TTL: 168h\n- **Evidencia:** Slot vacío. Complemento personalizado al slot 80. mode=\"cohort\" aprovecha las categorías fuertes (deporte 272 purchases/14d, tecnologia $25.4k/14d, moda_mujer $24k/14d) para segmentar.\n- **Qué espero en since_change:** seen_rate > 0.35, ATC/1k > 25 por personalización.\n\n### 3. PDP slot 20 — cross_sell (limit=12)\n- **ID:** `4e2efc60...` | TTL: 168h\n- **Evidencia:** Sin placements propios en PDP. Productos de alto AOV (Sony smartwatch $992, joyería Swarovski $889, Zara tacones $324) son ideales para cross_sell. La tienda genera 206k seen/14d total.\n- **Qué espero en since_change:** ≥0.5 ATC por cada 100 served, revenue incremental positivo.\n\n---\n\n**Notas:** Los slots 20-70 del home y slots 20-50 del carrito tienen flag `no_impression_logging` — según protocolo, la única acción válida es esperar, así que no se tocaron. En la próxima revisión (post-TTL de 168h) podré evaluar `since_change` de estas 3 propuestas y decidir si renovarlas con evidencia concreta.",
+  "truncated": false,
+  "runId": "sim-run-42-e9",
+  "createdAt": "2026-07-02T07:15:59.205Z"
+}

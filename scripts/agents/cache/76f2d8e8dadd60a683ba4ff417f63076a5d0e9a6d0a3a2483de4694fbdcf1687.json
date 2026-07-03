@@ -1,0 +1,128 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 50 vacío. Los populares globales existentes en slot 20 (id 43d36c33, 3.725 seen, 57 purchases, $9.796 rev en 14d) y slot 40 (id ba3591cc, 2.107 seen, 39 purchases, $3.701 rev en 14d) demuestran ATC/1k_seen >100 y alta conversión. Añadir popular global en slot 50 es margen aditivo puro: captura usuarios que escanean más abajo en la página. limit=12 para densidad equilibrada."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 60 vacío. mode=cohort ofrece popularidad personalizada por segmento de usuario, complementando los populares globales de slots 20 y 40. Categorías como moda_mujer ($12.356 rev/7d, 7.588 seen) y tecnologia ($11.080 rev/7d, 8.534 seen) tienen audiencias distintas. Personalización por cohorte maximiza relevancia sin canibalizar los carruseles globales existentes."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 8,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "HOME slot 70 vacío. Carrusel compacto (limit=8) con top hits globales para usuarios que escanean profundo. Con 5 slots aditivos vacíos (50-90), llenar 3 es conservador pero aprovecha el inmueble. Slots superiores (20, 40) ya generan ~$13.497 rev combinados en 14d; añadir en 70 captura cola de atención con riesgo mínimo."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP sin placements propios. 60.733 served/semana con 38.500 seen. El default cross_sell es genérico; un placement cross_sell con 8 items anclado al producto visto puede incrementar ATC. Categorías fuertes como moda_mujer ($12.356 rev) y tecnologia ($11.080 rev) se benefician de cross-selling contextual. Placement secundario vs home pero con volumen de tráfico alto."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 6
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart sin placements propios. 3.551 served, 2.538 seen, 92 ATC semanales. Añadir cart_addons (6 items) puede aumentar ticket promedio en etapa final del funnel. El ratio vs_holdout 3.54x (store) muestra margen para mejorar conversión en etapas avanzadas. Placement secundario pero de bajo riesgo por ser aditivo."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 50,
+      "placement_id": "54dc6764-de6b-477e-86f1-747c3748f25e",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "725e5381-741f-4117-b081-28027dfe17e5",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "9f4e0428-7604-41fb-8be9-25e101483276",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "d92657a5-9140-41d6-bf6e-fb467f9550dd",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 20,
+      "placement_id": "0e17777e-a707-41f3-bb26-1138e9c3fc05",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Todas las 5 propuestas fueron **aceptadas y aprobadas** en primera instancia (tier low). Aquí está el resumen:\n\n---\n\n## Resumen de lo ejecutado\n\n### Home — 3 carruseles aditivos nuevos\n| Slot | Sección | Modo | ID Placement | Justificación |\n|------|---------|------|--------------|---------------|\n| **50** | popular | global (12) | `54dc6764` | Primer carrusel bajo existentes. Slot 20 genera **$9,796/14d** y slot 40 **$3,701/14d** — replicar el patrón en slot 50 es margen puro. |\n| **60** | popular | cohort (12) | `725e5381` | Personalización por segmento de usuario. Diferencial frente a global ya usado arriba. moda_mujer ($12,356) y tecnologia ($11,080) tienen audiencias distintas. |\n| **70** | popular | global (8) | `9f4e0428` | Carrusel compacto para capturar cola de atención. Riesgo mínimo, aditivo puro. |\n\n### PDP — 1 cross_sell nuevo\n| Slot | Sección | Params | ID Placement | Justificación |\n|------|---------|--------|--------------|---------------|\n| **20** | cross_sell | limit=8 | `d92657a5` | **60,733 served/semana** sin placements míos. Cross-selling contextual aprovecha categorías fuertes (moda_mujer, tecnologia). |\n\n### Cart — 1 cart_addons nuevo\n| Slot | Sección | Params | ID Placement | Justificación |\n|------|---------|--------|--------------|---------------|\n| **20** | cart_addons | limit=6 | `0e17777e` | **3,551 served**, 92 ATC semanales. Aumentar ticket promedio en etapa final del funnel. |\n\n---\n\n### ¿Qué espero ver en `since_change` la próxima vez?\n- **Home slots 50-70**: Al menos **$1,500-3,000 rev** cada uno en 14d (conservador vs los $3,701 de slot 40). Si ATC/1k_seen supera 80, confirmaré que vale la pena renovar el TTL.\n- **PDP cross_sell**: Incremento en ATC sobre el default. Si el número de purchases desde PDP sube >10% vs línea base.\n- **Cart cart_addons**: Al menos 3-5 add-to-cart adicionales semanales desde cart, indicando que los addons incrementan el ticket.\n- **Sinergia general**: El ratio vs_holdout de 3.54x debería mantenerse o mejorar ligeramente al añadir superficies de conversión.",
+  "truncated": false,
+  "runId": "sim-run-7-e4",
+  "createdAt": "2026-07-02T08:21:35.440Z"
+}
