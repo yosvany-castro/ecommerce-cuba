@@ -163,9 +163,13 @@ export function CartDrawer() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
                 {items.map((item) => {
                   const { nameVar, meta } = itemVars(item);
+                  const navToProduct = () => {
+                    setOpen(false);
+                    router.push(`/products/${item.product_id}?src=direct`);
+                  };
                   return (
                     <div key={item.key} style={{ display: "flex", gap: 12, background: "#fff", borderRadius: 16, border: "1px solid #EFEFEA", padding: 10, alignItems: "center", animation: "secIn .35s ease both" }}>
-                      <div style={{ flex: "none", width: 60, height: 60, borderRadius: 12, background: stripe(catOf(item.category)), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div onClick={navToProduct} style={{ flex: "none", width: 60, height: 60, borderRadius: 12, background: stripe(catOf(item.category)), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#9a9b98" }}>foto</span>
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -196,24 +200,33 @@ export function CartDrawer() {
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, color: "#55565B" }}>{upsellLine}</div>
                   <div style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", marginTop: 10, paddingBottom: 4 }}>
-                    {upsellShown.map((p) => (
-                      <div key={p.id} style={{ flex: "none", width: 120, background: "#fff", borderRadius: 14, border: "1px solid #EFEFEA", padding: "7px 7px 9px" }}>
-                        <div style={{ height: 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
-                        </div>
-                        <div style={{ fontSize: 11.5, fontWeight: 600, margin: "6px 3px 0", lineHeight: 1.25, height: 28, overflow: "hidden" }}>{p.title}</div>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "3px 3px 0" }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{fmt(p.price_cents)}</span>
-                          <div
-                            onClick={() => add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url })}
-                            className="tk-hov-plus"
-                            style={{ width: 24, height: 24, borderRadius: "50%", background: "#1C1D20", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}
-                          >
-                            +
+                    {upsellShown.map((p) => {
+                      const navToProduct = () => {
+                        setOpen(false);
+                        router.push(`/products/${p.id}?src=direct`);
+                      };
+                      return (
+                        <div key={p.id} onClick={navToProduct} style={{ flex: "none", width: 120, background: "#fff", borderRadius: 14, border: "1px solid #EFEFEA", padding: "7px 7px 9px", cursor: "pointer" }}>
+                          <div style={{ height: 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
+                          </div>
+                          <div style={{ fontSize: 11.5, fontWeight: 600, margin: "6px 3px 0", lineHeight: 1.25, height: 28, overflow: "hidden" }}>{p.title}</div>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "3px 3px 0" }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 700 }}>{fmt(p.price_cents)}</span>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url });
+                              }}
+                              className="tk-hov-plus"
+                              style={{ width: 24, height: 24, borderRadius: "50%", background: "#1C1D20", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}
+                            >
+                              +
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
