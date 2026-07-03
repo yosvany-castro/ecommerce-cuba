@@ -165,8 +165,14 @@ Devolver lo local ya + `after()` de Next para fetch+enrich post-respuesta. Cambi
 ### Task 4 (HECHA 2026-07-03): Freshness por query + negative cache
 Migración `0031_query_aggregator_log` (query_hash PK, last_called_at, result_count) en public+test_schema. `getQueryFreshness`/`recordQueryAggregatorCall` reemplazan `getCategoryFreshness` (borrada). Registro tras fetch exitoso en ambos paths (sync en search.ts, async en ingest-async.ts); 0 resultados también cuenta = negative cache. Reason del trace: `query_recently_refreshed`. Test: una query distinta de la misma categoría YA no se suprime (fix del bug del audit). 5/5 verde.
 
-### Task 5 (DIFERIDA — día): Dedup multi-proveedor
+### Task 5 (BLOQUEADA — YAGNI hasta 2º proveedor): Dedup multi-proveedor
 Producto canónico por embedding+título (umbral calibrado con `calibrate-semantic-cache`).
+**No se construye ahora**: dedup ENTRE proveedores solo tiene sentido —y solo es
+testeable— cuando existe un segundo proveedor real que emita el mismo producto
+físico bajo otro `source`. Hoy solo el mock (provider 1). La unique key actual
+`(source, source_product_id)` ya dedupe re-fetches exactos. Se retoma junto con
+la integración del primer proveedor real (4.5), que a su vez está bloqueada por
+cuentas/keys/negocio (OFAC).
 
 ---
 
