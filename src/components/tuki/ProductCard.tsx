@@ -7,7 +7,7 @@ import { observeSeen } from "@/lib/client/seen-reporter";
 import { catOf, demoAttrs, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 
-export type CardSource = "home" | "category" | "search";
+export type CardSource = "home" | "category" | "search" | "direct";
 
 export function ProductCard({
   card,
