@@ -162,8 +162,8 @@ export function singleFlight<T>(key: string, fn: () => Promise<T>): Promise<T> {
 ### Task 3 (DIFERIDA — día): Ingesta asíncrona
 Devolver lo local ya + `after()` de Next para fetch+enrich post-respuesta. Cambia la semántica (los productos externos aparecen en la SIGUIENTE búsqueda) — requiere decisión de UX del dueño y ajuste del test `search-mock-fallback`.
 
-### Task 4 (DIFERIDA — día): Freshness por query + negative cache
-`last_refreshed_at` por hash de query (tabla nueva pequeña o columna en product_query_cache), no por categoría.
+### Task 4 (HECHA 2026-07-03): Freshness por query + negative cache
+Migración `0031_query_aggregator_log` (query_hash PK, last_called_at, result_count) en public+test_schema. `getQueryFreshness`/`recordQueryAggregatorCall` reemplazan `getCategoryFreshness` (borrada). Registro tras fetch exitoso en ambos paths (sync en search.ts, async en ingest-async.ts); 0 resultados también cuenta = negative cache. Reason del trace: `query_recently_refreshed`. Test: una query distinta de la misma categoría YA no se suprime (fix del bug del audit). 5/5 verde.
 
 ### Task 5 (DIFERIDA — día): Dedup multi-proveedor
 Producto canónico por embedding+título (umbral calibrado con `calibrate-semantic-cache`).

@@ -1,0 +1,58 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 20 es el carrusel aditivo de MAYOR atención post-hero (slot 10). El único popular con datos trackeables es slot 80 v4 (mode=global por defecto) que en 14d rindió 20,220 seen, 2,589 ATC (128 ATC/1k seen), 329 purchases y $25,421 revenue (read_metrics home 14d, placement 379f93ee). Propongo mode='cohort' en lugar de global para (a) evitar canibalización con slot 80 que usa global, (b) personalizar por segmento de usuario, y (c) testear si cohort supera el benchmark del hero (49.5 ATC/1k seen, placement 4236ac4e 14d). Hipótesis medible: ATC/1k seen >= 90 en los primeros 14 días desde aplicación."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 30 es el segundo carrusel aditivo post-hero. El slot 80 popular mode=global (v4, 14d) es el benchmark exitoso: 128 ATC/1k seen y $25,421 revenue en 14d (read_metrics home 14d, placement 379f93ee). Replico mode='global' aquí para (a) llenar un slot alto con la fórmula probada, (b) evitar canibalización con slot 20 que usa mode='cohort', y (c) porque mode='global' ya demostró funcionar en esta tienda. Hipótesis medible: ATC/1k seen >= 80 en los primeros 14 días, generando revenue incremental neto (aditivo puro, sin reemplazar nada)."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "8732ce0c-7d52-4b44-b23a-b1b746acf9f4",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "dd060394-2109-4748-884e-4c92c1f006ab",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron **aceptadas** ✅\n\n---\n\n## Resumen final\n\n**Qué propuse:**\n1. **Home slot 20 → popular mode=\"cohort\"** (id: `8732ce0c`, tier low) — carrusel personalizado por segmento de usuario, para probar si cohort supera el benchmark del slot 80 (128 ATC/1k seen) en una posición más alta.\n2. **Home slot 30 → popular mode=\"global\"** (id: `dd060394`, tier low) — replica la fórmula probada del slot 80, diferenciándose del slot 20 (cohort) para evitar canibalización.\n\n**Evidencia que lo justifica:**\n- Slot 80 popular v4: **128 ATC/1k seen**, 329 purchases, **$25,421 revenue** en 14d (read_metrics home 14d). Es el mejor placement de la tienda.\n- Slot 10 hero_grid: solo 49.5 ATC/1k seen — los carruseles popular añaden **margen aditivo** puro.\n- Todos los slots 20-70 actuales tienen `no_impression_logging` (no trackeables); crear nuevas versiones resolvió el logging en slot 80.\n- Caída de tráfico reciente (-84% en seen): cada visitante vale más, y estos carruseles son aditivos.\n\n**Qué espero ver en since_change:**\n- **Slot 20 cohort**: ATC/1k seen ≥ 90 (por encima del hero, aunque quizás por debajo del slot 80 que tiene usuarios más navegados).\n- **Slot 30 global**: ATC/1k seen ≥ 80, con revenue incremental neto.\n- Si funcionan, la estrategia será escalar a slots 40-60 alternando cohort/global para maximizar diferenciación.",
+  "truncated": false,
+  "runId": "sim-run-42-e12",
+  "createdAt": "2026-07-02T07:48:23.401Z"
+}

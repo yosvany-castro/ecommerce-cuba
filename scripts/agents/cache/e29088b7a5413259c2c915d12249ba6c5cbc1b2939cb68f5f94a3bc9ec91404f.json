@@ -1,0 +1,128 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home NO tiene carruseles funcionales (slots 20-50 todos con no_impression_logging). Slot 60 es aditivo puro — margen nuevo. Catálogo muestra alta demanda: Spigen powerbank (6,707 events / 108 purchases 7d), Samsung audifonos (7,188 / 60), Samsung laptop (7,538 / 43). Hipótesis: >=20 ATC/1k seen (benchmark hero_grid 36.8 en home). En 7d con ~4,000 seen esperados serían >=80 ATCs incrementales."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel aditivo en home. Slot 70 tiene menos atención que 60 pero sigue siendo margen puro — el home sin estos carruseles solo tiene el hero. Productos de alta rotación: Maybelline crema (5,513 events / 39 purchases 7d, $22.22), Mango blazer (4,936 / 15). mode=global porque en home no hay contexto de producto. Hipótesis: >=15 ATC/1k seen (conservador por slot bajo)."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP cross_sell slot 20 v2 ya genera 88.3 ATC/1k seen y $17,540 revenue en 7d (read_metrics pdp 7d: 19,747 seen, 101 purchases). Un segundo cross_sell en slot 50 captura usuarios que scrollearon más abajo en la PDP. No canibaliza al slot 20 porque está en posición inferior en el flujo visual. Hipótesis: >=40 ATC/1k seen (conservador vs 88.3 del slot 20 por posición inferior)."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 50,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart_addons slot 40 genera 31.3 ATC/1k seen y $616 revenue en 7d (read_metrics cart 7d: 2,330 seen, 14 purchases). Añadir cart_addons en slot 50 es incremental para usuarios que ya tienen intención de compra. Hipótesis: >=15 ATC/1k seen (mitad del slot 40 por posición inferior). En 7d con ~1,500 seen esperados serían >=22 ATCs adicionales."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 60,
+      "section_type": "popular",
+      "params": {
+        "limit": 16,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "En PDP SÍ hay contexto de producto, mode=pdp_category es válido. Tecnología lidera con $88,265 revenue en 14d y productos como Samsung audifonos (7,188 events / $158 / 60 purchases) tienen alta rotación. Un carrusel de 'lo más popular en esta categoría' en PDP complementa al cross_sell existente (slot 20, 88.3 ATC/1k seen). Hipótesis: >=30 ATC/1k seen."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 60,
+      "placement_id": "29b94b6f-e2fa-4c0f-a85f-62fe8ebe730a",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 70,
+      "placement_id": "d6b73d77-deb5-45d1-9095-be58659346ea",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 50,
+      "placement_id": "d5482c45-ef4d-44eb-a5b0-2db2e4fd01bd",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 50,
+      "placement_id": "6afdf0f5-bea5-4756-af1e-f1073578d42f",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 60,
+      "placement_id": "95b46a0f-1654-4a9c-a2c3-6d994a2f1da7",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 5 propuestas fueron **aprobadas** (todas en tier low, sin rechazos). Cierro con el resumen:\n\n---\n\n## Resumen de la ronda\n\n**Diagnóstico inicial**: La tienda sufre una caída severa de tráfico (-76% seen vs semana anterior). Todos los placements de `popular` en home (slots 20-50) tienen flag `no_impression_logging` — no se pueden tocar, solo esperar. Los placements que SÍ tienen datos (PDP cross_sell slot 20 v2 con 88.3 ATC/1k seen, cart_addons slot 40 con 31.3 ATC/1k seen) funcionan bien.\n\n**5 propuestas creadas y aceptadas**:\n\n| # | Superficie | Slot | Sección | Evidencia clave | Hipótesis |\n|---|---|---|---|---|---|\n| 1 | **Home** | 60 | popular global | Catálogo: Spigen powerbank 6,707 events / 108 purchases 7d | ≥20 ATC/1k seen |\n| 2 | **Home** | 70 | popular global | Catálogo: Maybelline 5,513 events / 39 purchases 7d | ≥15 ATC/1k seen |\n| 3 | **PDP** | 50 | cross_sell | PDP slot 20 existente: 88.3 ATC/1k seen, $17,540 rev 7d | ≥40 ATC/1k seen |\n| 4 | **Cart** | 50 | cart_addons | Cart slot 40 existente: 31.3 ATC/1k seen, $616 rev 7d | ≥15 ATC/1k seen |\n| 5 | **PDP** | 60 | popular pdp_category | Tecnología lidera con $88,265 revenue 14d | ≥30 ATC/1k seen |\n\n**Qué esperar en since_change la próxima vez**: Los dos carruseles nuevos en home (slots 60 y 70) generarán exposición incremental a productos de alta demanda. El cross_sell extra en PDP y cart_addons adicional capturarán usuarios en etapas avanzadas del funnel. Buscaré ATC/1k seen y revenue incremental vs el período anterior. Si alguno no cumple su hipótesis, lo replantearé.",
+  "truncated": false,
+  "runId": "sim-run-7-e12",
+  "createdAt": "2026-07-02T10:04:46.361Z"
+}

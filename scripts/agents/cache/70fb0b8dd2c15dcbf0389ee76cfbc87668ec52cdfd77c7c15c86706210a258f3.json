@@ -1,0 +1,57 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home es aditivo puro; slot 90 único libre. Slot 80 ya genera $654K/7d (ATC/1k=106.8), probando alto engagement profundo. Añadir popular mode='cohort' personaliza por segmento vs los global existentes, capturando afinidades de categorías fuertes como belleza (429 purchases/7d) y moda_mujer ($1.36M/7d)."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Cart slot 30 genera $106K/7d con ATC/1k=33.7 y seen_rate=0.545. Añadir cart_addons en slot 40 captura upsell incremental para usuarios que ya vieron slot 30. Riesgo de canibalización monitoreable: si slot 30 cae >20% en revenue, pausar."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "1588a5d2-3bdd-4129-96c1-884cea8a8be5",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 40,
+      "placement_id": "b4dfaa13-7adf-4d5e-9ce7-b6cb3a6eba95",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "## Resumen final\n\n**2 propuestas ejecutadas y aceptadas (tier low, ambas aprobadas):**\n\n| # | Propuesta | Placement ID | Evidencia clave | Status |\n|---|-----------|-------------|-----------------|--------|\n| 1 | **Home slot 90** — popular mode=\"cohort\", limit=12 | `1588a5d2-...` | Slot 80 genera $654K/7d (ATC/1k=106.8) → engagement profundo probado. Cohort personaliza vs global. | ✅ Aprobado |\n| 2 | **Cart slot 40** — cart_addons, limit=8 | `b4dfaa13-...` | Slot 30 genera $106K/7d (ATC/1k=33.7), seen_rate=0.545 → upsell incremental. | ✅ Aprobado |\n\n**Descartadas por el critic:**\n- PDP slot 30 cross_sell → sin métricas reales ni hipótesis medible.\n\n**Lo que espero ver en `since_change` la próxima vez:**\n1. **Home slot 90**: ATC/1k ≥ 20 (benchmark vs slot 70's 29.2 en posición más alta) con revenue y purchases positivos, y distribución de categorías distinta a slot 80 (señal de que cohort trae variedad).\n2. **Cart slot 40**: Revenue incremental neto sin canibalización severa a slot 30 (caída <20% en revenue de slot 30).",
+  "truncated": false,
+  "runId": "sim-run-42-e5",
+  "createdAt": "2026-07-02T06:28:26.794Z"
+}

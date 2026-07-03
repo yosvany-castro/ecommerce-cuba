@@ -1,0 +1,56 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "En 14d el revenue_ratio vs holdout es 1.61x (49 holdout purchases, SIN flag), lo que confirma que el sistema de recomendaciones agrega valor. La PDP no tiene placements de cross_sell listados en el reporte, siendo la única superficie sin cobertura de agente. moda_mujer genera $11,346 revenue en 7d (46 purchases, 6,610 seen) y belleza suma 39 purchases — ambas se benefician de cross-selling contextual durante navegación de producto. Hipótesis medible: espero al menos 15 ATC/1k seen en since_change, apoyado en que cart_addons (superficie análoga de baja fricción) rinde 34.4 ATC/1k en slot 40 de cart."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 50,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 12
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El cart_addons existente en slot 40 genera 34.4 ATC/1k seen y $1,455 revenue en 7d (sin flags), probando que los addons en carrito funcionan. Añadir un segundo carrusel en slot 50 (menor atención, captura scroll profundo) es aditivo: los usuarios que llegan al slot 50 no interactuaron con slot 40. En 14d revenue_ratio 1.61x (sin flag, 49 holdout purchases) confirma desempeño positivo del feed. Hipótesis medible: espero al menos 12 ATC/1k seen en since_change, sumando ~46 ATC/1k total en cart — incrementalidad neta positiva sobre los 34.4 actuales."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 20,
+      "placement_id": "9eb27814-53cd-4b96-9351-5a305e013ab6",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 50,
+      "placement_id": "90278732-9ac7-4fb7-8d57-9e312d5235e3",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Ambas propuestas fueron aceptadas en tier **low**. Cierro con el resumen.\n\n---\n\n## Resumen\n\n**Propuestas ejecutadas (2/2 aceptadas):**\n\n| # | Acción | Superficie | Slot | Sección | Tier | Placement ID |\n|---|---|---|---|---|---|---|\n| 1 | CREATE | PDP | 20 | cross_sell (limit=12) | low | `9eb27814-...` |\n| 2 | CREATE | Cart | 50 | cart_addons (limit=12) | low | `90278732-...` |\n\n**Evidencia que las justifica:**\n- **14d revenue_ratio 1.61x** vs holdout (49 compras holdout, **sin flag**) → el feed tiene desempeño positivo comprobado.\n- **Cart slot 40** rinde 34.4 ATC/1k seen y **$1,455 revenue en 7d** → los addons en carrito funcionan; añadir slot 50 es aditivo para scroll profundo.\n- **moda_mujer** lidera con **$11,346 revenue** (46 compras en 7d) → oportunidad para cross-sell contextual en PDP.\n- **PDP** era la única superficie sin cobertura de agente.\n\n**Lo que espero ver en `since_change` la próxima vez:**\n1. **cross_sell PDP slot 20** → ≥15 ATC/1k seen en 14d (baseline conservador vs 34.4 de cart_addons)\n2. **cart_addons cart slot 50** → ≥12 ATC/1k seen, incremental a los 34.4 del slot 40\n\n**Quedaron pendientes (sin acción):**\n- Home slots 20-80 y cart slots 20-30 → todos con `no_impression_logging`. Protocolo: esperar.",
+  "truncated": false,
+  "runId": "sim-run-42-e6",
+  "createdAt": "2026-07-02T06:40:11.804Z"
+}

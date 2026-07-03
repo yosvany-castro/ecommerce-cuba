@@ -1,0 +1,128 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 80 es aditivo puro. Slot 60 (popular global) genera $33,085 revenue en 14d con 272 purchases (read_metrics home 14d). Añadir otro popular global en slot 80 captura más tráfico del home sin canibalizar. vs_holdout revenue_ratio=3 (7d) muestra que los placements del home tienen alto impacto incremental."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Home slot 90 con popular mode=cohort personaliza por segmento de usuario. Complementa al popular global del slot 60 ($33,085 revenue, 272 purchases en 14d). Es aditivo puro. vs_holdout revenue_ratio=3 (7d, read_metrics home) sugiere que más contendido relevante en home genera revenue incremental."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "PDP tiene 87,975 served en 7d (read_metrics pdp 7d). El cross_sell actual (slot 20) genera $18,126 revenue / 278 purchases. Añadir popular mode=pdp_category en slot 30 muestra los más vendidos de la misma categoría del producto visto, complementando al cross_sell. Categorias fuertes: tecnologia $43,309 y joyeria $33,468 revenue 14d."
+    },
+    {
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "section_type": "cross_sell",
+      "params": {
+        "limit": 10
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo cross_sell en PDP slot 40. El cross_sell existente (slot 20) tiene alta conversión: 7,503 ATC y 278 purchases en 7d (read_metrics pdp 7d). PDP recibe 87,975 served/semana, justifica múltiples carruseles de venta cruzada. Un segundo carrusel captura ventas adicionales sin interferir con el primero."
+    },
+    {
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "section_type": "cart_addons",
+      "params": {
+        "limit": 8
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Segundo carrusel de cart_addons en slot 30 del carrito. El existente (slot 20) genera $404.86 revenue / 10 purchases en 7d con seen_rate de 0.712 (read_metrics cart 7d). Usuarios en carrito tienen alta intención de compra; un segundo carrusel incrementa el ticket promedio con margen incremental."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "344a0d19-04c6-40d3-8599-48f1966e4dc2",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 90,
+      "placement_id": "5856325a-cc4f-409e-9dba-ed88ffb585b4",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 30,
+      "placement_id": "78193b1d-3de6-4c24-a105-be2d2a22dc96",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "pdp",
+      "slot": 40,
+      "placement_id": "2c1ab8ac-6a65-406c-84c5-4281cbeee9b6",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "cart",
+      "slot": 30,
+      "placement_id": "70e6c88a-31d3-40a4-b274-469b0d210798",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 5 propuestas fueron aceptadas. Aquí el resumen:\n\n---\n\n## Resumen de la ronda\n\n**Qué propuse (5 placements):**\n\n1. **Home slot 80 — popular global** (ID: `344a0d19`) → Carrusel aditivo de productos populares globales, aprovechando que el slot 60 (similar) genera $33,085/14d.\n2. **Home slot 90 — popular cohort** (ID: `5856325a`) → Versión personalizada por segmento de usuario, complementaria al global. Ambos slots del home son 100% margen nuevo.\n3. **PDP slot 30 — popular pdp_category** (ID: `78193b1d`) → Muestra los más vendidos de la misma categoría del producto visto. PDP tiene 87,975 served/semana.\n4. **PDP slot 40 — cross_sell** (ID: `2c1ab8ac`) → Segundo carrusel de venta cruzada en PDP. El primero ya genera $18,126/7d con 278 purchases.\n5. **Cart slot 30 — cart_addons** (ID: `70e6c88a`) → Segundo carrusel de addons en carrito para incrementar ticket promedio.\n\n**Evidencia clave citada:** Slot 60 genera $33,085 revenue/14d (272 purchases); cross_sell PDP genera $18,126/7d; vs_holdout revenue_ratio=3×; categorías tecnologia ($43,309/14d) y joyería ($33,468/14d) como targets naturales.\n\n**Resultado:** Las 5 aprobadas en tier **low** con status **approved** por el sistema.\n\n**Qué espero en la próxima revisión (since_change):** Que los nuevos carruseles del home (slots 80 y 90) generen revenue incremental, aunque más modesto que el slot 60 por la posición más baja. Que el popular pdp_category en PDP diversifique las fuentes de revenue más allá del cross_sell puro. Que el segundo cross_sell y cart_addons capturen ventas adicionales sin canibalizar a los placements existentes.",
+  "truncated": false,
+  "runId": "sim-run-7-e5",
+  "createdAt": "2026-07-02T08:32:50.315Z"
+}

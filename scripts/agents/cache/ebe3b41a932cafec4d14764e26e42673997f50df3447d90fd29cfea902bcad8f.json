@@ -1,0 +1,34 @@
+{
+  "proposals": [
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {
+        "limit": 12,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El placement actual HOME slot 80 popular v3 (risk_tier=medium, único placement medium de toda la tienda) tiene atc_per_1k_seen de 44.7 en 7d (read_metrics home 7d: placement fbc8dbf8, 4093 seen, 149651 revenue_cents) y 47.8 en 14d (read_metrics home 14d: 21476 seen, 1352854 revenue_cents), muy por debajo del slot 90 v2 (133 atc/1k, read_metrics home 7d: placement e0bc4563, 3270 seen, 379148 revenue_cents) que está en posición PEOR. Propongo limit=12 y mode=cohort para reemplazar popular global por recomendaciones segmentadas. Categorías con alto volumen de compras semanales (moda_mujer 49 purchases/semana, joyeria 30, tecnologia 19) tienen perfiles diferenciados. Hipótesis medible: atc_per_1k_seen debe subir de ~46 a >=70 en 14d (target basado en PDP cross_sell que logra 70.2 atc/1k con recomendaciones contextuales). Si v3 ya usa cohort, la supersede será redundante y el sistema la rechazará sin riesgo.",
+      "action": "supersede",
+      "slot": 80
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "379f93ee-dea9-42a9-9cf4-df5e1134dfbe",
+      "effective_tier": "medium",
+      "status": "approved"
+    }
+  ],
+  "finalText": "La propuesta fue **aceptada y aprobada** con tier medium. Ahora cierro con el resumen.\n\n---\n\n## Resumen final\n\n**Diagnóstico completo:**\n- **HOME:** slots 10 (hero, seed), 20-70 (popular, todos con `no_impression_logging` → esperar), 80 v3 (medium risk, rindiendo bajo), 90 v2 (excelente, 133 atc/1k)\n- **PDP:** slot 20 v3 (cross_sell, rindiendo muy bien: $18,719 rev/semana), slot 30 (`no_impression_logging`)\n- **CART:** slots 20-60 (todos `no_impression_logging`)\n- **Search:** sin tráfico\n\n**Única acción viable:** Superseder HOME slot 80 v3.\n\n**Qué propuse:**\n- **Supersede** del slot 80 de HOME (placement `fbc8dbf8`, v3, risk_tier=medium)\n- Cambio de params: `{\"limit\": 12, \"mode\": \"cohort\"}` (popular global → personalizado por cohorte)\n- **Evidencia:** slot 80 tenía atc/1k=44.7 vs slot 90 (peor posición) que logra 133. Categorías con perfiles diferenciados: moda_mujer (49 purchases/semana), joyeria (30), tecnologia (19).\n- **Hipótesis medible:** atc_per_1k_seen debe subir de ~46 a ≥70 en 14 días.\n\n**Resultado:** ✅ Aceptado y aprobado (tier medium). Nuevo placement ID: `379f93ee-dea9-42a9-9cf4-df5e1134dfbe`.\n\n**Qué espero ver en `since_change` la próxima vez:** Que el atc_per_1k_seen del slot 80 haya mejorado significativamente (≥70), indicando que la personalización por cohorte conecta mejor que el popular global en esa posición de scroll medio-bajo.",
+  "truncated": false,
+  "runId": "sim-run-42-e11",
+  "createdAt": "2026-07-02T07:39:09.793Z"
+}

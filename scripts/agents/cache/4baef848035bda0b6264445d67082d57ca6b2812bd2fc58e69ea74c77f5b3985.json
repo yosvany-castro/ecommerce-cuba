@@ -1,0 +1,34 @@
+{
+  "proposals": [
+    {
+      "surface": "home",
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "El slot 80 v2 actual (popular global, ID a63f7238) generó 384,089¢ revenue / 833 atc (38.6/1k) / 105 purchases en 14d (read_metrics home 14d). La categoría joyería es la de mayor rendimiento en la tienda: 24,128,105¢ revenue, 505 purchases, 65,901 seen en 14d. Al cambiar a popular mode='pdp_category', el carrusel mostrará productos populares de la categoría afín al contexto del usuario, capturando más valor que el popular global genérico. El slot 90 v2 (popular global) ya rinde 3,356,574¢/14d y seguirá cubriendo contenido general. Hipótesis: el nuevo carrusel de categoría superará 38.6 atc/1k y generará >82,000¢ en 72h de since_change.",
+      "action": "supersede",
+      "slot": 80
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "supersede",
+      "surface": "home",
+      "slot": 80,
+      "placement_id": "fbc8dbf8-7025-4efc-8987-20796fca4de1",
+      "effective_tier": "medium",
+      "status": "approved"
+    }
+  ],
+  "finalText": "✅ **Aceptada**. Tier `medium`, status `approved`. Placement ID: `fbc8dbf8-7025-4efc-8987-20796fca4de1`.\n\n---\n\n## Resumen (5 líneas)\n\n1. **Diagnóstico**: 6 slots del home (20-70) y todos los de cart tienen `no_impression_logging` — intocables. Mis placements previos en slot 80 v2 y 90 v2 (14d) y PDP cross_sell v3 tienen datos limpios y positivos.\n2. **Propuesta ejecutada**: Supersede del slot 80 v2 del home (popular global → popular `mode=\"pdp_category\"`), justificado con joyería como categoría #1 en revenue (24,128,105¢ en 14d vs 384,089¢ del slot 80 actual).\n3. **Evidencia directa**: Slot 80 actual: 21,555 seen, 833 atc (38.6/1k), 384,089¢/14d. Joyería: 65,901 seen, 505 purchases, 24.1M¢/14d — la categoría con mayor potencial sin carrusel dedicado.\n4. **Lo que no toqué**: Slot 90 v2 (3,356,574¢/14d — éxito rotundo), PDP cross_sell (5,934,907¢/7d — excelente), y todos los placements con `no_impression_logging` (esperar es la única acción válida).\n5. **Hipótesis para since_change**: El carrusel de joyería en slot 80 superará los 38.6 atc/1k y generará >82,000¢ en 72h. Si se cumple, re-propondré con evidencia para un TTL más largo o slot más alto.",
+  "truncated": false,
+  "runId": "sim-run-42-e10",
+  "createdAt": "2026-07-02T07:28:01.295Z"
+}

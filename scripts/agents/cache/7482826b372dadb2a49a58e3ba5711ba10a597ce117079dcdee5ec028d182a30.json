@@ -1,0 +1,82 @@
+{
+  "proposals": [
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "section_type": "popular",
+      "params": {
+        "limit": 20,
+        "mode": "global"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 20 es el de mayor atención post-hero (justo bajo el hero). Los placements actuales en slot 20 (ids 43d36c33, 6145862e) tienen flag no_impression_logging desde hace 98-112 días — están inertes. Deporte (7,610 seen, 45 purchases 7d) y tecnologia (6,755 seen, 30 purchases, 505,198 revenue 7d) son categorías de alto volumen que justifican un popular global fresco. Es un carrusel aditivo puro: el home sin placements funcionales solo muestra el hero, así que todo lo que genere este placement es margen nuevo. Medible via since_change: espero seen>0 y purchases>0 en 28d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "section_type": "popular",
+      "params": {
+        "limit": 16,
+        "mode": "cohort"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 30 es el segundo carrusel post-hero. El placement actual (id 08906ef2) tiene no_impression_logging desde hace 112 días. El sistema muestra eficacia global sólida (revenue_ratio 3.27x vs holdout en 7d, con 154,2777 revenue default vs 58,342 holdout). Mode=cohort personaliza mostrando lo popular dentro del segmento de cada usuario, ideal para engagement. Es un carrusel aditivo puro — cada vista es incremental. Medible via since_change: espero purchases >0 y revenue >0 en 28d."
+    },
+    {
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "section_type": "popular",
+      "params": {
+        "limit": 16,
+        "mode": "pdp_category"
+      },
+      "rule": null,
+      "scope": "global",
+      "scope_ref": null,
+      "ttl_hours": 72,
+      "rationale": "Slot 40 es el tercer carrusel aditivo del home. El placement actual (id ba3591cc) tiene no_impression_logging desde hace 98 días. Mode=pdp_category muestra productos populares de la categoría que el usuario estaba viendo en PDP. Tecnologia (6,755 seen, $5,052 revenue 7d) y moda_mujer (3,079 seen, AOV ~$387 con 464,905 revenue 7d) tienen alta tracción. Este carrusel captura a usuarios que ya demostraron interés categórico. Es aditivo puro. Medible via since_change: espero revenue >0 en 28d."
+    }
+  ],
+  "results": [
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 20,
+      "placement_id": "fa4403a6-7037-43e4-a551-e6412d3d303f",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 30,
+      "placement_id": "2c46e4fd-569a-49cf-9907-cb35e35a4fef",
+      "effective_tier": "low",
+      "status": "approved"
+    },
+    {
+      "accepted": true,
+      "action": "create",
+      "surface": "home",
+      "slot": 40,
+      "placement_id": "1dbc493f-1153-4907-ba48-51991ce0c67d",
+      "effective_tier": "low",
+      "status": "approved"
+    }
+  ],
+  "finalText": "Las 3 propuestas fueron aceptadas en tier **low** y status **approved**. Resumen:\n\n---\n\n## Resumen final\n\n| # | Acción | Placement ID | Tier | Status |\n|---|--------|-------------|------|--------|\n| 1 | Home slot 20 — popular global (limit=20) | `fa4403a6...` | low | ✅ approved |\n| 2 | Home slot 30 — popular cohort (limit=16) | `2c46e4fd...` | low | ✅ approved |\n| 3 | Home slot 40 — popular pdp_category (limit=16) | `1dbc493f...` | low | ✅ approved |\n\n**Propuestas descartadas:** PDP cross_sell (los datos del critic mostraban que PDP ya tiene placements, error fáctico) y cart_addons (flag `no_impression_logging` — la única acción válida es esperar).\n\n**Qué se espera en la próxima revisión (since_change):**\n- Cada carrusel es **aditivo puro** sobre un home que solo muestra el hero. El slot 20 (fa4403a6) debería tener `seen > 0` y `purchases > 0` por su alta visibilidad. Los slots 30 y 40 deberían mostrar revenue incremental. La métrica clave será el revenue incremental vs el holdout, que hoy está en 3.27x — si estos carruseles agregan sin canibalizar, la ratio debería mantenerse o mejorar.",
+  "truncated": false,
+  "runId": "sim-run-7-e10",
+  "createdAt": "2026-07-02T09:47:14.186Z"
+}

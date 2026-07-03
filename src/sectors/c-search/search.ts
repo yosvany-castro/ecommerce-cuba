@@ -9,7 +9,7 @@ import { bm25Search, type SearchFilters } from "./retrieve/bm25";
 import { cosineSearch } from "./retrieve/cosine";
 import { rrfFuse, RRF_K0, type FusedProduct, type RankedProduct } from "./retrieve/rrf";
 import { shouldCallMock, FRESHNESS_THRESHOLD_HOURS } from "./decide/shouldCallMock";
-import { getCategoryFreshness } from "./decide/freshness";
+import { getQueryFreshness, recordQueryAggregatorCall } from "./decide/freshness";
 import { persistSearch, type SearchMethod } from "./persist/searches";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
 import { activeProvider } from "@/sectors/b-catalog/provider";
@@ -247,16 +247,13 @@ export async function hybridSearch(
   let fused: FusedProduct[] = rrfFuse([bm25, cos], RRF_K0);
   tracer.end("rrf");
 
-  // 7. Freshness check + mock fallback decision
+  // 7. Freshness check (POR QUERY, F4 T4) + mock fallback decision.
   tracer.start("freshness_check");
-  const checkedCategory = normalized?.categories?.[0] ?? null;
-  const lastRefreshedAt = normalized
-    ? await getCategoryFreshness(checkedCategory, pg)
-    : null;
+  const lastRefreshedAt = normalized ? await getQueryFreshness(hash, pg) : null;
   tracer.end("freshness_check");
   tracer.set("freshness", {
-    category_checked: checkedCategory,
-    last_refreshed_at: lastRefreshedAt ? lastRefreshedAt.toISOString() : null,
+    query_hash: hash,
+    last_called_at: lastRefreshedAt ? lastRefreshedAt.toISOString() : null,
     hours_old: lastRefreshedAt
       ? (Date.now() - lastRefreshedAt.getTime()) / (3600 * 1000)
       : null,
@@ -278,7 +275,7 @@ export async function hybridSearch(
         lastRefreshedAt &&
         (Date.now() - lastRefreshedAt.getTime()) / (3600 * 1000) < FRESHNESS_THRESHOLD_HOURS
       ) {
-        decisionReason = "category_recently_refreshed";
+        decisionReason = "query_recently_refreshed";
       } else decisionReason = "criteria_not_met";
     } else {
       // F4 T2: freno de gasto ANTES de pagar — el presupuesto se lee de la
@@ -338,6 +335,9 @@ export async function hybridSearch(
             Math.round(Date.now() - t0),
           ],
         );
+        // F4 T4: registra la llamada por-query (freshness + negative cache) —
+        // incluso 0 resultados cuenta, para no re-consultar la misma query.
+        await recordQueryAggregatorCall(hash, mockResult.products.length, pg);
         const seen = new Set<string>();
         for (const raw of mockResult.products) {
           const key = `${raw.source}:${raw.source_product_id}`;
