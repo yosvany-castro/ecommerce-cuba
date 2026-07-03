@@ -7,6 +7,7 @@ import { track } from "@/lib/client/track";
 import { CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
+import { CartDrawer } from "./CartDrawer";
 
 // FREE = $50 (dc.html:1174 envioGratisDesde=50; freeS = "$50").
 const AVISO_MSGS = [
@@ -542,6 +543,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </div>
 
       <main>{children}</main>
+      <CartDrawer />
     </>
   );
 }
