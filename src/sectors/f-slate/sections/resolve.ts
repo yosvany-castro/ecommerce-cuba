@@ -4,6 +4,7 @@ import type { ComposedPage, ComposeIdentity, ComposeSurfaceArgs } from "../compo
 import { SECTION_REGISTRY } from "./registry";
 import { logSectionImpressions, type SectionImpressionRow } from "./impressions";
 import type { ResolvedSection, SectionCardDTO } from "./types";
+import { toCard } from "@/storefront/map";
 
 /**
  * Section runner (D3): executes a composition's placements in PRIORITY order
@@ -67,15 +68,7 @@ export async function resolveSections(
           ),
           p.budget_ms,
         );
-        const items: SectionCardDTO[] = feed.items.map((it) => ({
-          id: it.product.id,
-          title: it.product.title,
-          price_cents: it.product.price_cents,
-          currency: it.product.currency,
-          image_url: it.product.image_url,
-          ...(it.reason ? { reason: it.reason } : {}),
-          ...(it.position ? { position: it.position } : {}),
-        }));
+        const items: SectionCardDTO[] = feed.items.map((it) => toCard(it.product, it.reason, it.position));
         for (const it of items) claimed.add(it.id);
         results.push({
           ...base,
@@ -137,12 +130,12 @@ export async function resolveSections(
   const allIds = pendingHydration.flatMap((x) => x.ids);
   if (allIds.length > 0) {
     const r = await pg.query(
-      `SELECT id::text, title, price_cents, currency, image_url
+      `SELECT id::text, title, price_cents, currency, image_url, metadata
        FROM products WHERE id = ANY($1::uuid[]) AND is_active = true`,
       [allIds],
     );
     const byId = new Map(
-      (r.rows as SectionCardDTO[]).map((row) => [row.id, row]),
+      (r.rows as Array<SectionCardDTO & { metadata?: unknown }>).map((row) => [row.id, toCard(row)]),
     );
     for (const { section, ids } of pendingHydration) {
       section.items = ids

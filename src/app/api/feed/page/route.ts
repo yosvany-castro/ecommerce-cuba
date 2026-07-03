@@ -4,6 +4,7 @@ import { dbHealth } from "@/lib/db/health";
 import { serveFeedPage } from "@/sectors/d-personalization/feed";
 import { RequestTiming } from "@/lib/timing";
 import type { StorefrontCard } from "@/storefront/contract";
+import { toCard } from "@/storefront/map";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -40,15 +41,7 @@ export async function GET(req: NextRequest) {
     ),
   );
 
-  const items: StorefrontCard[] = page.items.map((it) => ({
-    id: it.product.id,
-    title: it.product.title,
-    price_cents: it.product.price_cents,
-    currency: it.product.currency,
-    image_url: it.product.image_url,
-    ...(it.reason ? { reason: it.reason } : {}),
-    ...(it.position ? { position: it.position } : {}),
-  }));
+  const items: StorefrontCard[] = page.items.map((it) => toCard(it.product, it.reason, it.position));
 
   return NextResponse.json(
     { items, next_cursor: page.next_cursor, slate_id: page.slate_id },

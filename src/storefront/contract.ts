@@ -5,6 +5,7 @@ export interface StorefrontCard {
   price_cents: number;
   currency: string;
   image_url: string | null;
+  category?: string | null; // metadata.category normalizada (ropa|electronica|hogar|juguetes_bebe|belleza|otros)
   reason?: string;
   position?: number;
 }
