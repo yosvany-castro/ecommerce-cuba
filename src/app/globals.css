@@ -10,3 +10,76 @@ body {
   color: var(--foreground);
   font-family: system-ui, sans-serif;
 }
+
+@keyframes shimmer {
+  0% { background-position: -460px 0; }
+  100% { background-position: 460px 0; }
+}
+
+@keyframes secIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  0% { transform: scale(.4); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes checkPop {
+  0% { transform: scale(.3); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sparkPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: .7; }
+}
+
+@keyframes barStripes {
+  from { background-position: 0 0; }
+  to { background-position: 28.28px 0; }
+}
+
+.tk-hov-dark:hover { color: #1c1d20 !important; }
+.tk-hov-bd-dark:hover { border-color: #1c1d20 !important; }
+.tk-hov-bg:hover { background: #fafaf8 !important; }
+.tk-hov-white:hover { color: #fff !important; }
+.tk-hov-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(28, 29, 32, 0.09); }
