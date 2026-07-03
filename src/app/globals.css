@@ -83,3 +83,7 @@ body {
 .tk-hov-bg:hover { background: #fafaf8 !important; }
 .tk-hov-white:hover { color: #fff !important; }
 .tk-hov-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(28, 29, 32, 0.09); }
+.tk-hov-chip:hover { border-color: #1c1d20 !important; color: #1c1d20 !important; }
+.tk-hov-underline:hover { text-decoration: underline; }
+.tk-hov-plus:hover { transform: scale(1.12); }
+.tk-hov-cta:hover { transform: scale(1.04); }
