@@ -19,6 +19,7 @@ import {
   fetchSpentLast24h,
 } from "./decide/budget";
 import { singleFlight } from "./decide/single-flight";
+import { asyncIngestEnabled, queueExternalIngest, type IngestOutcome } from "./ingest-async";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 import { Tracer, NoopTracer, type ITracer } from "./debug/tracer";
@@ -43,6 +44,12 @@ export interface HybridSearchResult {
   calledMock: boolean;
   method: SearchMethod;
   trace?: SearchTrace;
+  /**
+   * F4 T3: job de ingesta externa EN VUELO (solo cuando calledMock=true en
+   * modo async). Producción lo ignora (fire-and-forget); tests/evals pueden
+   * await-earlo para determinismo. Jamás rechaza.
+   */
+  ingestion?: Promise<IngestOutcome>;
 }
 
 async function resolveProducts(ids: string[], pg: Client): Promise<ProductListRow[]> {
@@ -256,6 +263,7 @@ export async function hybridSearch(
   });
 
   let calledMock = false;
+  let ingestion: Promise<IngestOutcome> | undefined;
   let mockProductsFetched = 0;
   let mockProductsProcessed = 0;
   let mockProductsFailed = 0;
@@ -285,7 +293,25 @@ export async function hybridSearch(
     }
     tracer.set("decision", { should_call_mock: should, reason: decisionReason });
 
-    if (should) {
+    if (should && asyncIngestEnabled()) {
+      // F4 T3 (decisión 2026-07-02): devolver lo LOCAL ya — el fetch externo +
+      // enriquecimiento corre de fondo (ingest-async.ts) e invalida la caché
+      // exacta al terminar; los productos externos aparecen en la siguiente
+      // búsqueda idéntica. SEARCH_ASYNC_INGEST=false restaura el modo síncrono.
+      tracer.start("mock_fallback");
+      const searchPath = (await pg.query(`SHOW search_path`)).rows[0].search_path as string;
+      ingestion = queueExternalIngest({
+        hash,
+        query: normalized.search_terms,
+        category: normalized.categories?.[0] as MockCategory | undefined,
+        limit: process.env.HYBRID_SEARCH_MOCK_LIMIT
+          ? parseInt(process.env.HYBRID_SEARCH_MOCK_LIMIT, 10)
+          : undefined,
+        searchPath,
+      });
+      calledMock = true; // la llamada pagada se disparó (en vuelo)
+      tracer.end("mock_fallback");
+    } else if (should) {
       tracer.start("mock_fallback");
       try {
         const limitOverride = process.env.HYBRID_SEARCH_MOCK_LIMIT
@@ -356,8 +382,11 @@ export async function hybridSearch(
   const method = deriveMethod(bm25, cos);
   const productIds = fused.map((f) => f.id);
 
-  // 8. Cache (only on miss path)
-  if (normalized) {
+  // 8. Cache (only on miss path). Con ingesta async EN VUELO no se escribe:
+  // el job la invalidaría al terminar, pero si terminara ANTES de esta línea
+  // la escritura resucitaría el resultado local-only por 24h (race). Ese
+  // request simplemente no cachea; la siguiente búsqueda puebla la caché.
+  if (normalized && !ingestion) {
     tracer.start("persist");
     await writeExact(
       {
@@ -435,6 +464,7 @@ export async function hybridSearch(
     hitCache: false,
     calledMock,
     method,
+    ingestion,
     trace: opts.trace ? tracer.finish() : undefined,
   };
 }
