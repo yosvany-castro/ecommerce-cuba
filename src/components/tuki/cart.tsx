@@ -47,6 +47,7 @@ interface TukiCartContextValue {
   count: number;
   subtotal: number;
   weightLb: number;
+  hydrated: boolean;
   open: boolean;
   setOpen(v: boolean): void;
   add(snap: CardSnapshot, qty?: number, color?: string | null, size?: string | null): void;
@@ -64,10 +65,14 @@ export function TukiCartProvider({ children }: { children: React.ReactNode }) {
   // "parpadeo" de carrito vacío en el primer paint del cliente antes del effect.
   const [items, setItems] = useState<TukiCartItem[]>([]);
   const [open, setOpen] = useState(false);
+  // hydrated=false hasta que el effect lee localStorage: distingue "carrito vacío
+  // de verdad" de "aún no cargó" (primer paint siempre vacío por el SSR guard).
+  const [hydrated, setHydrated] = useState(false);
   const showToast = useToast();
 
   useEffect(() => {
     setItems(readLocal());
+    setHydrated(true);
   }, []);
 
   const add = useCallback(
@@ -112,6 +117,7 @@ export function TukiCartProvider({ children }: { children: React.ReactNode }) {
     count: items.reduce((sum, i) => sum + i.qty, 0),
     subtotal: subtotalCents(items),
     weightLb: cartWeightLb(items),
+    hydrated,
     open,
     setOpen,
     add,
