@@ -8,8 +8,18 @@ export interface AnonymousOrderInput {
   session_id: string;
   items: { product_id: string; quantity: number }[];
   // Datos de envío ya validados en la ruta (zod strict) — se guardan tal cual en orders.shipping.
-  shipping: Record<string, unknown> & { nombre?: string };
+  shipping: Record<string, unknown> & { nombre?: string; metodo?: "rapido" | "estandar" | "lento" };
 }
+
+// Tarifas de envío (centavos). Duplicado intencional de SHIP en
+// src/components/tuki/checkout-core.ts: ese archivo es capa UI (client), este
+// sector es server-only — no cruzamos esa frontera por 3 números.
+const SHIP_PRICE_CENTS: Record<"rapido" | "estandar" | "lento", number> = {
+  rapido: 1299,
+  estandar: 499,
+  lento: 199,
+};
+const FREE_SHIP_THRESHOLD_CENTS = 5000;
 
 export interface CheckoutResult {
   order_id: string;
@@ -67,12 +77,18 @@ export async function createAnonymousOrder(
 
     const totalCharged = lineItems.reduce((s, { item, prod }) => s + prod.price_cents * item.quantity, 0);
     const totalCost = Math.round(totalCharged * 0.6);
+    // total_charged_cents es solo-productos (igual que createCheckoutOrder); el
+    // envío no se suma al cobro confirmado, se guarda aparte abajo.
+    const metodo: "rapido" | "estandar" | "lento" = input.shipping.metodo ?? "estandar";
+    const shipPriceCents =
+      metodo === "estandar" && totalCharged >= FREE_SHIP_THRESHOLD_CENTS ? 0 : SHIP_PRICE_CENTS[metodo];
+    const shippingWithPrice = { ...input.shipping, ship_price_cents: shipPriceCents };
 
     const order = await pg.query(
       `INSERT INTO orders (user_id, status, total_charged_cents, total_cost_cents, shipping)
        VALUES ($1, 'pendiente', $2, $3, $4::jsonb)
        RETURNING id`,
-      [userId, totalCharged, totalCost, JSON.stringify(input.shipping)],
+      [userId, totalCharged, totalCost, JSON.stringify(shippingWithPrice)],
     );
     const orderId: string = order.rows[0].id;
 

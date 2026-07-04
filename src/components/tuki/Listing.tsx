@@ -64,7 +64,7 @@ export function Listing({
       setAdv((a) => ({ ...a, sort: next }));
     } else {
       const key = k as "oferta" | "r4" | "envio";
-      track("filter_applied", { filter_type: key, filter_value: !adv[key] });
+      track("filter_applied", { filter_type: key, filter_value: adv[key] ? "off" : "on" });
       setAdv((a) => ({ ...a, [key]: !a[key] }));
     }
   };

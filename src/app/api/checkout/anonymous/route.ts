@@ -9,8 +9,9 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const bodySchema = z
   .object({
     items: z
-      .array(z.object({ product_id: z.string().uuid(), quantity: z.number().int().min(1) }))
-      .min(1),
+      .array(z.object({ product_id: z.string().uuid(), quantity: z.number().int().min(1).max(999) }))
+      .min(1)
+      .max(50),
     shipping: z
       .object({
         nombre: z.string().min(1),

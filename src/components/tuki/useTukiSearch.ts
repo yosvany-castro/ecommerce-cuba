@@ -91,14 +91,14 @@ export function useTukiSearch(): TukiSearch {
       saveRecent(q); // guardar al INICIAR la búsqueda
 
       const fetchOnce = (): Promise<ApiResp> => fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => r.json());
-      const finish = (finalCards: StorefrontCard[], finalMeta: SearchMeta) => {
+      const finish = (finalCards: StorefrontCard[], finalMeta: SearchMeta, trackIt = true) => {
         if (myId !== runId.current) return;
         clearTimer();
         setCards(finalCards);
         setMeta(finalMeta);
         setProgress(1);
         setPhase("results");
-        track("search", { raw_query: q, results_count: finalCards.length, method: finalMeta.method });
+        if (trackIt) track("search", { raw_query: q, results_count: finalCards.length, method: finalMeta.method });
       };
 
       fetchOnce()
@@ -119,7 +119,8 @@ export function useTukiSearch(): TukiSearch {
               .catch(() => finish(toCards(r1.products), metaOf(r1))); // r2 falla → r1
           }, STEP_MS);
         })
-        .catch(() => finish([], { hit_cache: false, called_mock: false, method: "error" }));
+        // una búsqueda que no llegó al server no es evento medible: sin track.
+        .catch(() => finish([], { hit_cache: false, called_mock: false, method: "error" }, false));
     },
     [clearTimer],
   );

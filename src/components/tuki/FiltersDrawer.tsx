@@ -122,7 +122,7 @@ export function FiltersDrawer({
                 <div
                   key={key}
                   onClick={() => {
-                    track("filter_applied", { filter_type: key, filter_value: !on });
+                    track("filter_applied", { filter_type: key, filter_value: on ? "off" : "on" });
                     setAdv((a) => ({ ...a, [key]: !a[key] }));
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}

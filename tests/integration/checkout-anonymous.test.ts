@@ -96,4 +96,36 @@ describe("POST /api/checkout/anonymous", () => {
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("no_identity");
   });
+
+  test("persiste shipping.ship_price_cents — estándar con subtotal<5000 → 499", async () => {
+    await withTestDb(async (pg) => {
+      const anonId = randomUUID();
+      const sessionId = randomUUID();
+      const product = await seedProduct(pg, { title: "Taza", price_cents: 1000 });
+
+      const res = await POST(
+        makeReq(
+          { items: [{ product_id: product.id, quantity: 2 }], shipping }, // subtotal 2000 < 5000
+          { anonymous_id: anonId, session_id: sessionId },
+        ),
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+
+      const order = (await pg.query(`SELECT shipping FROM orders WHERE id=$1`, [body.order_id])).rows[0];
+      expect(order.shipping.ship_price_cents).toBe(499);
+    });
+  });
+
+  test("quantity 1000 (sobre la cota de 999) → 400 bad_request", async () => {
+    const product_id = randomUUID();
+    const res = await POST(
+      makeReq(
+        { items: [{ product_id, quantity: 1000 }], shipping },
+        { anonymous_id: randomUUID(), session_id: randomUUID() },
+      ),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("bad_request");
+  });
 });

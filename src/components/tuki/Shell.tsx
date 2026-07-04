@@ -14,7 +14,6 @@ import { DEMO_PROFILES, AVATAR_COLORS, profileForAnonId, type DemoProfile } from
 const AVISO_MSGS = [
   "🚚 envío estándar gratis desde $50 — siempre",
   "⚡ ¿prisa? el envío rápido llega en 1–2 días",
-  "✦ estrenamos secciones promocionales — baja por el feed",
   "la factura llega sola a tu correo al comprar",
 ];
 const TRENDING = ["freidora de aire", "audífonos", "yoga", "monstera", "sérum", "mochila"];
