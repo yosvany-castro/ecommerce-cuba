@@ -8,6 +8,7 @@ import { CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
 import { CartDrawer } from "./CartDrawer";
+import { DEMO_PROFILES, AVATAR_COLORS, profileForAnonId, type DemoProfile } from "./profiles";
 
 // FREE = $50 (dc.html:1174 envioGratisDesde=50; freeS = "$50").
 const AVISO_MSGS = [
@@ -18,14 +19,14 @@ const AVISO_MSGS = [
 ];
 const TRENDING = ["freidora de aire", "audífonos", "yoga", "monstera", "sérum", "mochila"];
 const NAV_IDS = ["electronica", "ropa", "hogar", "belleza"] as const;
-// Lista estática del diseño (dc.html 961–972). Wiring real de perfiles en T11.
-const PROFILES = [
-  { id: "explorador", name: "Explorador", letter: "✦", desc: "El feed parte general y aprende de cada toque", bg: "#F1F1EE", fg: "#55565B" },
-  { id: "ana", name: "Ana · deportista", letter: "A", desc: "Corre 5k tres veces por semana", bg: "#E4F2F1", fg: "#3E7F78" },
-  { id: "leo", name: "Leo · cocinero", letter: "L", desc: "Cocina en casa a diario", bg: "#FBEBEA", fg: "#A25B52" },
-  { id: "dani", name: "Dani · tecnófila", letter: "D", desc: "Setup, gadgets y estilo urbano", bg: "#F0ECFA", fg: "#6B5BA8" },
-];
-const ACTIVE_PROFILE = PROFILES[0]; // Explorador (perfil por defecto del diseño)
+const ANON_COOKIE_RE = /(?:^|;\s*)anonymous_id=([^;]+)/;
+
+// Función de módulo (no hook/componente) a propósito: el linter del compilador
+// de React marca cualquier asignación a un global (document.cookie = ...)
+// hecha directamente dentro de un componente como "mutación externa".
+function setAnonymousIdCookie(id: string): void {
+  document.cookie = `anonymous_id=${id}; path=/; max-age=31536000; SameSite=Lax`;
+}
 
 interface Suggestion {
   id: string;
@@ -46,6 +47,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [recents, setRecents] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeProfile, setActiveProfile] = useState<DemoProfile>(DEMO_PROFILES[0]);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Rotación de avisos cada 4s (dc.html:1317).
@@ -53,6 +55,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
     const t = setInterval(() => setAvisoIdx((i) => (i + 1) % AVISO_MSGS.length), 4000);
     return () => clearInterval(t);
   }, []);
+
+  // Perfil activo por cookie (T11): solo en el cliente — el primer render SSR
+  // usa el default Explorador (sin mismatch: un visitante frío realmente ES
+  // Explorador hasta que la cookie diga lo contrario).
+  useEffect(() => {
+    const m = document.cookie.match(ANON_COOKIE_RE);
+    setActiveProfile(profileForAnonId(m ? decodeURIComponent(m[1]) : null));
+  }, []);
+
+  const pickProfile = (p: DemoProfile) => {
+    const anonId = p.anonId ?? crypto.randomUUID(); // Explorador = usuario frío nuevo
+    setAnonymousIdCookie(anonId);
+    setActiveProfile(p);
+    setMenuOpen(false);
+    showToast(`✦ feed rearmado para ${p.name.split(" ")[0]}`);
+    router.push("/");
+    router.refresh();
+  };
 
   // Recientes de localStorage (solo lectura aquí; se escriben en T6). Se leen al
   // enfocar el buscador — así reflejan búsquedas hechas en esta misma sesión.
@@ -400,8 +420,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     width: 30,
                     height: 30,
                     borderRadius: "50%",
-                    background: ACTIVE_PROFILE.bg,
-                    color: ACTIVE_PROFILE.fg,
+                    background: AVATAR_COLORS[activeProfile.id].bg,
+                    color: AVATAR_COLORS[activeProfile.id].fg,
                     fontSize: 12.5,
                     fontWeight: 700,
                     display: "flex",
@@ -409,9 +429,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     justifyContent: "center",
                   }}
                 >
-                  {ACTIVE_PROFILE.letter}
+                  {activeProfile.letter}
                 </div>
-                <span style={{ fontSize: 13.5, fontWeight: 600 }}>{ACTIVE_PROFILE.name.split(" ")[0]}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 600 }}>{activeProfile.name.split(" ")[0]}</span>
                 <span style={{ fontSize: 10, color: "#8E8F94" }}>▾</span>
               </div>
               {menuOpen && (
@@ -433,15 +453,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, color: "#55565B", padding: "6px 8px 10px" }}>
                     ¿quién está comprando hoy?
                   </div>
-                  {PROFILES.map((pr) => {
-                    const active = pr.id === ACTIVE_PROFILE.id;
+                  {DEMO_PROFILES.map((pr) => {
+                    const active = pr.id === activeProfile.id;
                     return (
                       <div
                         key={pr.id}
-                        onClick={() => {
-                          setMenuOpen(false);
-                          showToast("disponible pronto");
-                        }}
+                        onClick={() => pickProfile(pr)}
                         className="tk-hov-bg"
                         style={{
                           display: "flex",
@@ -459,8 +476,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                             width: 36,
                             height: 36,
                             borderRadius: "50%",
-                            background: pr.bg,
-                            color: pr.fg,
+                            background: AVATAR_COLORS[pr.id].bg,
+                            color: AVATAR_COLORS[pr.id].fg,
                             fontSize: 14,
                             fontWeight: 700,
                             display: "flex",

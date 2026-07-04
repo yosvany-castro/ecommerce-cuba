@@ -10,9 +10,6 @@ import { catOf, demoAttrs, fmt, sectionize, stripe, type TukiSection, CATS } fro
 import { useTukiCart } from "./cart";
 import { ProductCard } from "./ProductCard";
 
-const GREETING = "Hola — armamos esto para ti";
-const GREET_SUB = "el feed aprende de lo que miras, sin formularios";
-
 interface Batch {
   sections: TukiSection[];
   slateId: string | null;
@@ -153,10 +150,15 @@ export function HomeFeed({
   initialCards,
   nextCursor,
   slateId,
+  greet = "Hola — armamos esto para ti",
+  gsub = "el feed aprende de lo que miras, sin formularios",
 }: {
   initialCards: StorefrontCard[];
   nextCursor: string | null;
   slateId: string | null;
+  /** Greeting por perfil demo (T11) — default = copy de Explorador (T5). */
+  greet?: string;
+  gsub?: string;
 }) {
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>(() => [{ sections: sectionize(initialCards), slateId }]);
@@ -213,8 +215,8 @@ export function HomeFeed({
     <div style={{ animation: "screenIn .3s ease both" }}>
       {/* greeting + chips */}
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "36px 28px 8px" }}>
-        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 36, letterSpacing: "-0.4px" }}>{GREETING}</div>
-        <div style={{ fontSize: 14, color: "#8E8F94", marginTop: 6 }}>✦ {GREET_SUB}</div>
+        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 36, letterSpacing: "-0.4px" }}>{greet}</div>
+        <div style={{ fontSize: 14, color: "#8E8F94", marginTop: 6 }}>✦ {gsub}</div>
         <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
           {Object.values(CATS).map((c) => (
             <div
