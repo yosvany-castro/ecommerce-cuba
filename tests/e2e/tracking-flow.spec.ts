@@ -30,7 +30,9 @@ test.describe("tracking-flow", () => {
         body: JSON.stringify({
           event_type: "search",
           occurred_at: new Date().toISOString(),
-          payload: { query: "e2e session start probe" },
+          // Forma actual de PAYLOAD_SCHEMAS.search (a-tracking/events/schema.ts) — el
+          // payload viejo { query } quedó obsoleto y el endpoint ahora lo rechaza (400).
+          payload: { raw_query: "e2e session start probe", results_count: 0, method: "hybrid_rrf" },
         }),
       });
       return r.status;

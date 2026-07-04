@@ -14,7 +14,7 @@ test.describe("search-flow", () => {
     await page.context().clearCookies();
 
     // Set up the response promise BEFORE navigating to avoid any race with the
-    // SearchTracker client component firing after React hydration.
+    // client-side search tracking firing after React hydration.
     const trackResponsePromise = page
       .waitForResponse(
         (resp) => resp.url().includes("/api/track") && resp.request().method() === "POST",
@@ -27,17 +27,17 @@ test.describe("search-flow", () => {
     // Wait for results to render OR the empty state
     await expect(
       page
-        .locator('[data-testid="product-card"]').first()
+        .locator('[data-testid="tuki-card"]').first()
         .or(page.getByText(/Sin resultados/)),
     ).toBeVisible({ timeout: 90_000 });
 
-    // Wait for the SearchTracker POST to complete (fires after hydration)
+    // Wait for the client-side track POST to complete (fires after hydration)
     await trackResponsePromise;
 
     const anonId = (await page.context().cookies()).find((c) => c.name === "anonymous_id")!.value;
     const c = await pg();
     try {
-      // searches row was inserted by hybridSearch via the server component
+      // searches row was inserted by hybridSearch via /api/search (Tuki: /search es client-side)
       const sr = await c.query(
         `SELECT search_method, raw_query FROM searches WHERE raw_query = 'camiseta' AND anonymous_id = $1 ORDER BY occurred_at DESC LIMIT 1`,
         [anonId],
@@ -45,7 +45,7 @@ test.describe("search-flow", () => {
       expect(sr.rowCount).toBeGreaterThanOrEqual(1);
       expect(sr.rows[0].search_method).toBe("hybrid_rrf");
 
-      // SearchTracker emitted an event
+      // client-side tracking emitted an event
       const ev = await c.query(
         `SELECT event_type, payload FROM events WHERE anonymous_id = $1 AND event_type = 'search'`,
         [anonId],
@@ -61,8 +61,9 @@ test.describe("search-flow", () => {
     await page.context().clearCookies();
 
     await page.goto("/search?q=asdfgh");
-    // Wait specifically for the search HTTP response (server-component renders /search?q=...)
-    // instead of networkidle — networkidle is fragile when DeepSeek latency varies.
+    // Tuki: /search es un client component — la página ya cargó (goto resuelve en 'load'),
+    // así que esto espera específicamente la respuesta del fetch a /api/search?q=... que
+    // dispara useTukiSearch tras hidratar. Evita networkidle, frágil con latencia de DeepSeek.
     await page.waitForResponse(
       (resp) => resp.url().includes("/search?q=") && resp.status() === 200,
       { timeout: 90_000 },

@@ -2,7 +2,37 @@
 import "server-only";
 import type { ComposedPage } from "@/sectors/f-slate/compose";
 import type { ResolvedSection } from "@/sectors/f-slate/sections/types";
-import type { StorefrontSection, StorefrontPage } from "./contract";
+import type { StorefrontCard, StorefrontSection, StorefrontPage } from "./contract";
+
+/**
+ * Único mapper producto→card (T2): antes duplicado inline en el feed
+ * (/api/feed/page) y en el hero_grid de f-slate/resolve — mismo literal,
+ * dos sitios. category viene de metadata.category (siempre presente como
+ * objeto, NOT NULL DEFAULT '{}' en products).
+ */
+export function toCard(
+  product: {
+    id: string;
+    title: string;
+    price_cents: number;
+    currency: string;
+    image_url: string | null;
+    metadata?: unknown;
+  },
+  reason?: string,
+  position?: number,
+): StorefrontCard {
+  return {
+    id: product.id,
+    title: product.title,
+    price_cents: product.price_cents,
+    currency: product.currency,
+    image_url: product.image_url,
+    category: (product.metadata as { category?: string } | undefined)?.category ?? null,
+    ...(reason ? { reason } : {}),
+    ...(position ? { position } : {}),
+  };
+}
 
 export function toSection(s: ResolvedSection): StorefrontSection {
   return {

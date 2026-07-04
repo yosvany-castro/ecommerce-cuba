@@ -10,6 +10,7 @@ export interface SectionCardDTO {
   price_cents: number;
   currency: string;
   image_url: string | null;
+  category?: string | null; // metadata.category (StorefrontCard, F/T2)
   reason?: string;
   /** Posición absoluta en el slate (solo hero — reporte de viewport). */
   position?: number;
@@ -46,7 +47,7 @@ export interface ResolvedSection {
   title: string;
   display: string;
   items: SectionCardDTO[];
-  /** hero_grid only: continuation for InfiniteFeed. */
+  /** hero_grid only: cursor de continuación para el feed paginado. */
   next_cursor?: string | null;
   slate_id?: string | null;
   outcome: "served" | "empty" | "below_min" | "timeout" | "error" | "unknown_type";

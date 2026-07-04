@@ -148,7 +148,11 @@ describe("POST /api/slate/resolve (D3)", () => {
       const res = await slateResolvePOST(req);
       expect(res.status).toBe(200);
       const body = (await res.json()) as {
-        sections: { section_type: string; title: string; items: { id: string; price_cents: number }[] }[];
+        sections: {
+          section_type: string;
+          title: string;
+          items: { id: string; price_cents: number; category?: string | null }[];
+        }[];
       };
       expect(body.sections).toHaveLength(1);
       const addons = body.sections[0];
@@ -157,6 +161,7 @@ describe("POST /api/slate/resolve (D3)", () => {
       expect(ids).toEqual([related[0], related[1]]); // orden por rank; excluido fuera; ancla fuera
       expect(ids).not.toContain(excluded);
       expect(addons.items[0].price_cents).toBe(1500); // hidratado
+      expect(addons.items[0].category).toBe("audio"); // T2: metadata.category hidratado en el SELECT del runner
 
       // Decisión registrada para atribución Fase 2:
       const dec = await pg.query(`SELECT surface, placements FROM slate_decisions`);

@@ -1,20 +1,22 @@
 // tests/unit/storefront-boundary.test.ts — la frontera visual/motor es una
-// regla ejecutable, no una convención: src/components/** solo ve el contrato
-// (@/storefront/contract) y libs cliente; jamás @/sectors/**.
+// regla ejecutable, no una convención: src/components/tuki/** (la UI pública,
+// T12) solo ve el contrato (@/storefront/contract), sus propios hermanos,
+// libs de cliente y react/next; jamás @/sectors/** ni el DAL.
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-// Excepciones EXPLÍCITAS (si se añade otra, justificarla aquí igual):
-// - SearchResults.tsx: llama hybridSearch directo; getSearchPage quedó diferido
-//   en el spec del contrato (2026-06-20). Migrarlo = ampliar el DAL.
-// - SearchTraceView/UserDebugView: vistas de ADMIN — inspeccionan el motor por
-//   diseño (imports type-only de trace/debug); el contrato es de la tienda.
-const ALLOWLIST = new Set([
-  "src/components/SearchResults.tsx",
-  "src/components/SearchTraceView.tsx",
-  "src/components/UserDebugView.tsx",
-]);
+const TUKI_DIR = "src/components/tuki";
+
+const ALLOWED = [
+  /^@\/storefront\/contract$/,
+  /^@\/components\/tuki\//,
+  /^@\/lib\/client\//,
+  /^\.\.?\//, // relativo, dentro del propio directorio tuki
+  /^react$/,
+  /^react\//,
+  /^next\//,
+];
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
@@ -23,12 +25,21 @@ function walk(dir: string): string[] {
   });
 }
 
-describe("frontera storefront", () => {
-  it("ningún componente visual importa @/sectors/** (salvo allowlist justificada)", () => {
-    const files = walk("src/components").filter((p) => /\.(ts|tsx)$/.test(p));
-    const offenders = files.filter(
-      (p) => !ALLOWLIST.has(p) && /from ["']@\/sectors\//.test(readFileSync(p, "utf8")),
-    );
+function importsOf(src: string): string[] {
+  return [...src.matchAll(/from\s+["']([^"']+)["']/g)].map((m) => m[1]);
+}
+
+describe("frontera storefront (tuki)", () => {
+  it("src/components/tuki/** solo importa contrato, sus propios módulos, libs de cliente y react/next", () => {
+    const files = walk(TUKI_DIR).filter((p) => /\.(ts|tsx)$/.test(p));
+    expect(files.length).toBeGreaterThan(0); // si el dir queda vacío, el test miente por vacuidad
+
+    const offenders = files.flatMap((p) => {
+      const bad = importsOf(readFileSync(p, "utf8")).filter(
+        (spec) => !ALLOWED.some((re) => re.test(spec)),
+      );
+      return bad.map((spec) => `${p} -> ${spec}`);
+    });
     expect(offenders).toEqual([]);
   });
 });
