@@ -14,7 +14,7 @@ test.describe("search-flow", () => {
     await page.context().clearCookies();
 
     // Set up the response promise BEFORE navigating to avoid any race with the
-    // SearchTracker client component firing after React hydration.
+    // client-side search tracking firing after React hydration.
     const trackResponsePromise = page
       .waitForResponse(
         (resp) => resp.url().includes("/api/track") && resp.request().method() === "POST",
@@ -31,7 +31,7 @@ test.describe("search-flow", () => {
         .or(page.getByText(/Sin resultados/)),
     ).toBeVisible({ timeout: 90_000 });
 
-    // Wait for the SearchTracker POST to complete (fires after hydration)
+    // Wait for the client-side track POST to complete (fires after hydration)
     await trackResponsePromise;
 
     const anonId = (await page.context().cookies()).find((c) => c.name === "anonymous_id")!.value;
@@ -45,7 +45,7 @@ test.describe("search-flow", () => {
       expect(sr.rowCount).toBeGreaterThanOrEqual(1);
       expect(sr.rows[0].search_method).toBe("hybrid_rrf");
 
-      // SearchTracker emitted an event
+      // client-side tracking emitted an event
       const ev = await c.query(
         `SELECT event_type, payload FROM events WHERE anonymous_id = $1 AND event_type = 'search'`,
         [anonId],
