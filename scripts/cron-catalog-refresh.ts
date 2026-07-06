@@ -25,12 +25,12 @@ const requested = (process.env.APIFY_CRON_SOURCES ?? "amazon")
   .split(",")
   .map((s) => s.trim())
   .filter((s) => s.length > 0);
-const sources = requested.filter((s): s is ApifySource => ALL_SOURCES.includes(s as ApifySource));
-if (sources.length !== requested.length) {
-  console.error("Unknown source in APIFY_CRON_SOURCES:", requested);
-  console.error("Allowed:", ALL_SOURCES.join(", "));
-  process.exit(2);
+const validSources = requested.filter((s): s is ApifySource => ALL_SOURCES.includes(s as ApifySource));
+if (validSources.length !== requested.length) {
+  console.warn("Unknown source in APIFY_CRON_SOURCES, filtering:", requested);
+  console.warn("Allowed:", ALL_SOURCES.join(", "));
 }
+const sources = [...new Set(validSources)]; // dedupe in case csv has duplicates
 
 async function main() {
   const providers = sources.map((s) => makeApifyProvider(s));

@@ -121,6 +121,7 @@ export async function runCatalogRefresh(
       try {
         result = await provider.fetch({ query, limit });
       } catch (e) {
+        // ponytail: piso 1¢ — el costo real de un run fallido es inconocible sin propagarlo desde client.ts (el throw lo descarta); si el gasto en errores importa, propagar usageTotalUsd en el error.
         await pg.query(
           `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
            VALUES ($1::jsonb, 0, 1, $2, true)`,
