@@ -5,7 +5,10 @@
  *
  * Sin --ingest: corre cada fuente una vez, imprime tabla (title/price/old/imgs#/colors#/sizes#)
  *   + costCents + latencyMs, y guarda los items CRUDOS en tests/fixtures/apify/<source>-sample.json.
- * Con --ingest: además pasa cada producto mapeado por processProduct (pg dedicado).
+ *   NO persiste nada — el run es efímero e invisible al breaker de presupuesto
+ *   (mock_calls), a propósito: es un smoke de inspección, no gasto operativo real.
+ * Con --ingest: además inserta en mock_calls (mismo shape que catalog-refresh, así el
+ *   breaker ve el gasto) y pasa cada producto mapeado por processProduct (pg dedicado).
  *
  * Llama runActorGetItems directo (no makeApifyProvider) para quedarse con los items crudos
  * pre-mapeo Y el costo del mismo run — una sola llamada viva por fuente.
@@ -79,16 +82,30 @@ async function runSource(name: SourceName, query: string, limit: number, ingest:
   console.log(`raw=${items.length} mapped=${products.length} cost=${costCents}¢ latency=${latencyMs}ms`);
   console.table(rows);
 
-  if (ingest && products.length) {
-    const res = await withPgDirect(async (pg) => {
-      const out = [];
-      for (const p of products) out.push(await processProduct(p, pg));
-      return out;
+  if (ingest) {
+    await withPgDirect(async (pg) => {
+      // Mismo shape que catalog-refresh (cron/catalog-refresh.ts): el breaker de
+      // presupuesto (fetchSpentLast24h) suma simulated_cost_cents sin distinguir
+      // origen — sin esta fila, un smoke --ingest gasta centavos invisibles al freno.
+      await pg.query(
+        `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
+         VALUES ($1::jsonb, $2, $3, $4, false)`,
+        [
+          JSON.stringify({ source: "apify_smoke", provider: name, query }),
+          products.length,
+          costCents,
+          Math.round(latencyMs),
+        ],
+      );
+      if (products.length) {
+        const out = [];
+        for (const p of products) out.push(await processProduct(p, pg));
+        console.log(
+          `[${name}] ingested: ` +
+            out.map((r) => `${r.productId.slice(0, 8)}(${r.inserted ? "new" : "upd"})`).join(", "),
+        );
+      }
     });
-    console.log(
-      `[${name}] ingested: ` +
-        res.map((r) => `${r.productId.slice(0, 8)}(${r.inserted ? "new" : "upd"})`).join(", "),
-    );
   }
 
   return { name, ok: true as const, raw: items.length, mapped: products.length, costCents, latencyMs };

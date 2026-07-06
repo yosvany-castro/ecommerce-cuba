@@ -87,3 +87,16 @@ export function curateAttrs(input: Record<string, unknown>): CuratedAttrs | unde
 
   return Object.keys(out).length ? out : undefined;
 }
+
+// Decide qué clave `attrs` persistir en metadata (F4 review, hueco de honestidad).
+// Mock viejo (fixture.ts) marca sus productos con `attributes.generated: true`: sin
+// proveedor real detrás, así que sin attrs key (comportamiento actual, ausencia = "no
+// aplica"). Cualquier OTRO producto es real (Apify u origen futuro): persistir attrs
+// SIEMPRE, incluso `{}` si no hubo nada curable — así mergeAttrs (tuki/lib.ts) ve
+// `attrs` presente y no cae al demo completo (old-price/colores/tallas inventados)
+// sobre un producto real. `{}` sigue dando rating/sold demo vía mergeAttrs, honesto.
+export function attrsForStorage(rawAttributes: Record<string, unknown>): CuratedAttrs | undefined {
+  const curated = curateAttrs(rawAttributes);
+  if (rawAttributes.generated === true) return curated;
+  return curated ?? {};
+}

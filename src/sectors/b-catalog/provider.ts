@@ -20,5 +20,10 @@ const PROVIDERS: Record<string, AggregatorProvider> = {
   "apify-shein": makeApifyProvider("shein"),
 };
 
+const envProvider = process.env.AGGREGATOR_PROVIDER;
+if (envProvider && !PROVIDERS[envProvider]) {
+  console.warn(`AGGREGATOR_PROVIDER '${envProvider}' no reconocido — usando mock`);
+}
+
 export const activeProvider: AggregatorProvider =
-  PROVIDERS[process.env.AGGREGATOR_PROVIDER ?? "mock"] ?? mock;
+  (envProvider && PROVIDERS[envProvider]) || mock;

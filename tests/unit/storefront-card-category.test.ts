@@ -29,6 +29,13 @@ describe("toCard", () => {
     } as never);
     expect(c.attrs).toBeUndefined();
   });
+  it("metadata.attrs={} (real sin datos curables) -> card.attrs={}, NO undefined (F4 review)", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null, metadata: { category: "hogar", attrs: {} }, created_at: "",
+    } as never);
+    expect(c.attrs).toEqual({});
+  });
   it("mapea metadata.attrs a card.attrs: colors tal cual, orders numérico -> sold formateado 'k'", () => {
     const c = toCard({
       id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
@@ -62,5 +69,14 @@ describe("toCard", () => {
       created_at: "",
     } as never);
     expect(c.attrs?.sold).toBe("340");
+  });
+  it("orders string con sufijo 'sold' del proveedor -> se quita (el UI ya añade el suyo, F4 review)", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null,
+      metadata: { attrs: { orders: "10,000+ sold" } },
+      created_at: "",
+    } as never);
+    expect(c.attrs?.sold).toBe("10,000+");
   });
 });

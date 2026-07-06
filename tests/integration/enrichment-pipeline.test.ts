@@ -156,4 +156,29 @@ describe("processProduct (REAL Anthropic + REAL Voyage + REAL Postgres)", () => 
       expect(md.attrs).toBeUndefined();
     });
   }, 30_000);
+
+  test("raw real (sin generated) sin atributos curables → metadata.attrs = {} (real sin datos, honesto — F4 review)", async () => {
+    await withTestDb(async (pg) => {
+      const raw = {
+        id: "real-empty-attrs-test",
+        source: "amazon" as const,
+        source_product_id: "real-empty-attrs-test",
+        title: "Producto real sin atributos curables",
+        description: "Descripción de un producto real que no trajo colores, tallas ni rating utilizables.",
+        image_url: "https://img.example/real.jpg",
+        price_cents: 4999,
+        brand: "RealBrand",
+        raw_category: "hogar",
+        attributes: { material: "cotton", weight_kg: 2 }, // ninguna clave del whitelist de curateAttrs
+      };
+
+      const result = await processProduct(raw, pg);
+      expect(result.enrichmentStatus).toBe("ok");
+
+      const stored = await pg.query(`SELECT metadata FROM products WHERE id = $1`, [result.productId]);
+      const md = stored.rows[0].metadata;
+      expect(VALID_CATEGORIES).toContain(md.category);
+      expect(md.attrs).toEqual({});
+    });
+  }, 30_000);
 });

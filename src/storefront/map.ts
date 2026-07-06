@@ -10,7 +10,9 @@ import type { StorefrontCard, StorefrontSection, StorefrontPage } from "./contra
 // (hash cosmético) vs. la otra (dato real de A4); coincidencia de forma, no de origen.
 function formatSold(orders: string | number | undefined): string | undefined {
   if (orders === undefined) return undefined;
-  if (typeof orders === "string") return orders;
+  // el UI ya añade su propio "ventas"/"vendidos" — quitar el sufijo "sold" del
+  // proveedor real evita el doble idioma ("10,000+ sold vendidos", F4 review).
+  if (typeof orders === "string") return orders.replace(/\s*sold\s*$/i, "");
   return orders >= 1000 ? (orders / 1000).toFixed(1) + "k" : String(orders);
 }
 

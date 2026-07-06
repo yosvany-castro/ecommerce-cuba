@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { curateAttrs } from "@/sectors/b-catalog/enrichment/attrs";
+import { curateAttrs, attrsForStorage } from "@/sectors/b-catalog/enrichment/attrs";
 
 describe("curateAttrs", () => {
   test("full valid attrs pass through", () => {
@@ -110,5 +110,20 @@ describe("curateAttrs", () => {
   test("unknown keys are stripped even alongside valid ones", () => {
     const out = curateAttrs({ brand: "Nike", material: "cotton", weight_kg: 2 });
     expect(out).toEqual({ brand: "Nike" });
+  });
+});
+
+describe("attrsForStorage (hueco de honestidad — F4 review)", () => {
+  test("mock viejo (generated: true) sin atributos curables -> undefined (sin attrs key, comportamiento actual)", () => {
+    expect(attrsForStorage({ generated: true, seedIndex: 3, cat: "x" })).toBeUndefined();
+  });
+
+  test("producto real (sin generated) sin atributos curables -> {} (real sin datos, honesto, NO undefined)", () => {
+    expect(attrsForStorage({})).toEqual({});
+    expect(attrsForStorage({ material: "cotton" })).toEqual({});
+  });
+
+  test("producto real con atributos curables -> objeto curado tal cual", () => {
+    expect(attrsForStorage({ brand: "Nike", rating: 4.5 })).toEqual({ brand: "Nike", rating: 4.5 });
   });
 });

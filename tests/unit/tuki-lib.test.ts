@@ -65,6 +65,15 @@ describe("tuki lib", () => {
     const merged = mergeAttrs(da, { rating: 4.9 });
     expect(merged.weightLb).toBe(da.weightLb);
   });
+  it("mergeAttrs: attrs={} (real sin datos curables) -> old null/colors []/sizes [] pero rating/sold demo (F4 review)", () => {
+    const da = demoAttrs("id-1", "ropa", 2490);
+    const merged = mergeAttrs(da, {});
+    expect(merged.oldPriceCents).toBeNull();
+    expect(merged.colors).toEqual([]);
+    expect(merged.sizes).toEqual([]);
+    expect(merged.rating).toBe(da.rating);
+    expect(merged.sold).toBe(da.sold);
+  });
   it("sectionize agrupa en [aisle6, focus1, grid4] cíclico sin perder cards", () => {
     const cards = Array.from({ length: 13 }, (_, i) => card(String(i), "hogar"));
     const secs = sectionize(cards);
