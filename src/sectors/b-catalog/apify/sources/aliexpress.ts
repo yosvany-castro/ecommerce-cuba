@@ -5,6 +5,8 @@ import { asRecord, compactAttrs, queryFromOpts, str, toNumber, usdToCents } from
 // devcake/aliexpress-products-scraper
 export const ACTOR_SLUG = "devcake/aliexpress-products-scraper";
 export const PER_ITEM_USD = 0.0015;
+// Smoke en vivo: 8.8s. Margen amplio, el más rápido de las 3 fuentes.
+export const TIMEOUT_SECS = 120;
 
 export function buildInput(opts: FetchOptions): Record<string, unknown> {
   // El actor exige maxProducts >= 50 (piso duro); el cliente recorta a `limit` al leer
@@ -35,7 +37,8 @@ export function mapItem(raw: unknown): MockProduct | null {
     image_url: str(o.imageUrl) ?? str(o.image) ?? "",
     price_cents: price,
     brand: str(o.brand) ?? "",
-    raw_category: str(o.categoryName) ?? "",
+    // categoryName no viene en el output real; searchQuery sí — hint para el normalizador LLM.
+    raw_category: str(o.categoryName) ?? str(o.searchQuery) ?? "",
     attributes: compactAttrs({
       old_price_cents: oldPrice !== null && oldPrice > price ? oldPrice : undefined,
       rating: toNumber(o.ratingValue ?? o.rating),

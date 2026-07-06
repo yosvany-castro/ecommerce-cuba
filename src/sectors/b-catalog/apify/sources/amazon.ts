@@ -5,6 +5,8 @@ import { asRecord, compactAttrs, queryFromOpts, str, toNumber, usdToCents } from
 // junglee/amazon-crawler
 export const ACTOR_SLUG = "junglee/amazon-crawler";
 export const PER_ITEM_USD = 0.003;
+// Smoke en vivo: 32.6s. Margen amplio, sin anti-bot pesado como shein.
+export const TIMEOUT_SECS = 180;
 
 export function buildInput(opts: FetchOptions): Record<string, unknown> {
   const q = queryFromOpts(opts);

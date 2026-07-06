@@ -5,6 +5,8 @@ import { asRecord, compactAttrs, queryFromOpts, str, usdToCents } from "./shared
 // api-empire/shein-search-products-scraper
 export const ACTOR_SLUG = "api-empire/shein-search-products-scraper";
 export const PER_ITEM_USD = 0.005;
+// Smoke en vivo: 330s (anti-bot pesado). Default de runActorGetItems (180s) no alcanza.
+export const TIMEOUT_SECS = 420;
 
 export function buildInput(opts: FetchOptions): Record<string, unknown> {
   // Schema real: query es array; countryCode enum en minúsculas.

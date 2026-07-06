@@ -18,7 +18,11 @@ export function makeApifyProvider(source: ApifySource): AggregatorProvider {
       const { items, costCents, latencyMs } = await runActorGetItems(
         mod.ACTOR_SLUG,
         mod.buildInput(opts),
-        { limitItems: opts.limit ?? 20, estimatePerItemUsd: mod.PER_ITEM_USD },
+        {
+          limitItems: opts.limit ?? 20,
+          estimatePerItemUsd: mod.PER_ITEM_USD,
+          timeoutSecs: mod.TIMEOUT_SECS,
+        },
       );
       const products = items
         .map((it) => mod.mapItem(it))

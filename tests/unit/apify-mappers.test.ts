@@ -150,6 +150,8 @@ describe("aliexpress.mapItem", () => {
     expect(p.attributes.rating).toBe(4.2); // ratingValue
     expect(p.attributes.orders).toBe("10,000+ sold"); // soldDescription
     expect(p.image_url).toBe(aliexpressFx[0].imageUrl);
+    // categoryName ausente en el output real; cae a searchQuery.
+    expect(p.raw_category).toBe("audifonos bluetooth");
   });
 
   test("minimal item via alias legacy: productId + salePrice", () => {
@@ -246,6 +248,16 @@ describe("real fixtures — batch mapping (capturado en vivo T3)", () => {
     expect(
       mapped.some((p) => Array.isArray(p.attributes.colors) && p.attributes.colors.length > 0),
     ).toBe(true);
+  });
+
+  test("amazon fixture item 1: valores exactos (Soundcore P30i, asin B0CRTR3PMF)", () => {
+    const p = amazon.mapItem(amazonFx[1])!;
+    expect(p.source_product_id).toBe("B0CRTR3PMF");
+    expect(p.price_cents).toBe(2799); // price.value 27.99
+    expect(p.attributes.old_price_cents).toBe(3999); // listPrice.value 39.99
+    expect(p.attributes.rating).toBe(4.4); // stars
+    expect((p.attributes.images as string[]).length).toBe(8); // highResolutionImages
+    expect(p.attributes.colors).toEqual(["Green"]); // variantAttributes Color
   });
 
   test("shein: mapea todo; precio usdAmount, galería detail_image, categoría cate_name", () => {

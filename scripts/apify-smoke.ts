@@ -47,8 +47,8 @@ async function runSource(name: SourceName, query: string, limit: number, ingest:
     ({ items, costCents, latencyMs } = await runActorGetItems(
       mod.ACTOR_SLUG,
       mod.buildInput({ query, limit }),
-      // wait generoso: Shein tiene anti-bot pesado y pasa de 180s el default.
-      { limitItems: limit, estimatePerItemUsd: mod.PER_ITEM_USD, timeoutSecs: 420 },
+      // timeoutSecs por fuente (mismo valor que usa el provider real) — una sola fuente de verdad.
+      { limitItems: limit, estimatePerItemUsd: mod.PER_ITEM_USD, timeoutSecs: mod.TIMEOUT_SECS },
     ));
   } catch (e) {
     const msg = (e as Error).message;
