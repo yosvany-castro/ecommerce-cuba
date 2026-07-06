@@ -144,7 +144,7 @@ export function ProductView({
           <div style={{ position: "relative", height: 440, borderRadius: 26, background: stripe(cat), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {card.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={card.image_url} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9a9b98" }}>foto producto grande</span>
             )}
@@ -162,6 +162,7 @@ export function ProductView({
                   key={src}
                   src={src}
                   alt={card.title}
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
                   style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", border: i === 0 ? "2px solid #1C1D20" : "2px solid transparent" }}
                 />
               ))
@@ -206,7 +207,7 @@ export function ProductView({
                   <div
                     key={i}
                     onClick={() => setSelColor(cv.name)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", background: cv.hex, cursor: "pointer", border: `2px solid ${selColor === cv.name ? "#1C1D20" : "rgba(0,0,0,.08)"}`, boxShadow: "inset 0 0 0 3px #FAFAF8" }}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: cv.hex ?? "#D8D8D3", cursor: "pointer", border: `2px solid ${selColor === cv.name ? "#1C1D20" : "rgba(0,0,0,.08)"}`, boxShadow: "inset 0 0 0 3px #FAFAF8" }}
                   />
                 ))}
               </div>

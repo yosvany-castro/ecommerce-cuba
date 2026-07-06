@@ -83,7 +83,7 @@ export function ProductCard({
       >
         {card.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={card.image_url} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9a9b98" }}>foto producto</span>
         )}
@@ -121,7 +121,7 @@ export function ProductCard({
           {dots.map((d, i) => (
             <div
               key={i}
-              style={{ width: 11, height: 11, borderRadius: "50%", background: d.hex, border: "1px solid rgba(0,0,0,.14)" }}
+              style={{ width: 11, height: 11, borderRadius: "50%", background: d.hex ?? "#D8D8D3", border: "1px solid rgba(0,0,0,.14)" }}
             />
           ))}
           {!isGrid && moreN > 0 && <span style={{ fontSize: 10, color: "#8E8F94" }}>+{moreN}</span>}
