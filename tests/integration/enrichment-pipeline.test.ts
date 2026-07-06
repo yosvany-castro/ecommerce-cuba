@@ -93,4 +93,92 @@ describe("processProduct (REAL Anthropic + REAL Voyage + REAL Postgres)", () => 
       expect(row.rows[0].lexeme_count).toBeGreaterThan(2);
     });
   }, 30_000);
+
+  test("raw with real Apify-shaped attributes → metadata.attrs.colors persisted alongside metadata.category", async () => {
+    await withTestDb(async (pg) => {
+      const raw = {
+        id: "attrs-test-1",
+        source: "amazon" as const,
+        source_product_id: "attrs-test-1",
+        title: "Camiseta de algodón azul talla M",
+        description: "Camiseta de algodón suave, corte regular.",
+        image_url: "https://img.example/shirt.jpg",
+        price_cents: 1999,
+        brand: "Acme",
+        raw_category: "ropa",
+        attributes: {
+          colors: ["Azul", { name: "Rojo", hex: "#ff0000" }],
+          sizes: ["S", "M", "L"],
+          images: ["https://img.example/shirt.jpg"],
+          old_price_cents: 2999,
+          rating: 4.3,
+          orders: "1,000+ sold",
+          brand: "Acme",
+        },
+      };
+
+      const result = await processProduct(raw, pg);
+      expect(result.enrichmentStatus).toBe("ok");
+
+      const stored = await pg.query(`SELECT metadata FROM products WHERE id = $1`, [result.productId]);
+      const md = stored.rows[0].metadata;
+      expect(VALID_CATEGORIES).toContain(md.category);
+      expect(md.attrs.colors).toEqual([{ name: "Azul" }, { name: "Rojo", hex: "#ff0000" }]);
+      expect(md.attrs.brand).toBe("Acme");
+    });
+  }, 30_000);
+
+  test("old mock shape {generated, seedIndex, cat} → no attrs key in metadata (regression)", async () => {
+    await withTestDb(async (pg) => {
+      const raw = {
+        id: "old-mock-test",
+        source: "amazon" as const,
+        source_product_id: "old-mock-test",
+        title: "Producto de prueba antiguo",
+        description: "Descripción del producto antiguo.",
+        image_url: "https://img.example/old.jpg",
+        price_cents: 9999,
+        brand: "OldMock",
+        raw_category: "electronica",
+        attributes: {
+          generated: true,
+          seedIndex: 3,
+          cat: "electronica",
+        },
+      };
+
+      const result = await processProduct(raw, pg);
+      expect(result.enrichmentStatus).toBe("ok");
+
+      const stored = await pg.query(`SELECT metadata FROM products WHERE id = $1`, [result.productId]);
+      const md = stored.rows[0].metadata;
+      expect(VALID_CATEGORIES).toContain(md.category);
+      expect(md.attrs).toBeUndefined();
+    });
+  }, 30_000);
+
+  test("raw real (sin generated) sin atributos curables → metadata.attrs = {} (real sin datos, honesto — F4 review)", async () => {
+    await withTestDb(async (pg) => {
+      const raw = {
+        id: "real-empty-attrs-test",
+        source: "amazon" as const,
+        source_product_id: "real-empty-attrs-test",
+        title: "Producto real sin atributos curables",
+        description: "Descripción de un producto real que no trajo colores, tallas ni rating utilizables.",
+        image_url: "https://img.example/real.jpg",
+        price_cents: 4999,
+        brand: "RealBrand",
+        raw_category: "hogar",
+        attributes: { material: "cotton", weight_kg: 2 }, // ninguna clave del whitelist de curateAttrs
+      };
+
+      const result = await processProduct(raw, pg);
+      expect(result.enrichmentStatus).toBe("ok");
+
+      const stored = await pg.query(`SELECT metadata FROM products WHERE id = $1`, [result.productId]);
+      const md = stored.rows[0].metadata;
+      expect(VALID_CATEGORIES).toContain(md.category);
+      expect(md.attrs).toEqual({});
+    });
+  }, 30_000);
 });

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { randomUUID } from "node:crypto";
 import { withTestDb, truncateTestTables } from "@/../tests/helpers/db";
 import { seedProductWithEmbedding } from "@/../tests/helpers/seed";
@@ -6,6 +6,10 @@ import { hybridSearch } from "@/sectors/c-search/search";
 
 beforeEach(async () => {
   await truncateTestTables(["product_query_cache", "searches", "products", "anonymous_sessions", "users"]);
+});
+
+afterEach(() => {
+  delete process.env.SEARCH_STRONG_HIT_MIN_SCORE;
 });
 
 describe("hybridSearch (REAL APIs)", () => {
@@ -46,6 +50,11 @@ describe("hybridSearch (REAL APIs)", () => {
   }, 120_000);
 
   test("same query twice: second call hits exact cache", async () => {
+    // política vieja: valida dedup de caché exacta con el conteo total. Los seeds
+    // "Vestido i" no matchean léxicamente "vestido elegante" (BM25 usa AND) y su
+    // coseno cae bajo 0.55, así que bajo la política nueva dispararían la ingesta y
+    // no se cachearía. El piso=0 restaura el conteo total que este test asume.
+    process.env.SEARCH_STRONG_HIT_MIN_SCORE = "0";
     await withTestDb(async (pg) => {
       for (let i = 0; i < 15; i++) {
         await seedProductWithEmbedding(pg, { title: `Vestido ${i}`, metadata: { category: "ropa" }, raw_category: "ropa" });
@@ -62,6 +71,10 @@ describe("hybridSearch (REAL APIs)", () => {
   }, 120_000);
 
   test("3 permutations of same words → 1 cache row, 2nd and 3rd hit", async () => {
+    // política vieja: valida dedup por permutaciones con el conteo total. Los seeds
+    // "Juguete i" no matchean léxicamente "regalo niña 8 años" y su coseno cae bajo
+    // 0.55; el piso=0 restaura el conteo total que este test de caché asume.
+    process.env.SEARCH_STRONG_HIT_MIN_SCORE = "0";
     await withTestDb(async (pg) => {
       for (let i = 0; i < 15; i++) {
         await seedProductWithEmbedding(pg, { title: `Juguete ${i}`, metadata: { category: "juguetes_bebe" }, raw_category: "juguetes_bebe" });

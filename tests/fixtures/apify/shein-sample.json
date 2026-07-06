@@ -1,0 +1,1604 @@
+[
+  {
+    "section_index": 1,
+    "section": "audifonos bluetooth",
+    "query": "audifonos bluetooth",
+    "country": "US",
+    "sort_order": "recommend",
+    "goodsColorImage": "//img.ltwebstatic.com/images3_spmp/2024/02/15/f8/170798366745c3a9b64513c33afbbafa6db461eb77.jpg",
+    "fromSkuCode": "I3c8q8zqy71f",
+    "brandCode": "22f6o",
+    "parentIds": [
+      "2273",
+      "4671",
+      "3303"
+    ],
+    "priorityMallType": "1",
+    "customizationFlag": "0",
+    "originAreaCodeList": [],
+    "isSkcMultiPrice": "0",
+    "priority": "1",
+    "spu": "e251009668443",
+    "soldOutStatus": false,
+    "productStockCheckLog": "goodsId| 207687426, goodsSn| se25100966844326011, mallCode| 1, isSale| 1, stock| 1",
+    "goods_id": "207687426",
+    "goods_sn": "se25100966844326011",
+    "productRelationID": "e251009668443",
+    "goods_img": "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/c7/1748239647c220d1885131fe097a0188870a79ed43_thumbnail_405x552.jpg",
+    "detail_image": [
+      "//img.ltwebstatic.com/images3_spmp/2024/09/01/89/1725173805041d741d093a161bad3f130713b7e507_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2024/02/15/18/170798361755bedbfbf738d19b7eb43f09d67642fa_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2024/02/16/96/1708051511ead8c5a32fc5e2704e29fc3b1e102f07_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2024/02/15/3d/170798361649da4d48778f1ffb3828f877a6218a8b_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2024/02/16/46/17080516055a52a9c5a32aa398a1ab656f7a87038d_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2024/09/01/32/1725173812085dc0b50fcd605ead9d8a1529fe86d3_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/f1/1748239906afaa35d856b8c5be50b3c9bd0888bbe8_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/05/20/de/17477314737ce94301e084a8250d194e3fc23d3bba_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2024/07/24/89/172179109985f37f9f424d2e9f56658debe9ede322_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/p/spmp/2025/05/20/ff/174773142028175c3bfcc0185a0cb4583c1d667b9b_thumbnail_405x552.png"
+    ],
+    "goods_name": "Lenovo LP75 Bluetooth Earphones, Hanging Ear Style With Digital Display, Ultra-Long Battery Life 5.3H, HIFI Sound, Low Latency, Music, Gaming, Running, Waterproof, Microphone, Wireless Headphones",
+    "goods_url_name": "Lenovo-LP75-Bluetooth-Earphones-Hanging-Ear-Style-With-Digital-Display-Ultra-Long-Battery-Life-5-3H-HIFI-Sound-Low-Latency-Music-Gaming-Running-Waterproof-Microphone-Wireless-Headphones",
+    "cat_id": "3306",
+    "cate_name": "Wireless Earbuds",
+    "stock": "1",
+    "store_code": "8267709898",
+    "business_model": "1",
+    "mall_code": "1",
+    "is_on_sale": 1,
+    "retailPrice": {
+      "amount": "22.28",
+      "amountWithSymbol": "$22.28",
+      "usdAmount": "22.28",
+      "usdAmountWithSymbol": "$22.28",
+      "priceShowStyle": "22"
+    },
+    "salePrice": {
+      "amount": "14.08",
+      "amountWithSymbol": "$14.08",
+      "usdAmount": "14.08",
+      "usdAmountWithSymbol": "$14.08",
+      "priceShowStyle": "14"
+    },
+    "discountPrice": {
+      "amount": "8.20",
+      "amountWithSymbol": "$8.20",
+      "usdAmount": "8.20",
+      "usdAmountWithSymbol": "$8.20",
+      "priceShowStyle": "8"
+    },
+    "isInversion": "1",
+    "retailDiscountPrice": {
+      "amount": "8.20",
+      "amountWithSymbol": "$8.20",
+      "usdAmount": "8.20",
+      "usdAmountWithSymbol": "$8.20",
+      "priceShowStyle": "8"
+    },
+    "retailDiscountPercent": "37",
+    "isNewCoupon": "0",
+    "isSrpInversion": "1",
+    "srpDiscount": "0",
+    "srpDiscountPrice": {
+      "amount": "0.00",
+      "amountWithSymbol": "$0.00",
+      "usdAmount": "0.00",
+      "usdAmountWithSymbol": "$0.00",
+      "priceShowStyle": "0"
+    },
+    "unit_discount": "37",
+    "original_discount": "37",
+    "premiumFlagNew": {
+      "brandId": "5248",
+      "brandSeriesType": "1",
+      "brand_badge_name": "Lenovo",
+      "brand_logo_url_left": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/09/dc/17574181845b2052cbf48f494463b672069b7ea4fd.png",
+      "brand_code": "22f6o",
+      "brandName": "Lenovo"
+    },
+    "productInfoLabels": {},
+    "quickship": "0",
+    "coupon_prices": [],
+    "video_url": "0",
+    "relatedColor": [],
+    "relatedColorNew": [
+      {
+        "colorImage": "//img.ltwebstatic.com/images3_spmp/2024/02/15/f8/170798366745c3a9b64513c33afbbafa6db461eb77.jpg",
+        "goods_id": "207687426",
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/images3_spmp/2024/02/15/6f/170798369315d9a7c7fb7db27d22a4b4eaed1f1499.jpg",
+        "goods_id": null,
+        "skc_name": null
+      }
+    ],
+    "is_clearance": "0",
+    "grade_enums": [],
+    "productMaterial": {
+      "pictureBelt": {
+        "oneColumnStyle": null,
+        "twoColumnStyle": null
+      },
+      "col2ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/c7/1748239647c220d1885131fe097a0188870a79ed43_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/09/01/89/1725173805041d741d093a161bad3f130713b7e507_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/02/15/18/170798361755bedbfbf738d19b7eb43f09d67642fa_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/02/16/96/1708051511ead8c5a32fc5e2704e29fc3b1e102f07_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/02/15/3d/170798361649da4d48778f1ffb3828f877a6218a8b_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/02/16/46/17080516055a52a9c5a32aa398a1ab656f7a87038d_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/09/01/32/1725173812085dc0b50fcd605ead9d8a1529fe86d3_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/f1/1748239906afaa35d856b8c5be50b3c9bd0888bbe8_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/05/20/de/17477314737ce94301e084a8250d194e3fc23d3bba_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/07/24/89/172179109985f37f9f424d2e9f56658debe9ede322_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/p/spmp/2025/05/20/ff/174773142028175c3bfcc0185a0cb4583c1d667b9b_thumbnail_405x552.png"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/c7/1748239647c220d1885131fe097a0188870a79ed43_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "col1ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/c7/1748239647c220d1885131fe097a0188870a79ed43_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/c7/1748239647c220d1885131fe097a0188870a79ed43_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "upperLeftPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "subscript",
+          "displayType": "brand_image",
+          "image": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/09/dc/17574181845b2052cbf48f494463b672069b7ea4fd.png",
+          "appTraceInfo": "lu_corner_mark_brand_image_5248"
+        }
+      },
+      "lowerRightPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "color_information",
+          "appTraceInfo": "show_attribute_labels_-_color"
+        }
+      },
+      "salesLabel": {
+        "labelType": null,
+        "contentType": "custom",
+        "salesMultiLang": null,
+        "labelLang": "100+ sold",
+        "icon": "",
+        "fontColor": "#666666",
+        "backgroundColor": "#ffffff",
+        "saleNumShow": null,
+        "appTraceInfo": "show_sales_label_02_1661_600014336_100+_sold"
+      },
+      "showAddButtonLabel": "1",
+      "showAddButtonLabelStyle": "",
+      "trendLabel": {
+        "trendIpImg": {
+          "imgUrl": "https://img.ltwebstatic.com/v4/p/ccc/2026/04/15/7a/177624640421ef39fbf7c2890dd4cfd1e57579a90b.png",
+          "width": "46",
+          "height": "14"
+        },
+        "trendIpBigImg": {
+          "imgUrl": "https://img.ltwebstatic.com/v4/p/ccc/2026/04/15/7a/177624640421ef39fbf7c2890dd4cfd1e57579a90b.png",
+          "width": "46",
+          "height": "14"
+        },
+        "trendLabel": {
+          "labelName": "April Electronic Audio Store Marketplace",
+          "bgColor": "#FFF1E0",
+          "fontColor": "#7D543C",
+          "icon": "https://img.ltwebstatic.com/v4/p/ccc/2025/07/17/6b/175273961898fb60cce5eeef5bb75c5eec4d60d44f.png",
+          "iconType": null
+        },
+        "routingUrl": "/store/home?data=%7B%22store_code%22%3A%228267709898%22%2C%22page_from%22%3A%22%22%2C%22top_goods_id%22%3A%22207687426%22%2C%22main_goods_id%22%3Anull%2C%22store_scene%22%3A%22%22%2C%22tab%22%3A%22items%22%2C%22cate_ids%22%3A%22%22%2C%22main_cate_id%22%3Anull%2C%22goods_ids%22%3A%22%22%7D",
+        "appTraceInfo": "trend_shop_code_8267709898_April Electronic Audio Store Marketplace_0_2",
+        "showPosition": "aboveTitle",
+        "trendWordId": "-",
+        "trendShopCode": "8267709898",
+        "trendType": "brandStore",
+        "contentCarrierId": "-",
+        "carrierSubTypeName": "-",
+        "sceneId": "-",
+        "srcModule": "list",
+        "srcIdentifier": "store=8267709898",
+        "clickEventName": "click_brand_store",
+        "clickEventParams": {
+          "store_id": "8267709898",
+          "src_module": "list",
+          "src_identifier": "-",
+          "brand_code": null
+        }
+      },
+      "v2ProductAttributeLabelList": [],
+      "goodsDetailExtraParams": {
+        "buyboxTag": "0"
+      },
+      "fullPriceUI": {
+        "descriptionLeadingIconHC": null,
+        "price": "$14.08",
+        "usdAmount": null,
+        "priceShowStyle": "14",
+        "discountPercent": "37",
+        "discountPrice": "$8.20",
+        "description": null,
+        "descriptionLeadingIcon": null,
+        "color": "discount",
+        "originalColor": "discount",
+        "leadingIcon": {
+          "type": null
+        },
+        "trailingIcon": null,
+        "bi": {
+          "pri": "pri_14.08|pri_22.28",
+          "isFlashSale": "0",
+          "otherMarks": null,
+          "discount": null
+        },
+        "endTime": null,
+        "s3Price": null,
+        "retailPrice": null,
+        "recommendedRetailPrice": null,
+        "couponPrice": null,
+        "suggestedSalePrice": null,
+        "retailPriceDescription": null,
+        "style": [
+          "us"
+        ],
+        "firstSalePrice": null,
+        "pcPrice": null,
+        "leadingText": null,
+        "fullDescription": null
+      },
+      "otherMarks": "price_show_I3c8q8zqy71f",
+      "productTitleSubscript": {},
+      "buyBox": {}
+    },
+    "is_show_plus_size": "0",
+    "actTagFromCcc": {
+      "productDetailStyle": [],
+      "productDetailCartStyle": [],
+      "overviewCarStyle": [],
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "comment_rank_average": "4.80",
+    "comment_num": 61,
+    "percent_overall_fit": {
+      "true_size": "100%",
+      "large": "0%",
+      "small": "0%"
+    },
+    "is_single_sku": "0",
+    "ext": {
+      "rec_mark": "spri_3679_1_1|mpr_0.75|roi_15847|troi_8.0|gfc99|gfc80|gfc61|gfc56|ft_331|rs_4|gk|S_2_1004_2030|trace_b81d27597ab15948|ctc_0.015094_v3589-us|ctr_0.017038|fs_0.092244|ppr_11.905445_pct2.0.1.4|acr_0.011123_pct2.0.1.4|rcr_0.010001|rpr_14.080000|ptr_4.725325|ftr_5.000000|mpr_0.750000|roi_15847|gcr_0.939500|sre_seq_9|S_2_1004_2030|sc_5|btr_2.348582|rms_0.053949|rkt|trace_b81d27597ab15948|zk|se_99_1",
+      "recall_mark": "267_1_1>translate_allwords_script_sort>knna_mind_v3>all_words_expand_script_hot>knna_reorder_3_aml",
+      "fine_mark": "0_fs_0.9512_3349",
+      "rough_mark": "0_prs_0.0438238_3619",
+      "marks": "rfc_1991_1923|rf_3|ms_2|rsrc_2|S_2_1004_2030",
+      "ad_data": "roi_15847|acr_0.011123|ctc_0.015094|ppr_11.905445|ptr_4.725325|mpr_0.750000|gcr_0.939500|grp_3|trace_b81d27597ab15948"
+    },
+    "isShowAdditionalDiscount": "0",
+    "usePositionInfo": "1",
+    "dynamic_ext": {},
+    "goods_priority": "1",
+    "tag_3p_label_name": "Marketplace",
+    "goods_img_thumb": "//img.ltwebstatic.com/v4/j/spmp/2025/05/26/c7/1748239647c220d1885131fe097a0188870a79ed43_thumbnail_200x.webp"
+  },
+  {
+    "section_index": 1,
+    "section": "audifonos bluetooth",
+    "query": "audifonos bluetooth",
+    "country": "US",
+    "sort_order": "recommend",
+    "goodsColorImage": "//img.ltwebstatic.com/v4/p/spmp/2025/09/29/ce/175912675880956256014dc16123ddc22b7aeb6783.png",
+    "fromSkuCode": "I9cepkjsmrb6",
+    "brandCode": "22f6o",
+    "parentIds": [
+      "2273",
+      "4671",
+      "3303"
+    ],
+    "priorityMallType": "1",
+    "customizationFlag": "0",
+    "originAreaCodeList": [],
+    "isSkcMultiPrice": "0",
+    "priority": "1",
+    "spu": "e251016507577",
+    "soldOutStatus": false,
+    "productStockCheckLog": "goodsId| 217773948, goodsSn| se25101650757755544, mallCode| 1, isSale| 1, stock| 1",
+    "goods_id": "217773948",
+    "goods_sn": "se25101650757755544",
+    "productRelationID": "e251016507577",
+    "goods_img": "//img.ltwebstatic.com/v4/j/spmp/2025/11/05/78/1762330911124c2de642c20cc4461e4d1b79fa8a61_thumbnail_405x552.jpg",
+    "detail_image": [
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/db/1759126688de576401e3a39109b29c3c553f7ca95c_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/af/1759126800e31bbbdd2cdd924fd8f5cac5a026e889_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/ae/1759126832020036c46cfc5343835d062ba67bc77a_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/b6/1759126800d2edda6dfdd96262146ce829819b6e08_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/dd/17591268004aef8782a9402a85b4d6170f51b0ce70_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/fb/17591268012cd9932ece489744d4de767c24b97206_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/41/1759127065dc0f2024b648951933982f45609b0781_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/69/175912691328fb1b1c42ad961f15684b5e514631ce_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/f7/1759127128e3cd3facba53682b3d32577ddd0eeb64_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/12/10/92/1765355270d6a51b2095b9412c7cd1d710bef3870d_thumbnail_405x552.jpg"
+    ],
+    "goods_name": "Lenovo LE302 New Bluetooth Earphones, Clip-On Open-Ear Surround Sound Stereo, High-Quality Audio, Low Latency, Music & Gaming, Directional Audio, ENC Noise Cancellation, Clear Calls, Wireless Earphones Compatible With Smartphones & Computers",
+    "goods_url_name": "Lenovo-LE302-New-Bluetooth-Earphones-Clip-On-Open-Ear-Surround-Sound-Stereo-High-Quality-Audio-Low-Latency-Music-Gaming-Directional-Audio-ENC-Noise-Cancellation-Clear-Calls-Wireless-Earphones-Compatible-With-Smartphones-Computers",
+    "cat_id": "12965",
+    "cate_name": "Open-Ear Headphones",
+    "stock": "1",
+    "store_code": "6219551776",
+    "business_model": "1",
+    "mall_code": "1",
+    "is_on_sale": 1,
+    "retailPrice": {
+      "amount": "18.40",
+      "amountWithSymbol": "$18.40",
+      "usdAmount": "18.40",
+      "usdAmountWithSymbol": "$18.40",
+      "priceShowStyle": "18"
+    },
+    "salePrice": {
+      "amount": "14.70",
+      "amountWithSymbol": "$14.70",
+      "usdAmount": "14.70",
+      "usdAmountWithSymbol": "$14.70",
+      "priceShowStyle": "14"
+    },
+    "discountPrice": {
+      "amount": "3.70",
+      "amountWithSymbol": "$3.70",
+      "usdAmount": "3.70",
+      "usdAmountWithSymbol": "$3.70",
+      "priceShowStyle": "3"
+    },
+    "isInversion": "1",
+    "retailDiscountPrice": {
+      "amount": "3.70",
+      "amountWithSymbol": "$3.70",
+      "usdAmount": "3.70",
+      "usdAmountWithSymbol": "$3.70",
+      "priceShowStyle": "3"
+    },
+    "retailDiscountPercent": "20",
+    "isNewCoupon": "0",
+    "isSrpInversion": "1",
+    "srpDiscount": "0",
+    "srpDiscountPrice": {
+      "amount": "0.00",
+      "amountWithSymbol": "$0.00",
+      "usdAmount": "0.00",
+      "usdAmountWithSymbol": "$0.00",
+      "priceShowStyle": "0"
+    },
+    "unit_discount": "20",
+    "original_discount": "20",
+    "premiumFlagNew": {
+      "brandId": "5248",
+      "brandSeriesType": "1",
+      "brand_badge_name": "Lenovo",
+      "brand_logo_url_left": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/09/dc/17574181845b2052cbf48f494463b672069b7ea4fd.png",
+      "brand_code": "22f6o",
+      "brandName": "Lenovo"
+    },
+    "productInfoLabels": {},
+    "quickship": "0",
+    "coupon_prices": [],
+    "video_url": "0",
+    "relatedColor": [],
+    "relatedColorNew": [
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/p/spmp/2025/09/29/ce/175912675880956256014dc16123ddc22b7aeb6783.png",
+        "goods_id": "217773948",
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/p/spmp/2025/09/29/b1/17591267538659831c817bee177b61d9977481d512.png",
+        "goods_id": null,
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/p/spmp/2025/09/29/bb/1759126886559213aeb4f0da5c75c494f39d083628.png",
+        "goods_id": null,
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/p/spmp/2025/09/29/af/1759126764224b2e9a34ba77be9524aa50c264649f.png",
+        "goods_id": null,
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/p/spmp/2025/09/29/1b/175912676917d874ad257319aae586222539b3f389.png",
+        "goods_id": null,
+        "skc_name": null
+      }
+    ],
+    "is_clearance": "0",
+    "grade_enums": [],
+    "productMaterial": {
+      "pictureBelt": {
+        "oneColumnStyle": null,
+        "twoColumnStyle": null
+      },
+      "col2ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/11/05/78/1762330911124c2de642c20cc4461e4d1b79fa8a61_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/db/1759126688de576401e3a39109b29c3c553f7ca95c_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/af/1759126800e31bbbdd2cdd924fd8f5cac5a026e889_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/ae/1759126832020036c46cfc5343835d062ba67bc77a_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/b6/1759126800d2edda6dfdd96262146ce829819b6e08_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/dd/17591268004aef8782a9402a85b4d6170f51b0ce70_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/fb/17591268012cd9932ece489744d4de767c24b97206_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/41/1759127065dc0f2024b648951933982f45609b0781_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/69/175912691328fb1b1c42ad961f15684b5e514631ce_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/29/f7/1759127128e3cd3facba53682b3d32577ddd0eeb64_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/12/10/92/1765355270d6a51b2095b9412c7cd1d710bef3870d_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/11/05/78/1762330911124c2de642c20cc4461e4d1b79fa8a61_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "col1ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/11/05/78/1762330911124c2de642c20cc4461e4d1b79fa8a61_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/11/05/78/1762330911124c2de642c20cc4461e4d1b79fa8a61_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "upperLeftPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "subscript",
+          "displayType": "brand_image",
+          "image": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/09/dc/17574181845b2052cbf48f494463b672069b7ea4fd.png",
+          "appTraceInfo": "lu_corner_mark_brand_image_5248"
+        }
+      },
+      "lowerRightPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "color_information",
+          "appTraceInfo": "show_attribute_labels_-_color"
+        }
+      },
+      "salesLabel": {
+        "labelType": null,
+        "contentType": "custom",
+        "salesMultiLang": null,
+        "labelLang": "700+ sold",
+        "icon": "",
+        "fontColor": "#666666",
+        "backgroundColor": "#ffffff",
+        "saleNumShow": null,
+        "appTraceInfo": "show_sales_label_02_1661_600014336_700+_sold"
+      },
+      "showAddButtonLabel": "1",
+      "showAddButtonLabelStyle": "",
+      "trendLabel": {
+        "trendIpImg": {
+          "imgUrl": "https://img.ltwebstatic.com/v4/p/ccc/2026/04/15/7a/177624640421ef39fbf7c2890dd4cfd1e57579a90b.png",
+          "width": "46",
+          "height": "14"
+        },
+        "trendIpBigImg": {
+          "imgUrl": "https://img.ltwebstatic.com/v4/p/ccc/2026/04/15/7a/177624640421ef39fbf7c2890dd4cfd1e57579a90b.png",
+          "width": "46",
+          "height": "14"
+        },
+        "trendLabel": {
+          "labelName": "Groundbreaker Electron Marketplace",
+          "bgColor": "#FFF1E0",
+          "fontColor": "#7D543C",
+          "icon": "https://img.ltwebstatic.com/v4/p/ccc/2025/07/17/6b/175273961898fb60cce5eeef5bb75c5eec4d60d44f.png",
+          "iconType": null
+        },
+        "routingUrl": "/store/home?data=%7B%22store_code%22%3A%226219551776%22%2C%22page_from%22%3A%22%22%2C%22top_goods_id%22%3A%22217773948%22%2C%22main_goods_id%22%3Anull%2C%22store_scene%22%3A%22%22%2C%22tab%22%3A%22items%22%2C%22cate_ids%22%3A%22%22%2C%22main_cate_id%22%3Anull%2C%22goods_ids%22%3A%22%22%7D",
+        "appTraceInfo": "trend_shop_code_6219551776_Groundbreaker Electron Marketplace_0_2",
+        "showPosition": "aboveTitle",
+        "trendWordId": "-",
+        "trendShopCode": "6219551776",
+        "trendType": "brandStore",
+        "contentCarrierId": "-",
+        "carrierSubTypeName": "-",
+        "sceneId": "-",
+        "srcModule": "list",
+        "srcIdentifier": "store=6219551776",
+        "clickEventName": "click_brand_store",
+        "clickEventParams": {
+          "store_id": "6219551776",
+          "src_module": "list",
+          "src_identifier": "-",
+          "brand_code": null
+        }
+      },
+      "v2ProductAttributeLabelList": [
+        {
+          "contentType": "number_of_comments",
+          "appTraceInfo": "4609`1`4.80_100+",
+          "tagId": "4609"
+        }
+      ],
+      "buyBox": {
+        "sameKindNum": 2,
+        "sameKindLabelLang": "2 other sellers",
+        "lowestPrice": null,
+        "lowestPriceLabelLang": null,
+        "lowestPriceFromLang": null
+      },
+      "goodsDetailExtraParams": {
+        "buyboxTag": "1"
+      },
+      "fullPriceUI": {
+        "descriptionLeadingIconHC": null,
+        "price": "$14.70",
+        "usdAmount": null,
+        "priceShowStyle": "14",
+        "discountPercent": "20",
+        "discountPrice": "$3.70",
+        "description": null,
+        "descriptionLeadingIcon": null,
+        "color": "discount",
+        "originalColor": "discount",
+        "leadingIcon": {
+          "type": null
+        },
+        "trailingIcon": null,
+        "bi": {
+          "pri": "pri_14.70|pri_18.40",
+          "isFlashSale": "0",
+          "otherMarks": null,
+          "discount": null
+        },
+        "endTime": null,
+        "s3Price": null,
+        "retailPrice": null,
+        "recommendedRetailPrice": null,
+        "couponPrice": null,
+        "suggestedSalePrice": null,
+        "retailPriceDescription": null,
+        "style": [
+          "us"
+        ],
+        "firstSalePrice": null,
+        "pcPrice": null,
+        "leadingText": null,
+        "fullDescription": null
+      },
+      "otherMarks": "price_show_I9cepkjsmrb6",
+      "productTitleSubscript": {}
+    },
+    "is_show_plus_size": "0",
+    "actTagFromCcc": {
+      "productDetailStyle": [],
+      "productDetailCartStyle": [],
+      "overviewCarStyle": [],
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "rankInfo": {
+      "productDetailStyle": null,
+      "productDetailCartStyle": null,
+      "overviewCarStyle": null,
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "comment_num_show": "100+",
+    "comment_rank_average": "4.80",
+    "comment_num": 218,
+    "percent_overall_fit": {
+      "true_size": "100%",
+      "large": "0%",
+      "small": "0%"
+    },
+    "is_single_sku": "0",
+    "ext": {
+      "rec_mark": "spri_3679_1_1|mpr_0.75|roi_15847|troi_8.0|gfc99|gfc80|gfc61|gfc56|ft_331|rs_4|gk|S_2_1004_2030|trace_b81d27597ab15948|ctc_0.008873_v3589-us|ctr_0.010183|fs_0.057855|ppr_12.429690_pct2.0.1.4|acr_0.005028_pct2.0.1.4|rcr_0.004358|rpr_14.700000|ptr_4.853550|ftr_5.000000|mpr_0.750000|roi_15847|gcr_0.939500|sre_seq_9|S_2_1004_2030|sc_5|btr_4.458768|rms_0.053949|rkt|trace_b81d27597ab15948|zk|se_99_1",
+      "recall_mark": "267_1_1>translate_allwords_script_sort>knna_mind_v3>all_words_expand_script_hot",
+      "fine_mark": "0_fs_0.7087_3349",
+      "rough_mark": "0_prs_0.04793667_3619",
+      "marks": "rfc_1991_1923|rf_3|ms_2|rsrc_2|S_2_1004_2030",
+      "ad_data": "roi_15847|acr_0.005028|ctc_0.008873|ppr_12.429690|ptr_4.853550|mpr_0.750000|gcr_0.939500|grp_3|trace_b81d27597ab15948"
+    },
+    "isShowAdditionalDiscount": "0",
+    "usePositionInfo": "1",
+    "dynamic_ext": {},
+    "goods_priority": "1",
+    "tag_3p_label_name": "Marketplace",
+    "goods_img_thumb": "//img.ltwebstatic.com/v4/j/spmp/2025/11/05/78/1762330911124c2de642c20cc4461e4d1b79fa8a61_thumbnail_200x.webp"
+  },
+  {
+    "section_index": 1,
+    "section": "audifonos bluetooth",
+    "query": "audifonos bluetooth",
+    "country": "US",
+    "sort_order": "recommend",
+    "goodsColorImage": "//img.ltwebstatic.com/images3_spmp/2023/06/02/168571652834ae5fc361a8baa2f5b8524a119c9f35.jpg",
+    "fromSkuCode": "I99eidgd8lu8",
+    "parentIds": [
+      "2273",
+      "4671",
+      "3303"
+    ],
+    "priorityMallType": "1",
+    "customizationFlag": "0",
+    "originAreaCodeList": [],
+    "isSkcMultiPrice": "0",
+    "priority": "1",
+    "spu": "e250508459595",
+    "soldOutStatus": false,
+    "productStockCheckLog": "goodsId| 74598143, goodsSn| se25050845959516694, mallCode| 1, isSale| 1, stock| 1",
+    "goods_id": "74598143",
+    "goods_sn": "se25050845959516694",
+    "productRelationID": "e250508459595",
+    "goods_img": "//img.ltwebstatic.com/v4/j/spmp/2025/10/02/d5/1759385742a720ea6bf2a195ce3d6047aaa4e66376_thumbnail_405x552.jpg",
+    "detail_image": [
+      "//img.ltwebstatic.com/images3_spmp/2025/02/23/44/1740300688ae0853a77933aec37468b45d9a94e350_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2025/02/23/42/1740300688d7594616ce90c1e2ae4e4adde6e812f6_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2025/02/23/4e/1740300692f643f4a17ccfcc27aadb1e00e8ce7892_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/images3_spmp/2025/02/23/8a/17403006929e0da853a4e3bb8f3062ec18333400fa_thumbnail_405x552.jpg"
+    ],
+    "goods_name": "New SENYANG True Wireless Simple Couples In-Ear Music Headset Sports Mini Bluetooth Earbuds TWS Earphones For Android For Cellphone Gaming Earpieces Smart Headphones For Valentine's Day Gift",
+    "goods_url_name": "New-SENYANG-True-Wireless-Simple-Couples-In-Ear-Music-Headset-Sports-Mini-Bluetooth-Earbuds-TWS-Earphones-For-Android-For-Cellphone-Gaming-Earpieces-Smart-Headphones-For-Valentine-s-Day-Gift",
+    "cat_id": "3306",
+    "cate_name": "Wireless Earbuds",
+    "stock": "1",
+    "store_code": "6279664107",
+    "business_model": "1",
+    "mall_code": "1",
+    "is_on_sale": 1,
+    "retailPrice": {
+      "amount": "13.00",
+      "amountWithSymbol": "$13.00",
+      "usdAmount": "13.00",
+      "usdAmountWithSymbol": "$13.00",
+      "priceShowStyle": "13"
+    },
+    "salePrice": {
+      "amount": "7.14",
+      "amountWithSymbol": "$7.14",
+      "usdAmount": "7.14",
+      "usdAmountWithSymbol": "$7.14",
+      "priceShowStyle": "7"
+    },
+    "discountPrice": {
+      "amount": "5.86",
+      "amountWithSymbol": "$5.86",
+      "usdAmount": "5.86",
+      "usdAmountWithSymbol": "$5.86",
+      "priceShowStyle": "5"
+    },
+    "isInversion": "1",
+    "retailDiscountPrice": {
+      "amount": "5.86",
+      "amountWithSymbol": "$5.86",
+      "usdAmount": "5.86",
+      "usdAmountWithSymbol": "$5.86",
+      "priceShowStyle": "5"
+    },
+    "retailDiscountPercent": "45",
+    "isNewCoupon": "0",
+    "isSrpInversion": "1",
+    "srpDiscount": "0",
+    "srpDiscountPrice": {
+      "amount": "0.00",
+      "amountWithSymbol": "$0.00",
+      "usdAmount": "0.00",
+      "usdAmountWithSymbol": "$0.00",
+      "priceShowStyle": "0"
+    },
+    "unit_discount": "45",
+    "original_discount": "35",
+    "promotionInfo": [
+      {
+        "typeId": "31",
+        "dsaEndTime": "Valid before Jul 13, 00:00",
+        "startTimestamp": "1783267200",
+        "id": "83831873",
+        "mall_code": "1",
+        "mall_code_list": [
+          "1"
+        ],
+        "category_info": [],
+        "every_body_price_type": "1",
+        "endTime": "2026-07-13 00:00:00",
+        "isReturn": "1",
+        "endTimestamp": "1783872000",
+        "isFullShop": "0",
+        "isDeletePromotion": "0",
+        "isAddBuy": "",
+        "singleNum": "5",
+        "singleRemainNum": "",
+        "member": "99",
+        "saleNumScene": "",
+        "buyLimitType": "",
+        "language_key": "",
+        "aggregateMemberResult": {},
+        "promotionActivityPriority": 0,
+        "promotion_logo_type": "0",
+        "rules": [
+          {
+            "type": 5,
+            "value": 0,
+            "discount": {
+              "type": 16,
+              "value": 0,
+              "enjoy_goods_num": 0,
+              "value_amount": {
+                "amount": "0.0",
+                "amountWithSymbol": "$0.00",
+                "usdAmount": "0.00",
+                "usdAmountWithSymbol": "$0.00"
+              },
+              "gift_coupons": []
+            },
+            "value_amount": {
+              "amount": "0",
+              "amountWithSymbol": "$0.00",
+              "usdAmount": "0.00",
+              "usdAmountWithSymbol": "$0.00"
+            },
+            "max_discount": 0,
+            "max_discount_amount": {
+              "amount": "0.00",
+              "amountWithSymbol": "$0.00",
+              "usdAmount": "0.00",
+              "usdAmountWithSymbol": "$0.00",
+              "priceShowStyle": "0"
+            },
+            "delivery_id": null
+          }
+        ],
+        "subject": "1",
+        "channelType": "0",
+        "categoryInfo": [],
+        "pool_list": [],
+        "max_discount_convert_by_app_currency": {
+          "amount": "0.00",
+          "amountWithSymbol": "$0.00",
+          "usdAmount": "0.00",
+          "usdAmountWithSymbol": "$0.00",
+          "priceShowStyle": "0"
+        }
+      }
+    ],
+    "premiumFlagNew": {
+      "brandSeriesType": null
+    },
+    "productInfoLabels": {},
+    "quickship": "0",
+    "coupon_prices": [],
+    "video_url": "0",
+    "relatedColor": [],
+    "relatedColorNew": [
+      {
+        "colorImage": "//img.ltwebstatic.com/images3_spmp/2025/02/06/1e/1738827741868900e877388369b0f6108c5cbd0509.jpg",
+        "goods_id": "74598143",
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/images3_spmp/2023/06/02/168571652834ae5fc361a8baa2f5b8524a119c9f35.jpg",
+        "goods_id": null,
+        "skc_name": null
+      }
+    ],
+    "is_clearance": "0",
+    "grade_enums": [],
+    "productMaterial": {
+      "pictureBelt": {
+        "oneColumnStyle": null,
+        "twoColumnStyle": {
+          "materialValueKey": "custom",
+          "component": "general",
+          "discountPrice": null,
+          "bgImage": "https://img.ltwebstatic.com/v4/p/ccc/2026/07/02/4e/17829837099bb44678022d7aa77ef32cfaed70c124.png",
+          "bgImageSize": {
+            "width": "340",
+            "height": "60"
+          },
+          "shapedImage": null,
+          "shapedImageSize": null,
+          "bigCardBgImage": null,
+          "bigCardBgImageSize": null,
+          "bigCardShapedImage": null,
+          "bigCardShapedImageSize": null,
+          "saveLabelLang": null,
+          "saveFontColor": null,
+          "labelLang": "Save $5.86",
+          "secondLabelLang": null,
+          "fontColor": "#FFFFFF",
+          "appTraceInfo": "belt_600510505",
+          "endTime": null,
+          "icon": null,
+          "transparentImage": "https://img.ltwebstatic.com/v4/p/ccc/2025/12/08/43/17651613738e860553534eb671dd3def461097b749.png",
+          "transparentImageSize": {
+            "width": "215",
+            "height": "40"
+          },
+          "bigCardTransparentImage": null,
+          "bigCardTransparentImageSize": null,
+          "emphasizedText": null,
+          "currentTime": null
+        }
+      },
+      "col2ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/10/02/d5/1759385742a720ea6bf2a195ce3d6047aaa4e66376_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2025/02/23/44/1740300688ae0853a77933aec37468b45d9a94e350_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2025/02/23/42/1740300688d7594616ce90c1e2ae4e4adde6e812f6_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2025/02/23/4e/1740300692f643f4a17ccfcc27aadb1e00e8ce7892_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2025/02/23/8a/17403006929e0da853a4e3bb8f3062ec18333400fa_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/10/02/d5/1759385742a720ea6bf2a195ce3d6047aaa4e66376_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "col1ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/10/02/d5/1759385742a720ea6bf2a195ce3d6047aaa4e66376_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/10/02/d5/1759385742a720ea6bf2a195ce3d6047aaa4e66376_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "lowerRightPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "color_information",
+          "appTraceInfo": "show_attribute_labels_-_color"
+        }
+      },
+      "salesLabel": {
+        "labelType": null,
+        "contentType": "custom",
+        "salesMultiLang": null,
+        "labelLang": "500+ sold",
+        "icon": "",
+        "fontColor": "#666666",
+        "backgroundColor": "#ffffff",
+        "saleNumShow": null,
+        "appTraceInfo": "show_sales_label_02_1661_600014336_500+_sold"
+      },
+      "showAddButtonLabel": "1",
+      "showAddButtonLabelStyle": "",
+      "v2ProductAttributeLabelList": [
+        {
+          "contentType": "number_of_comments",
+          "appTraceInfo": "4609`1`4.87_1000+",
+          "tagId": "4609"
+        }
+      ],
+      "goodsDetailExtraParams": {
+        "buyboxTag": "0"
+      },
+      "fullPriceUI": {
+        "descriptionLeadingIconHC": null,
+        "price": "$7.14",
+        "usdAmount": null,
+        "priceShowStyle": "7",
+        "discountPercent": "45",
+        "discountPrice": "$5.86",
+        "description": null,
+        "descriptionLeadingIcon": null,
+        "color": "discount",
+        "originalColor": "discount",
+        "leadingIcon": {
+          "type": null
+        },
+        "trailingIcon": null,
+        "bi": {
+          "pri": "pri_7.14|pri_13.00",
+          "isFlashSale": "0",
+          "otherMarks": null,
+          "discount": null
+        },
+        "endTime": null,
+        "s3Price": null,
+        "retailPrice": null,
+        "recommendedRetailPrice": null,
+        "couponPrice": null,
+        "suggestedSalePrice": null,
+        "retailPriceDescription": null,
+        "style": [
+          "us"
+        ],
+        "firstSalePrice": null,
+        "pcPrice": null,
+        "leadingText": null,
+        "fullDescription": null
+      },
+      "otherMarks": "price_show_I99eidgd8lu8",
+      "productTitleSubscript": {},
+      "buyBox": {}
+    },
+    "is_show_plus_size": "0",
+    "actTagFromCcc": {
+      "productDetailStyle": [],
+      "productDetailCartStyle": [],
+      "overviewCarStyle": [],
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "rankInfo": {
+      "productDetailStyle": null,
+      "productDetailCartStyle": null,
+      "overviewCarStyle": null,
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "comment_num_show": "1000+",
+    "comment_rank_average": "4.87",
+    "comment_num": 1001,
+    "percent_overall_fit": {
+      "true_size": "100%",
+      "large": "0%",
+      "small": "0%"
+    },
+    "is_single_sku": "0",
+    "ext": {
+      "rec_mark": "spri_3679_1_1|gfc99|gfc80|gfc61|gfc56|ft_331|rs_4|gk|S_2_1004_2030|trace_b81d27597ab15948|ctc_0.028206_v3589-us|ctr_0.031096|sre_seq_9|S_2_1004_2030|repg_1-74598143-3|resun_1|rets_37666|rms_0.053949|rkt|trace_b81d27597ab15948|zk|se_99_1",
+      "recall_mark": "11_1_2>knna_mind_v3>all_words_expand_script_hot",
+      "fine_mark": "0_fs_0.9975_3349",
+      "rough_mark": "0_prs_0.0453994_3619",
+      "marks": "rfc_1991_1883|rf_3|ms_2|rsrc_2|S_2_1004_2030"
+    },
+    "isShowAdditionalDiscount": "0",
+    "usePositionInfo": "1",
+    "dynamic_ext": {},
+    "goods_priority": "1",
+    "tag_3p_label_name": "Marketplace",
+    "goods_img_thumb": "//img.ltwebstatic.com/v4/j/spmp/2025/10/02/d5/1759385742a720ea6bf2a195ce3d6047aaa4e66376_thumbnail_200x.webp"
+  },
+  {
+    "section_index": 1,
+    "section": "audifonos bluetooth",
+    "query": "audifonos bluetooth",
+    "country": "US",
+    "sort_order": "recommend",
+    "goodsColorImage": "//img.ltwebstatic.com/images3_spmp/2023/08/15/c6/1692071953e037187b16c4b57af717e1898594bad7.jpg",
+    "fromSkuCode": "I81cm5ieoy0h",
+    "brandCode": "2kcxz",
+    "parentIds": [
+      "2273",
+      "4671",
+      "3303"
+    ],
+    "priorityMallType": "1",
+    "customizationFlag": "0",
+    "originAreaCodeList": [],
+    "isSkcMultiPrice": "1",
+    "priority": "1",
+    "spu": "e250429917110",
+    "soldOutStatus": false,
+    "productStockCheckLog": "goodsId| 71275384, goodsSn| se25042991711078887, mallCode| 1, isSale| 1, stock| 1",
+    "goods_id": "71275384",
+    "goods_sn": "se25042991711078887",
+    "productRelationID": "e250429917110",
+    "goods_img": "//img.ltwebstatic.com/images3_spmp/2024/06/13/05/1718251050950256dcafa75d1b5ddccdee208a02ff_thumbnail_405x552.jpg",
+    "goods_name": "GENAI Gaming Headset With Bluetooth, Colorful LED Lights, AAC High-Quality Audio Decoding, Built-In Microphone, Intelligent Noise Reduction, Ergonomic Design For Comfortable Wear, Low-Latency Audio-Visual Synchronization, IPX7 Waterproof, Comes With Charging Case",
+    "goods_url_name": "GENAI-Gaming-Headset-With-Bluetooth-Colorful-LED-Lights-AAC-High-Quality-Audio-Decoding-Built-In-Microphone-Intelligent-Noise-Reduction-Ergonomic-Design-For-Comfortable-Wear-Low-Latency-Audio-Visual-Synchronization-IPX7-Waterproof-Comes-With-Charging-Case",
+    "cat_id": "3306",
+    "cate_name": "Wireless Earbuds",
+    "stock": "1",
+    "store_code": "3994991793",
+    "business_model": "1",
+    "mall_code": "1",
+    "is_on_sale": 1,
+    "retailPrice": {
+      "amount": "9.00",
+      "amountWithSymbol": "$9.00",
+      "usdAmount": "9.00",
+      "usdAmountWithSymbol": "$9.00",
+      "priceShowStyle": "9"
+    },
+    "salePrice": {
+      "amount": "5.87",
+      "amountWithSymbol": "$5.87",
+      "usdAmount": "5.87",
+      "usdAmountWithSymbol": "$5.87",
+      "priceShowStyle": "5"
+    },
+    "discountPrice": {
+      "amount": "3.13",
+      "amountWithSymbol": "$3.13",
+      "usdAmount": "3.13",
+      "usdAmountWithSymbol": "$3.13",
+      "priceShowStyle": "3"
+    },
+    "isInversion": "1",
+    "retailDiscountPrice": {
+      "amount": "3.13",
+      "amountWithSymbol": "$3.13",
+      "usdAmount": "3.13",
+      "usdAmountWithSymbol": "$3.13",
+      "priceShowStyle": "3"
+    },
+    "retailDiscountPercent": "35",
+    "isNewCoupon": "0",
+    "isSrpInversion": "1",
+    "srpDiscount": "0",
+    "srpDiscountPrice": {
+      "amount": "0.00",
+      "amountWithSymbol": "$0.00",
+      "usdAmount": "0.00",
+      "usdAmountWithSymbol": "$0.00",
+      "priceShowStyle": "0"
+    },
+    "unit_discount": "35",
+    "original_discount": "35",
+    "premiumFlagNew": {
+      "brandId": "17481",
+      "brandSeriesType": "1",
+      "brand_badge_name": "GENAI",
+      "brand_logo_url_left": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/19/cb/1758268441400a693771fe119e85a3dee05f6714eb.png",
+      "brand_code": "2kcxz",
+      "brandName": "GENAI"
+    },
+    "productInfoLabels": {},
+    "quickship": "0",
+    "coupon_prices": [],
+    "spu_images": {
+      "spu_images": [
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928903f9797ab5ee3f5e8b511cebad9a3bc_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928d9a7940b017df792392b0b7f460acf38_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928c23267b97a60019b68d9f79d768620ba_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928c215101cd4863a26a534f79c01f883eb_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928d5271295db78a5fe066178b065090e34_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928bafef662f74dbaebdbd061f1722f83f6_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/171825092830fa1abf40af0bb5a5e1ed80103b425f_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/a5/17182509275b3c3967071548863b5dbbf2d6762170_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/a5/1718250927225e1f68c339d2656452ce3b9ba35f45_thumbnail_405x552.jpg",
+        "//img.ltwebstatic.com/images3_spmp/2024/06/13/13/1718250975872eaee5613a6abf2699770be681e3de_thumbnail_405x552.jpg"
+      ],
+      "track_info": "spupic_1"
+    },
+    "video_url": "0",
+    "is_clearance": "0",
+    "grade_enums": [],
+    "productMaterial": {
+      "pictureBelt": {
+        "oneColumnStyle": null,
+        "twoColumnStyle": null
+      },
+      "col2ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928903f9797ab5ee3f5e8b511cebad9a3bc_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928d9a7940b017df792392b0b7f460acf38_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928c23267b97a60019b68d9f79d768620ba_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928c215101cd4863a26a534f79c01f883eb_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928d5271295db78a5fe066178b065090e34_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928bafef662f74dbaebdbd061f1722f83f6_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/171825092830fa1abf40af0bb5a5e1ed80103b425f_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/a5/17182509275b3c3967071548863b5dbbf2d6762170_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/a5/1718250927225e1f68c339d2656452ce3b9ba35f45_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/13/1718250975872eaee5613a6abf2699770be681e3de_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/05/1718251050950256dcafa75d1b5ddccdee208a02ff_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": "spupic_1",
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928903f9797ab5ee3f5e8b511cebad9a3bc_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "col1ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928903f9797ab5ee3f5e8b511cebad9a3bc_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/images3_spmp/2024/06/13/f7/1718250928903f9797ab5ee3f5e8b511cebad9a3bc_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "upperLeftPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "subscript",
+          "displayType": "brand_image",
+          "image": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/19/cb/1758268441400a693771fe119e85a3dee05f6714eb.png",
+          "appTraceInfo": "lu_corner_mark_brand_image_17481"
+        }
+      },
+      "lowerRightPositionInfo": {},
+      "salesLabel": {
+        "labelType": null,
+        "contentType": "custom",
+        "salesMultiLang": null,
+        "labelLang": "200+ sold",
+        "icon": "",
+        "fontColor": "#666666",
+        "backgroundColor": "#ffffff",
+        "saleNumShow": null,
+        "appTraceInfo": "show_sales_label_02_1661_600014336_200+_sold"
+      },
+      "showAddButtonLabel": "1",
+      "showAddButtonLabelStyle": "",
+      "v2ProductAttributeLabelList": [
+        {
+          "contentType": "number_of_comments",
+          "appTraceInfo": "4609`1`4.91_1000+",
+          "tagId": "4609"
+        }
+      ],
+      "goodsDetailExtraParams": {
+        "buyboxTag": "0"
+      },
+      "fullPriceUI": {
+        "descriptionLeadingIconHC": null,
+        "price": "$5.87",
+        "usdAmount": null,
+        "priceShowStyle": "5",
+        "discountPercent": "35",
+        "discountPrice": "$3.13",
+        "description": null,
+        "descriptionLeadingIcon": null,
+        "color": "discount",
+        "originalColor": "discount",
+        "leadingIcon": {
+          "type": null
+        },
+        "trailingIcon": null,
+        "bi": {
+          "pri": "pri_5.87|pri_9.00",
+          "isFlashSale": "0",
+          "otherMarks": null,
+          "discount": null
+        },
+        "endTime": null,
+        "s3Price": null,
+        "retailPrice": null,
+        "recommendedRetailPrice": null,
+        "couponPrice": null,
+        "suggestedSalePrice": null,
+        "retailPriceDescription": null,
+        "style": [
+          "us"
+        ],
+        "firstSalePrice": null,
+        "pcPrice": null,
+        "leadingText": null,
+        "fullDescription": null
+      },
+      "otherMarks": "price_show_I81cm5ieoy0h",
+      "productTitleSubscript": {},
+      "buyBox": {}
+    },
+    "is_show_plus_size": "0",
+    "actTagFromCcc": {
+      "productDetailStyle": [],
+      "productDetailCartStyle": [],
+      "overviewCarStyle": [],
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "comment_num_show": "1000+",
+    "comment_rank_average": "4.91",
+    "comment_num": 1001,
+    "percent_overall_fit": {
+      "true_size": "100%",
+      "large": "0%",
+      "small": "0%"
+    },
+    "is_single_sku": "0",
+    "ext": {
+      "rec_mark": "spri_3679_1_1|gfc99|gfc80|gfc61|gfc56|ft_331|rs_4|gk|S_2_1004_2030|trace_b81d27597ab15948|ctc_0.056939_v3589-us|ctr_0.061078|sre_seq_9|S_2_1004_2030|rms_0.053949|rkt|trace_b81d27597ab15948|zk|se_99_1",
+      "recall_mark": "267_1_1>translate_allwords_script_sort>knna_mind_v3>all_words_expand_script_hot>knna_reorder_3_aml>operation_query_eff_shop_v3_exp1",
+      "fine_mark": "0_fs_0.9987_3349",
+      "rough_mark": "0_prs_0.05546823_3619",
+      "marks": "rfc_1991_1923|rf_3|ms_2|rsrc_2|S_2_1004_2030"
+    },
+    "isShowAdditionalDiscount": "0",
+    "usePositionInfo": "1",
+    "dynamic_ext": {},
+    "goods_priority": "1",
+    "tag_3p_label_name": "Marketplace",
+    "goods_img_thumb": "//img.ltwebstatic.com/images3_spmp/2024/06/13/05/1718251050950256dcafa75d1b5ddccdee208a02ff_thumbnail_200x.webp"
+  },
+  {
+    "section_index": 1,
+    "section": "audifonos bluetooth",
+    "query": "audifonos bluetooth",
+    "country": "US",
+    "sort_order": "recommend",
+    "goodsColorImage": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/c4/17537800876fa5093b1bce97cac488ab86fdfeee4c.jpg",
+    "fromSkuCode": "I2ml6dujjbd6fp",
+    "brandCode": "2ha6p",
+    "parentIds": [
+      "2273",
+      "4671",
+      "3303"
+    ],
+    "priorityMallType": "1",
+    "customizationFlag": "0",
+    "originAreaCodeList": [],
+    "isSkcMultiPrice": "0",
+    "priority": "1",
+    "spu": "e2601211123564649",
+    "soldOutStatus": false,
+    "productStockCheckLog": "goodsId| 394941015, goodsSn| se260121112356464964181, mallCode| 1, isSale| 1, stock| 1",
+    "goods_id": "394941015",
+    "goods_sn": "se260121112356464964181",
+    "productRelationID": "e2601211123564649",
+    "goods_img": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/1d/1753780023e65ed9e2d8319d1ca822f03d598204a0_squfix_thumbnail_405x552.jpg",
+    "detail_image": [
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/86/1753780023ff91db0525ea44441641b8397a9c08ae_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/59/175378002431729fbb2e4e2c33bc02b8116de4d4ba_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/66/17537800240922be1bbc9396b62d143b934c6a7f29_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/d5/1753780023fb6ecbb23263f5cc9008ba65710a20d5_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/b4/17537800243a44cc624a6a91c0a97ba93a2a60f578_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/06/17537800243c577c3fced2b1faec360963a0d2239f_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/fb/1753780023796c652e5612fd94f97e951a9ad00b48_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/80/1753780023a8b0d41795d7be12496d1ce1f985deb6_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/a3/1753780023b69d669037ef4fe03e99a5aa67420a4e_squfix_thumbnail_405x552.jpg",
+      "//img.ltwebstatic.com/v4/j/spmp/2025/09/18/ec/17581790318e1f2491672a3e270d92038cfc796639_squfix_thumbnail_405x552.jpg"
+    ],
+    "goods_name": "Philips TAT1120 New True Wireless Bluetooth Earbuds, Semi-In-Ear Noise Cancelling, High-Quality Audio, Sports & Gaming, Super Long Battery Life, Suitable For Men And Women",
+    "goods_url_name": "Philips-TAT1120-New-True-Wireless-Bluetooth-Earbuds-Semi-In-Ear-Noise-Cancelling-High-Quality-Audio-Sports-Gaming-Super-Long-Battery-Life-Suitable-For-Men-And-Women",
+    "cat_id": "3306",
+    "cate_name": "Wireless Earbuds",
+    "stock": "1",
+    "store_code": "6973275467",
+    "business_model": "1",
+    "mall_code": "1",
+    "is_on_sale": 1,
+    "retailPrice": {
+      "amount": "19.20",
+      "amountWithSymbol": "$19.20",
+      "usdAmount": "19.20",
+      "usdAmountWithSymbol": "$19.20",
+      "priceShowStyle": "19"
+    },
+    "salePrice": {
+      "amount": "12.35",
+      "amountWithSymbol": "$12.35",
+      "usdAmount": "12.35",
+      "usdAmountWithSymbol": "$12.35",
+      "priceShowStyle": "12"
+    },
+    "discountPrice": {
+      "amount": "6.85",
+      "amountWithSymbol": "$6.85",
+      "usdAmount": "6.85",
+      "usdAmountWithSymbol": "$6.85",
+      "priceShowStyle": "6"
+    },
+    "isInversion": "1",
+    "retailDiscountPrice": {
+      "amount": "6.85",
+      "amountWithSymbol": "$6.85",
+      "usdAmount": "6.85",
+      "usdAmountWithSymbol": "$6.85",
+      "priceShowStyle": "6"
+    },
+    "retailDiscountPercent": "36",
+    "isNewCoupon": "0",
+    "isSrpInversion": "1",
+    "srpDiscount": "0",
+    "srpDiscountPrice": {
+      "amount": "0.00",
+      "amountWithSymbol": "$0.00",
+      "usdAmount": "0.00",
+      "usdAmountWithSymbol": "$0.00",
+      "priceShowStyle": "0"
+    },
+    "unit_discount": "36",
+    "original_discount": "31",
+    "promotionInfo": [
+      {
+        "typeId": "31",
+        "dsaEndTime": "Valid before Jul 06, 23:59",
+        "startTimestamp": "1782057600",
+        "id": "79337698",
+        "mall_code": "1",
+        "mall_code_list": [
+          "1",
+          "2"
+        ],
+        "category_info": [],
+        "every_body_price_type": "1",
+        "endTime": "2026-07-06 23:59:59",
+        "isReturn": "1",
+        "endTimestamp": "1783353599",
+        "isFullShop": "0",
+        "isDeletePromotion": "0",
+        "isAddBuy": "",
+        "singleNum": "0",
+        "singleRemainNum": "",
+        "saleNumScene": "",
+        "buyLimitType": "",
+        "language_key": "",
+        "aggregateMemberResult": {},
+        "promotionActivityPriority": 0,
+        "promotion_logo_type": "0",
+        "rules": [
+          {
+            "type": 5,
+            "value": 0,
+            "discount": {
+              "type": 16,
+              "value": 0,
+              "enjoy_goods_num": 0,
+              "value_amount": {
+                "amount": "0.0",
+                "amountWithSymbol": "$0.00",
+                "usdAmount": "0.00",
+                "usdAmountWithSymbol": "$0.00"
+              },
+              "gift_coupons": []
+            },
+            "value_amount": {
+              "amount": "0",
+              "amountWithSymbol": "$0.00",
+              "usdAmount": "0.00",
+              "usdAmountWithSymbol": "$0.00"
+            },
+            "max_discount": 0,
+            "max_discount_amount": {
+              "amount": "0.00",
+              "amountWithSymbol": "$0.00",
+              "usdAmount": "0.00",
+              "usdAmountWithSymbol": "$0.00",
+              "priceShowStyle": "0"
+            },
+            "delivery_id": null
+          }
+        ],
+        "subject": "1",
+        "channelType": "0",
+        "categoryInfo": [],
+        "pool_list": [],
+        "max_discount_convert_by_app_currency": {
+          "amount": "0.00",
+          "amountWithSymbol": "$0.00",
+          "usdAmount": "0.00",
+          "usdAmountWithSymbol": "$0.00",
+          "priceShowStyle": "0"
+        }
+      }
+    ],
+    "premiumFlagNew": {
+      "brandId": "28387",
+      "brandSeriesType": "1",
+      "brand_badge_name": "PHILIPS",
+      "brand_logo_url_left": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/02/6b/17568059819c1c804b19927d05afb66d6cc908c6d8.png",
+      "brand_code": "2ha6p",
+      "brandName": "PHILIPS"
+    },
+    "productInfoLabels": {},
+    "quickship": "1",
+    "coupon_prices": [],
+    "video_url": "0",
+    "relatedColor": [],
+    "relatedColorNew": [
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/c4/17537800876fa5093b1bce97cac488ab86fdfeee4c.jpg",
+        "goods_id": "394941015",
+        "skc_name": null
+      },
+      {
+        "colorImage": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/7c/17537800897bdc178de6b31bc8b4236b766f5ed6b6.jpg",
+        "goods_id": null,
+        "skc_name": null
+      }
+    ],
+    "is_clearance": "0",
+    "grade_enums": [],
+    "productMaterial": {
+      "pictureBelt": {
+        "oneColumnStyle": null,
+        "twoColumnStyle": null
+      },
+      "titleLabelList": [
+        {
+          "labelType": "local_stock",
+          "labelLang": "Local",
+          "fontColor": "#FFFFFF",
+          "backgroundColor": "#169660",
+          "image": null,
+          "width": null,
+          "height": null,
+          "appTraceInfo": "listlocalTag_title"
+        }
+      ],
+      "col2ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/1d/1753780023e65ed9e2d8319d1ca822f03d598204a0_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/86/1753780023ff91db0525ea44441641b8397a9c08ae_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/59/175378002431729fbb2e4e2c33bc02b8116de4d4ba_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/66/17537800240922be1bbc9396b62d143b934c6a7f29_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/d5/1753780023fb6ecbb23263f5cc9008ba65710a20d5_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/b4/17537800243a44cc624a6a91c0a97ba93a2a60f578_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/06/17537800243c577c3fced2b1faec360963a0d2239f_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/fb/1753780023796c652e5612fd94f97e951a9ad00b48_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/80/1753780023a8b0d41795d7be12496d1ce1f985deb6_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/a3/1753780023b69d669037ef4fe03e99a5aa67420a4e_squfix_thumbnail_405x552.jpg",
+          "//img.ltwebstatic.com/v4/j/spmp/2025/09/18/ec/17581790318e1f2491672a3e270d92038cfc796639_squfix_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/1d/1753780023e65ed9e2d8319d1ca822f03d598204a0_squfix_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "col1ImageUI": {
+        "aspectRatio": "0.75",
+        "urls": [
+          "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/1d/1753780023e65ed9e2d8319d1ca822f03d598204a0_squfix_thumbnail_405x552.jpg"
+        ],
+        "otherMarks": null,
+        "goodsDetailExtraParams": null,
+        "transitionImage": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/1d/1753780023e65ed9e2d8319d1ca822f03d598204a0_squfix_thumbnail_405x552.jpg",
+        "goodsDetailCropType": null,
+        "goodsDetailFirstImage": null
+      },
+      "upperLeftPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "subscript",
+          "displayType": "brand_image",
+          "image": "https://img.ltwebstatic.com/v4/p/pics1/2025/09/02/6b/17568059819c1c804b19927d05afb66d6cc908c6d8.png",
+          "appTraceInfo": "lu_corner_mark_brand_image_28387"
+        }
+      },
+      "lowerRightPositionInfo": {
+        "twoColumnStyle": {
+          "contentType": "color_information",
+          "appTraceInfo": "show_attribute_labels_-_color"
+        }
+      },
+      "salesLabel": {
+        "labelType": null,
+        "contentType": "custom",
+        "salesMultiLang": null,
+        "labelLang": "100+ sold",
+        "icon": "",
+        "fontColor": "#666666",
+        "backgroundColor": "#ffffff",
+        "saleNumShow": null,
+        "appTraceInfo": "show_sales_label_02_1661_600014336_100+_sold"
+      },
+      "showAddButtonLabel": "1",
+      "showAddButtonLabelStyle": "",
+      "trendLabel": {
+        "trendIpImg": {
+          "imgUrl": "https://img.ltwebstatic.com/v4/p/ccc/2026/04/15/7a/177624640421ef39fbf7c2890dd4cfd1e57579a90b.png",
+          "width": "46",
+          "height": "14"
+        },
+        "trendIpBigImg": {
+          "imgUrl": "https://img.ltwebstatic.com/v4/p/ccc/2026/04/15/7a/177624640421ef39fbf7c2890dd4cfd1e57579a90b.png",
+          "width": "46",
+          "height": "14"
+        },
+        "trendLabel": {
+          "labelName": "Worldwide Outlet Stores Marketplace",
+          "bgColor": "#FFF1E0",
+          "fontColor": "#7D543C",
+          "icon": "https://img.ltwebstatic.com/v4/p/ccc/2025/07/17/6b/175273961898fb60cce5eeef5bb75c5eec4d60d44f.png",
+          "iconType": null
+        },
+        "routingUrl": "/store/home?data=%7B%22store_code%22%3A%226973275467%22%2C%22page_from%22%3A%22%22%2C%22top_goods_id%22%3A%22394941015%22%2C%22main_goods_id%22%3Anull%2C%22store_scene%22%3A%22%22%2C%22tab%22%3A%22items%22%2C%22cate_ids%22%3A%22%22%2C%22main_cate_id%22%3Anull%2C%22goods_ids%22%3A%22%22%7D",
+        "appTraceInfo": "trend_shop_code_6973275467_Worldwide Outlet Stores Marketplace_0_2",
+        "showPosition": "aboveTitle",
+        "trendWordId": "-",
+        "trendShopCode": "6973275467",
+        "trendType": "brandStore",
+        "contentCarrierId": "-",
+        "carrierSubTypeName": "-",
+        "sceneId": "-",
+        "srcModule": "list",
+        "srcIdentifier": "store=6973275467",
+        "clickEventName": "click_brand_store",
+        "clickEventParams": {
+          "store_id": "6973275467",
+          "src_module": "list",
+          "src_identifier": "-",
+          "brand_code": null
+        }
+      },
+      "v2ProductAttributeLabelList": [],
+      "goodsDetailExtraParams": {
+        "buyboxTag": "0"
+      },
+      "fullPriceUI": {
+        "descriptionLeadingIconHC": null,
+        "price": "$12.35",
+        "usdAmount": null,
+        "priceShowStyle": "12",
+        "discountPercent": "36",
+        "discountPrice": "$6.85",
+        "description": null,
+        "descriptionLeadingIcon": null,
+        "color": "discount",
+        "originalColor": "discount",
+        "leadingIcon": {
+          "type": null
+        },
+        "trailingIcon": null,
+        "bi": {
+          "pri": "pri_12.35|pri_19.20",
+          "isFlashSale": "0",
+          "otherMarks": null,
+          "discount": null
+        },
+        "endTime": null,
+        "s3Price": null,
+        "retailPrice": null,
+        "recommendedRetailPrice": null,
+        "couponPrice": null,
+        "suggestedSalePrice": null,
+        "retailPriceDescription": null,
+        "style": [
+          "us"
+        ],
+        "firstSalePrice": null,
+        "pcPrice": null,
+        "leadingText": null,
+        "fullDescription": null
+      },
+      "otherMarks": "price_show_I2ml6dujjbd6fp",
+      "productTitleSubscript": {},
+      "buyBox": {}
+    },
+    "is_show_plus_size": "0",
+    "actTagFromCcc": {
+      "productDetailStyle": [],
+      "productDetailCartStyle": [],
+      "overviewCarStyle": [],
+      "oneColumnStyle": null,
+      "twoColumnStyle": null,
+      "preferenceTagStyle": null,
+      "msg": null
+    },
+    "comment_rank_average": "4.85",
+    "comment_num": 21,
+    "percent_overall_fit": {
+      "true_size": "100%",
+      "large": "0%",
+      "small": "0%"
+    },
+    "is_single_sku": "0",
+    "ext": {
+      "rec_mark": "spri_3679_1_1|roi_14994|troi_25.0|rdg_8|gfc99|gfc80|gfc61|gfc56|ft_331|rs_4|gk|S_2_1004_2030|trace_b81d27597ab15948|ctc_0.03467_v3589-us|ctr_0.037907|sre_seq_9|S_2_1004_2030|rms_0.053949|rkt|trace_b81d27597ab15948|zk|se_99_1",
+      "recall_mark": "11_1_2>knna_mind_v3>all_words_expand_script_hot>knna_reorder_3_aml",
+      "fine_mark": "0_fs_0.9962_3349",
+      "rough_mark": "0_prs_0.04263613_3619",
+      "marks": "rfc_1991_1883|rf_3|ms_2|rsrc_2|S_2_1004_2030"
+    },
+    "isShowAdditionalDiscount": "0",
+    "usePositionInfo": "1",
+    "dynamic_ext": {},
+    "goods_priority": "1",
+    "tag_3p_label_name": "Marketplace",
+    "goods_img_thumb": "//img.ltwebstatic.com/v4/j/spmp/2025/07/29/1d/1753780023e65ed9e2d8319d1ca822f03d598204a0_squfix_thumbnail_200x.webp"
+  }
+]

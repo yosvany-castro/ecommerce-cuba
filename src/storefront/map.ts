@@ -2,7 +2,31 @@
 import "server-only";
 import type { ComposedPage } from "@/sectors/f-slate/compose";
 import type { ResolvedSection } from "@/sectors/f-slate/sections/types";
+import type { CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
 import type { StorefrontCard, StorefrontSection, StorefrontPage } from "./contract";
+
+// orders crudo (string ya-formateado del proveedor, o número) -> `sold` legible.
+// Mismo redondeo que demoAttrs (tuki/lib.ts) pero no se comparte: una fuente
+// (hash cosmético) vs. la otra (dato real de A4); coincidencia de forma, no de origen.
+function formatSold(orders: string | number | undefined): string | undefined {
+  if (orders === undefined) return undefined;
+  // el UI ya añade su propio "ventas"/"vendidos" — quitar el sufijo "sold" del
+  // proveedor real evita el doble idioma ("10,000+ sold vendidos", F4 review).
+  if (typeof orders === "string") return orders.replace(/\s*sold\s*$/i, "");
+  return orders >= 1000 ? (orders / 1000).toFixed(1) + "k" : String(orders);
+}
+
+function toCardAttrs(attrs: CuratedAttrs | undefined): StorefrontCard["attrs"] {
+  if (!attrs) return undefined;
+  return {
+    ...(attrs.colors ? { colors: attrs.colors } : {}),
+    ...(attrs.sizes ? { sizes: attrs.sizes } : {}),
+    ...(attrs.images ? { images: attrs.images } : {}),
+    ...(attrs.old_price_cents !== undefined ? { old_price_cents: attrs.old_price_cents } : {}),
+    ...(attrs.rating !== undefined ? { rating: attrs.rating } : {}),
+    ...(attrs.orders !== undefined ? { sold: formatSold(attrs.orders) } : {}),
+  };
+}
 
 /**
  * Único mapper producto→card (T2): antes duplicado inline en el feed
@@ -22,15 +46,18 @@ export function toCard(
   reason?: string,
   position?: number,
 ): StorefrontCard {
+  const meta = product.metadata as { category?: string; attrs?: CuratedAttrs } | undefined;
+  const attrs = toCardAttrs(meta?.attrs);
   return {
     id: product.id,
     title: product.title,
     price_cents: product.price_cents,
     currency: product.currency,
     image_url: product.image_url,
-    category: (product.metadata as { category?: string } | undefined)?.category ?? null,
+    category: meta?.category ?? null,
     ...(reason ? { reason } : {}),
     ...(position ? { position } : {}),
+    ...(attrs ? { attrs } : {}),
   };
 }
 

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard } from "@/storefront/contract";
-import { catOf, demoAttrs, fmt, stripe } from "./lib";
+import { catOf, demoAttrs, fmt, mergeAttrs, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
 
@@ -30,8 +30,9 @@ export function ProductView({
 }) {
   const router = useRouter();
   const { add } = useTukiCart();
-  const da = demoAttrs(card.id, card.category, card.price_cents);
+  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
   const cat = catOf(card.category);
+  const thumbs = card.attrs?.images && card.attrs.images.length > 1 ? card.attrs.images.slice(0, 4) : null;
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
 
@@ -143,7 +144,7 @@ export function ProductView({
           <div style={{ position: "relative", height: 440, borderRadius: 26, background: stripe(cat), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {card.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={card.image_url} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9a9b98" }}>foto producto grande</span>
             )}
@@ -154,12 +155,27 @@ export function ProductView({
             )}
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), border: "2px solid #1C1D20" }} />
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.7 }} />
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.5 }} />
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.35, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#77787D", fontWeight: 600 }}>
-              +3
-            </div>
+            {thumbs ? (
+              thumbs.map((src, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={src}
+                  src={src}
+                  alt={card.title}
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", border: i === 0 ? "2px solid #1C1D20" : "2px solid transparent" }}
+                />
+              ))
+            ) : (
+              <>
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), border: "2px solid #1C1D20" }} />
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.7 }} />
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.5 }} />
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.35, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#77787D", fontWeight: 600 }}>
+                  +3
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -191,7 +207,7 @@ export function ProductView({
                   <div
                     key={i}
                     onClick={() => setSelColor(cv.name)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", background: cv.hex, cursor: "pointer", border: `2px solid ${selColor === cv.name ? "#1C1D20" : "rgba(0,0,0,.08)"}`, boxShadow: "inset 0 0 0 3px #FAFAF8" }}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: cv.hex ?? "#D8D8D3", cursor: "pointer", border: `2px solid ${selColor === cv.name ? "#1C1D20" : "rgba(0,0,0,.08)"}`, boxShadow: "inset 0 0 0 3px #FAFAF8" }}
                   />
                 ))}
               </div>

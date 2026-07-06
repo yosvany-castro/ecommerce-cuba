@@ -8,7 +8,13 @@ import type { NormalizedQuery } from "./normalizer/prompt";
 import { bm25Search, type SearchFilters } from "./retrieve/bm25";
 import { cosineSearch } from "./retrieve/cosine";
 import { rrfFuse, RRF_K0, type FusedProduct, type RankedProduct } from "./retrieve/rrf";
-import { shouldCallMock, FRESHNESS_THRESHOLD_HOURS } from "./decide/shouldCallMock";
+import {
+  shouldCallMock,
+  countStrongHits,
+  currentStrongHitMinScore,
+  LOCAL_HITS_THRESHOLD,
+  FRESHNESS_THRESHOLD_HOURS,
+} from "./decide/shouldCallMock";
 import { getQueryFreshness, recordQueryAggregatorCall } from "./decide/freshness";
 import { persistSearch, type SearchMethod } from "./persist/searches";
 import type { ProductListRow } from "@/sectors/b-catalog/repository/products";
@@ -266,10 +272,20 @@ export async function hybridSearch(
   let mockProductsFailed = 0;
   let decisionReason = "not evaluated";
 
+  // F4 T7: cuenta hits FUERTES (match léxico BM25 o coseno ≥ piso), no el total
+  // fusionado. El fuse no conserva scores de origen, así que se cuenta desde las
+  // listas PRE-fuse (bm25/cos). Con SEARCH_STRONG_HIT_MIN_SCORE=0 se recupera el
+  // conteo total viejo. NO cambia el orden ni los resultados, solo la decisión.
+  const strongHits = countStrongHits(
+    bm25.map((b) => b.id),
+    cos,
+    currentStrongHitMinScore(),
+  );
+
   if (normalized) {
-    let should = shouldCallMock(fused.length, normalized.confidence, lastRefreshedAt);
+    let should = shouldCallMock(strongHits, normalized.confidence, lastRefreshedAt);
     if (!should) {
-      if (fused.length >= 12) decisionReason = "enough_local_hits";
+      if (strongHits >= LOCAL_HITS_THRESHOLD) decisionReason = "enough_local_hits";
       else if (normalized.confidence <= 0.5) decisionReason = "low_confidence";
       else if (
         lastRefreshedAt &&
@@ -288,7 +304,7 @@ export async function hybridSearch(
         decisionReason = "low_count_high_confidence_stale_category";
       }
     }
-    tracer.set("decision", { should_call_mock: should, reason: decisionReason });
+    tracer.set("decision", { should_call_mock: should, reason: decisionReason, strong_hits: strongHits });
 
     if (should && asyncIngestEnabled()) {
       // F4 T3 (decisión 2026-07-02): devolver lo LOCAL ya — el fetch externo +

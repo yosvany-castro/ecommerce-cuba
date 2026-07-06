@@ -8,6 +8,15 @@ export interface StorefrontCard {
   category?: string | null; // metadata.category normalizada (ropa|electronica|hogar|juguetes_bebe|belleza|otros)
   reason?: string;
   position?: number;
+  // metadata.attrs curado (A4), presente solo si el proveedor real trajo algo.
+  attrs?: {
+    colors?: { name: string; hex?: string }[];
+    sizes?: string[];
+    images?: string[];
+    old_price_cents?: number;
+    rating?: number;
+    sold?: string; // ya formateado ("1.2k"), no el `orders` crudo
+  };
 }
 export interface StorefrontSection {
   placement_id: string;

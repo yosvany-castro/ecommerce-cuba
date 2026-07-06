@@ -19,4 +19,9 @@ describe("applyFilters", () => {
   it("colors interseca", () => {
     expect(applyFilters(base, { sort: "rel", price: null, colors: ["Crema"], oferta: false, envio: false, r4: false }).map((x) => x.card.id)).toEqual(["b"]);
   });
+  it("colors: nombre inglés de producto real ('Black') matchea el chip español 'Negro' (F4 review)", () => {
+    const real = [f("d", 1500, 4.5, null, ["Black"])];
+    expect(applyFilters(real, { sort: "rel", price: null, colors: ["Negro"], oferta: false, envio: false, r4: false }).map((x) => x.card.id)).toEqual(["d"]);
+    expect(applyFilters(real, { sort: "rel", price: null, colors: ["Crema"], oferta: false, envio: false, r4: false })).toEqual([]);
+  });
 });

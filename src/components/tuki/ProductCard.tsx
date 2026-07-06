@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { observeSeen } from "@/lib/client/seen-reporter";
-import { catOf, demoAttrs, fmt, stripe } from "./lib";
+import { catOf, demoAttrs, fmt, mergeAttrs, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 
 export type CardSource = "home" | "category" | "search" | "direct";
@@ -33,7 +33,7 @@ export function ProductCard({
     return observeSeen(el, seenSlate, seenPos);
   }, [seenSlate, seenPos]);
 
-  const da = demoAttrs(card.id, card.category, card.price_cents);
+  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
   const dots = da.colors.slice(0, 4);
@@ -78,9 +78,15 @@ export function ProductCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
         }}
       >
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9a9b98" }}>foto producto</span>
+        {card.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9a9b98" }}>foto producto</span>
+        )}
         {oldC != null && (
           <div
             style={{
@@ -115,7 +121,7 @@ export function ProductCard({
           {dots.map((d, i) => (
             <div
               key={i}
-              style={{ width: 11, height: 11, borderRadius: "50%", background: d.hex, border: "1px solid rgba(0,0,0,.14)" }}
+              style={{ width: 11, height: 11, borderRadius: "50%", background: d.hex ?? "#D8D8D3", border: "1px solid rgba(0,0,0,.14)" }}
             />
           ))}
           {!isGrid && moreN > 0 && <span style={{ fontSize: 10, color: "#8E8F94" }}>+{moreN}</span>}
