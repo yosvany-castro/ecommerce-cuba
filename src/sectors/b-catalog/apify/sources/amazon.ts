@@ -48,6 +48,10 @@ export function mapItem(raw: unknown): MockProduct | null {
   const oldPrice = listPrice !== null && listPrice > price ? listPrice : undefined;
   const brand = str(o.brand);
   const { colors, sizes } = variantColorsSizes(o.variantAttributes);
+  // Real: la galería viene en highResolutionImages (string[]); category en breadCrumbs (string).
+  const images = Array.isArray(o.highResolutionImages)
+    ? o.highResolutionImages.filter((x): x is string => typeof x === "string")
+    : undefined;
 
   return {
     id: `amazon:${id}`,
@@ -55,15 +59,16 @@ export function mapItem(raw: unknown): MockProduct | null {
     source_product_id: id,
     title,
     description: str(o.description) ?? title,
-    image_url: str(o.thumbnailImage) ?? "",
+    image_url: str(o.thumbnailImage) ?? images?.[0] ?? "",
     price_cents: price,
     brand: brand ?? "",
-    raw_category: str(o.category) ?? "",
+    raw_category: str(o.breadCrumbs) ?? "",
     attributes: compactAttrs({
       old_price_cents: oldPrice,
       rating: toNumber(o.stars),
       colors,
       sizes,
+      images,
       brand,
     }),
   };

@@ -7,20 +7,24 @@ export const ACTOR_SLUG = "devcake/aliexpress-products-scraper";
 export const PER_ITEM_USD = 0.0015;
 
 export function buildInput(opts: FetchOptions): Record<string, unknown> {
-  return { searchQueries: [queryFromOpts(opts)], maxProducts: opts.limit ?? 20 };
+  // El actor exige maxProducts >= 50 (piso duro); el cliente recorta a `limit` al leer
+  // el dataset, así que igual solo ingerimos `limit` items aunque el actor raspe 50.
+  return { searchQueries: [queryFromOpts(opts)], maxProducts: Math.max(50, opts.limit ?? 50) };
 }
 
 export function mapItem(raw: unknown): MockProduct | null {
   const o = asRecord(raw);
   if (!o) return null;
 
-  const id = str(o.id) ?? str(o.productId);
+  // Campos reales (devcake): productId, priceCurrent(Min) string/number con símbolo,
+  // priceOriginal(Min), ratingValue, soldDescription. Se mantienen los alias viejos por si acaso.
+  const id = str(o.productId) ?? str(o.id);
   const title = str(o.title);
-  const price = usdToCents(o.price ?? o.salePrice);
+  const price = usdToCents(o.priceCurrentMin ?? o.priceCurrent ?? o.price ?? o.salePrice);
   if (!id || !title || price === null) return null;
 
-  const oldPrice = usdToCents(o.originalPrice ?? o.originalPriceStr);
-  const orders = o.orders ?? o.tradeCount;
+  const oldPrice = usdToCents(o.priceOriginalMin ?? o.priceOriginal ?? o.originalPrice);
+  const orders = str(o.soldDescription) ?? o.soldCount ?? o.orders;
 
   return {
     id: `aliexpress:${id}`,
@@ -34,7 +38,7 @@ export function mapItem(raw: unknown): MockProduct | null {
     raw_category: str(o.categoryName) ?? "",
     attributes: compactAttrs({
       old_price_cents: oldPrice !== null && oldPrice > price ? oldPrice : undefined,
-      rating: toNumber(o.rating),
+      rating: toNumber(o.ratingValue ?? o.rating),
       orders: typeof orders === "string" || typeof orders === "number" ? orders : undefined,
     }),
   };

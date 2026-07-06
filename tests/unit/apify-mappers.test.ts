@@ -3,6 +3,16 @@ import { usdToCents, queryFromOpts } from "@/sectors/b-catalog/apify/sources/sha
 import * as amazon from "@/sectors/b-catalog/apify/sources/amazon";
 import * as aliexpress from "@/sectors/b-catalog/apify/sources/aliexpress";
 import * as shein from "@/sectors/b-catalog/apify/sources/shein";
+import type { MockProduct } from "@/sectors/b-catalog/mock/types";
+// Fixtures reales capturados en vivo (T3): endurecen los mappers con las formas de verdad.
+import amazonFxRaw from "../fixtures/apify/amazon-sample.json";
+import aliexpressFxRaw from "../fixtures/apify/aliexpress-sample.json";
+import sheinFxRaw from "../fixtures/apify/shein-sample.json";
+
+const amazonFx = amazonFxRaw as Record<string, unknown>[];
+const aliexpressFx = aliexpressFxRaw as Record<string, unknown>[];
+const sheinFx = sheinFxRaw as Record<string, unknown>[];
+const notNull = (p: MockProduct | null): p is MockProduct => p !== null;
 
 describe("usdToCents", () => {
   test("number float → integer cents", () => {
@@ -120,31 +130,29 @@ describe("amazon.mapItem", () => {
 });
 
 describe("aliexpress.mapItem", () => {
-  const rich = {
-    id: "1005006",
-    title: "Bluetooth Earbuds",
-    price: "US $8.50",
-    originalPrice: "US $15.00",
-    rating: "4.7",
-    reviewsCount: 320,
-    orders: "2000+",
-    productUrl: "https://aliexpress.com/item/1005006.html",
-    imageUrl: "https://img.example/ae1.jpg",
-  };
+  // Forma real (devcake): productId, priceCurrent(Min), priceOriginal(Min), ratingValue, soldDescription.
+  const mapped = aliexpressFx.map((it) => aliexpress.mapItem(it)).filter(notNull);
 
-  test("rich item maps price strings and aliases", () => {
-    const p = aliexpress.mapItem(rich);
-    expect(p).not.toBeNull();
-    expect(p!.source).toBe("aliexpress");
-    expect(p!.source_product_id).toBe("1005006");
-    expect(p!.price_cents).toBe(850);
-    expect(p!.image_url).toBe("https://img.example/ae1.jpg");
-    expect(p!.attributes.old_price_cents).toBe(1500);
-    expect(p!.attributes.rating).toBe(4.7);
-    expect(p!.attributes.orders).toBe("2000+");
+  test("real fixture: cada item mapea con price entero > 0", () => {
+    expect(mapped.length).toBe(aliexpressFx.length);
+    for (const p of mapped) {
+      expect(Number.isInteger(p.price_cents)).toBe(true);
+      expect(p.price_cents).toBeGreaterThan(0);
+    }
   });
 
-  test("minimal item: productId + salePrice aliases", () => {
+  test("real fixture item 0: precios/rating/orders desde los nombres reales", () => {
+    const p = aliexpress.mapItem(aliexpressFx[0])!;
+    expect(p.source).toBe("aliexpress");
+    expect(p.source_product_id).toBe(aliexpressFx[0].productId);
+    expect(p.price_cents).toBe(99); // priceCurrentMin 0.99
+    expect(p.attributes.old_price_cents).toBe(325); // priceOriginalMin 3.25 > price
+    expect(p.attributes.rating).toBe(4.2); // ratingValue
+    expect(p.attributes.orders).toBe("10,000+ sold"); // soldDescription
+    expect(p.image_url).toBe(aliexpressFx[0].imageUrl);
+  });
+
+  test("minimal item via alias legacy: productId + salePrice", () => {
     const p = aliexpress.mapItem({ productId: "9999", title: "Thing", salePrice: "3.00" });
     expect(p).not.toBeNull();
     expect(p!.source_product_id).toBe("9999");
@@ -156,9 +164,11 @@ describe("aliexpress.mapItem", () => {
     expect(aliexpress.mapItem({ title: "no id no price" })).toBeNull();
   });
 
-  test("buildInput", () => {
-    const input = aliexpress.buildInput({ query: "smartwatch", limit: 8 });
-    expect(input).toEqual({ searchQueries: ["smartwatch"], maxProducts: 8 });
+  test("buildInput fuerza maxProducts >= 50 (piso del actor)", () => {
+    expect(aliexpress.buildInput({ query: "smartwatch", limit: 8 })).toEqual({
+      searchQueries: ["smartwatch"],
+      maxProducts: 50,
+    });
   });
 });
 
@@ -214,8 +224,37 @@ describe("shein.mapItem", () => {
     expect(shein.mapItem({ goods_name: "no id" })).toBeNull();
   });
 
-  test("buildInput", () => {
-    const input = shein.buildInput({ query: "vestido", limit: 6 });
-    expect(input).toEqual({ query: "vestido", maxItems: 6, countryCode: "US" });
+  test("buildInput: query como array, countryCode en minúsculas", () => {
+    expect(shein.buildInput({ query: "vestido", limit: 6 })).toEqual({
+      query: ["vestido"],
+      maxItems: 6,
+      countryCode: "us",
+    });
+  });
+});
+
+describe("real fixtures — batch mapping (capturado en vivo T3)", () => {
+  test("amazon: mapea los items con precio; categoría de breadCrumbs, galería de highResolutionImages", () => {
+    const mapped = amazonFx.map((it) => amazon.mapItem(it)).filter(notNull);
+    expect(mapped.length).toBeGreaterThanOrEqual(4); // 1 item sin stock trae price null → descartado
+    for (const p of mapped) {
+      expect(p.price_cents).toBeGreaterThan(0);
+      expect(p.raw_category).toContain(">"); // rastro de breadCrumbs
+      expect(Array.isArray(p.attributes.images)).toBe(true);
+    }
+    // variantAttributes → al menos un color real
+    expect(
+      mapped.some((p) => Array.isArray(p.attributes.colors) && p.attributes.colors.length > 0),
+    ).toBe(true);
+  });
+
+  test("shein: mapea todo; precio usdAmount, galería detail_image, categoría cate_name", () => {
+    const mapped = sheinFx.map((it) => shein.mapItem(it)).filter(notNull);
+    expect(mapped.length).toBe(sheinFx.length);
+    const p0 = shein.mapItem(sheinFx[0])!;
+    expect(p0.price_cents).toBe(1408); // salePrice.usdAmount 14.08
+    expect(p0.attributes.old_price_cents).toBe(2228); // retailPrice.usdAmount 22.28
+    expect(p0.raw_category).toBe("Wireless Earbuds");
+    expect((p0.attributes.images as string[]).length).toBe(10);
   });
 });
