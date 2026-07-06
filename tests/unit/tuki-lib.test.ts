@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATS, catOf, demoAttrs, fmt, sectionize, stripe } from "@/components/tuki/lib";
+import { CATS, catOf, demoAttrs, fmt, mergeAttrs, sectionize, stripe } from "@/components/tuki/lib";
 
 const card = (id: string, category: string) => ({
   id, title: "p" + id, price_cents: 1000, currency: "USD", image_url: null,
@@ -27,6 +27,43 @@ describe("tuki lib", () => {
     if (a1.oldPriceCents !== null) expect(a1.oldPriceCents).toBeGreaterThan(2490);
     expect(demoAttrs("otro-id", "electronica", 2490).sizes).toEqual([]); // electronica sin tallas
     expect(a1.weightLb).toBeGreaterThan(0);
+  });
+  it("mergeAttrs: sin attrs (producto mock) devuelve demo intacto", () => {
+    const da = demoAttrs("id-1", "ropa", 2490);
+    expect(mergeAttrs(da, undefined)).toEqual(da);
+  });
+  it("mergeAttrs: attrs presente con colors reales los usa (no demo)", () => {
+    const da = demoAttrs("id-1", "ropa", 2490);
+    const merged = mergeAttrs(da, { colors: [{ name: "Rojo", hex: "#F00" }] });
+    expect(merged.colors).toEqual([{ name: "Rojo", hex: "#F00" }]);
+  });
+  it("mergeAttrs: attrs presente sin old_price_cents -> null, NO fallback a demo (honestidad)", () => {
+    const da = demoAttrs("id-1", "ropa", 2490); // puede o no traer oldPriceCents demo
+    const merged = mergeAttrs(da, { rating: 4.8 });
+    expect(merged.oldPriceCents).toBeNull();
+  });
+  it("mergeAttrs: attrs presente sin colors/sizes -> vacíos, NO fallback a demo", () => {
+    const da = demoAttrs("id-1", "ropa", 2490); // ropa siempre trae sizes demo
+    const merged = mergeAttrs(da, { rating: 4.8 });
+    expect(merged.colors).toEqual([]);
+    expect(merged.sizes).toEqual([]);
+  });
+  it("mergeAttrs: rating/sold caen a demo cuando attrs no los trae (cosmética)", () => {
+    const da = demoAttrs("id-1", "ropa", 2490);
+    const merged = mergeAttrs(da, { colors: [{ name: "Rojo" }] });
+    expect(merged.rating).toBe(da.rating);
+    expect(merged.sold).toBe(da.sold);
+  });
+  it("mergeAttrs: rating/sold reales pisan al demo cuando están", () => {
+    const da = demoAttrs("id-1", "ropa", 2490);
+    const merged = mergeAttrs(da, { rating: 4.9, sold: "3.4k" });
+    expect(merged.rating).toBe(4.9);
+    expect(merged.sold).toBe("3.4k");
+  });
+  it("mergeAttrs: weightLb siempre demo (ninguna fuente trae peso)", () => {
+    const da = demoAttrs("id-1", "ropa", 2490);
+    const merged = mergeAttrs(da, { rating: 4.9 });
+    expect(merged.weightLb).toBe(da.weightLb);
   });
   it("sectionize agrupa en [aisle6, focus1, grid4] cíclico sin perder cards", () => {
     const cards = Array.from({ length: 13 }, (_, i) => card(String(i), "hogar"));

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { observeSeen } from "@/lib/client/seen-reporter";
 import { track } from "@/lib/client/track";
-import { catOf, demoAttrs, fmt, sectionize, stripe, type TukiSection, CATS } from "./lib";
+import { catOf, demoAttrs, fmt, mergeAttrs, sectionize, stripe, type TukiSection, CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { ProductCard } from "./ProductCard";
 
@@ -44,7 +44,7 @@ function FocusCard({
     return observeSeen(el, seenSlate, seenPos);
   }, [seenSlate, seenPos]);
 
-  const da = demoAttrs(card.id, card.category, card.price_cents);
+  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
   const cat = catOf(card.category);

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard } from "@/storefront/contract";
-import { catOf, demoAttrs, fmt, stripe } from "./lib";
+import { catOf, demoAttrs, fmt, mergeAttrs, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
 
@@ -30,8 +30,9 @@ export function ProductView({
 }) {
   const router = useRouter();
   const { add } = useTukiCart();
-  const da = demoAttrs(card.id, card.category, card.price_cents);
+  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
   const cat = catOf(card.category);
+  const thumbs = card.attrs?.images && card.attrs.images.length > 1 ? card.attrs.images.slice(0, 4) : null;
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
 
@@ -154,12 +155,26 @@ export function ProductView({
             )}
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), border: "2px solid #1C1D20" }} />
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.7 }} />
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.5 }} />
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.35, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#77787D", fontWeight: 600 }}>
-              +3
-            </div>
+            {thumbs ? (
+              thumbs.map((src, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={src}
+                  src={src}
+                  alt={card.title}
+                  style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", border: i === 0 ? "2px solid #1C1D20" : "2px solid transparent" }}
+                />
+              ))
+            ) : (
+              <>
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), border: "2px solid #1C1D20" }} />
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.7 }} />
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.5 }} />
+                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.35, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#77787D", fontWeight: 600 }}>
+                  +3
+                </div>
+              </>
+            )}
           </div>
         </div>
 

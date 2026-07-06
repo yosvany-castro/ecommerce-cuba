@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard } from "@/storefront/contract";
-import { CATS, demoAttrs } from "./lib";
+import { CATS, demoAttrs, mergeAttrs } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { FiltersDrawer } from "./FiltersDrawer";
 import { advCount, applyFilters, EMPTY_ADV, type AdvState, type FilterableCard } from "./filters";
@@ -43,7 +43,7 @@ export function Listing({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const filterable: FilterableCard[] = useMemo(
-    () => cards.map((c) => ({ card: c, attrs: demoAttrs(c.id, c.category, c.price_cents) })),
+    () => cards.map((c) => ({ card: c, attrs: mergeAttrs(demoAttrs(c.id, c.category, c.price_cents), c.attrs) })),
     [cards],
   );
   const shown = useMemo(() => applyFilters(filterable, adv), [filterable, adv]);

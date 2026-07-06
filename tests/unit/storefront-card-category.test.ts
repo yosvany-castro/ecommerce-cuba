@@ -22,4 +22,45 @@ describe("toCard", () => {
     } as never);
     expect(c.category).toBeNull();
   });
+  it("attrs undefined si metadata.attrs ausente", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null, metadata: { category: "hogar" }, created_at: "",
+    } as never);
+    expect(c.attrs).toBeUndefined();
+  });
+  it("mapea metadata.attrs a card.attrs: colors tal cual, orders numérico -> sold formateado 'k'", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null,
+      metadata: { category: "hogar", attrs: { colors: [{ name: "Rojo", hex: "#F00" }], rating: 4.7, orders: 2300, old_price_cents: 500, sizes: ["M"], images: ["/a.jpg"] } },
+      created_at: "",
+    } as never);
+    expect(c.attrs).toEqual({
+      colors: [{ name: "Rojo", hex: "#F00" }],
+      rating: 4.7,
+      sold: "2.3k",
+      old_price_cents: 500,
+      sizes: ["M"],
+      images: ["/a.jpg"],
+    });
+  });
+  it("mapea orders string tal cual (sin formatear)", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null,
+      metadata: { attrs: { orders: "50+" } },
+      created_at: "",
+    } as never);
+    expect(c.attrs?.sold).toBe("50+");
+  });
+  it("orders numérico bajo (<1000) queda tal cual sin sufijo k", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null,
+      metadata: { attrs: { orders: 340 } },
+      created_at: "",
+    } as never);
+    expect(c.attrs?.sold).toBe("340");
+  });
 });

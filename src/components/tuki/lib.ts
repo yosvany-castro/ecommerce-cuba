@@ -39,7 +39,7 @@ const PALETTE = [
 export const FILTER_COLORS = PALETTE;
 const WEIGHT_BASE: Record<string, number> = { ropa: 0.6, electronica: 1.2, hogar: 3.0, juguetes_bebe: 1.0, belleza: 0.4, otros: 1.5 };
 
-export interface DemoAttrs { rating: number; sold: string; oldPriceCents: number | null; colors: { name: string; hex: string }[]; sizes: string[]; weightLb: number }
+export interface DemoAttrs { rating: number; sold: string; oldPriceCents: number | null; colors: { name: string; hex?: string }[]; sizes: string[]; weightLb: number }
 export function demoAttrs(productId: string, category: string | null | undefined, priceCents: number): DemoAttrs {
   const h = hash(productId);
   const cat = catOf(category).id;
@@ -52,6 +52,28 @@ export function demoAttrs(productId: string, category: string | null | undefined
   const sizes = cat === "ropa" ? ["S", "M", "L", "XL"] : [];
   const weightLb = Math.round((WEIGHT_BASE[cat] ?? 1) * (0.5 + (h % 100) / 66) * 10) / 10;
   return { rating, sold, oldPriceCents, colors, sizes, weightLb };
+}
+
+/**
+ * Fusiona demoAttrs con `card.attrs` reales (A4/Apify), precedencia per-field.
+ * Si `attrs` es undefined (producto mock/viejo, sin proveedor real) → demo
+ * completo, igual que hoy. Si `attrs` está presente (producto real):
+ *   - rating/sold: caen a demo si faltan — cosmética inofensiva, el diseño los
+ *     necesita para no dejar huecos en la tarjeta.
+ *   - oldPriceCents/colors/sizes: NUNCA caen a demo. Inventar un precio viejo o
+ *     colores sobre un producto real sería mentira encima de un dato real.
+ *   - weightLb: siempre demo, ninguna fuente trae peso.
+ */
+export function mergeAttrs(da: DemoAttrs, attrs?: StorefrontCard["attrs"]): DemoAttrs {
+  if (!attrs) return da;
+  return {
+    rating: attrs.rating ?? da.rating,
+    sold: attrs.sold ?? da.sold,
+    oldPriceCents: attrs.old_price_cents ?? null,
+    colors: attrs.colors ?? [],
+    sizes: attrs.sizes ?? [],
+    weightLb: da.weightLb,
+  };
 }
 
 const WHYS = ["elegido para ti", "también encaja contigo", "tendencia hoy en tu zona", "muy pedido esta semana"];
