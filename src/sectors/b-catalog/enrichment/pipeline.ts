@@ -3,6 +3,7 @@ import type { MockProduct } from "@/sectors/b-catalog/mock/types";
 import { embed } from "@/lib/embeddings/voyage";
 import { normalizeWithLLM, type NormalizedMetadata } from "./normalizer";
 import { buildCanonicalText } from "./canonical";
+import { curateAttrs } from "./attrs";
 
 export interface ProcessResult {
   productId: string;
@@ -14,7 +15,9 @@ export async function processProduct(
   raw: MockProduct,
   pg: Client,
 ): Promise<ProcessResult> {
-  const metadata = await normalizeWithLLM(raw);
+  const normalized = await normalizeWithLLM(raw);
+  const attrs = curateAttrs(raw.attributes);
+  const metadata = { ...normalized, ...(attrs ? { attrs } : {}) };
   const canonical = buildCanonicalText(raw, metadata);
   const [embedding] = await embed([canonical], { inputType: "document" });
 
