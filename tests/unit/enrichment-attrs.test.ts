@@ -49,6 +49,11 @@ describe("curateAttrs", () => {
     expect(out).toEqual({ rating: 5 });
   });
 
+  test("rating: 0 is preserved as valid boundary", () => {
+    const out = curateAttrs({ rating: 0 });
+    expect(out).toEqual({ rating: 0 });
+  });
+
   test("mixed colors (objects + strings) normalize consistently to {name} objects", () => {
     const out = curateAttrs({ colors: [{ name: "Rojo" }, "Azul"] });
     expect(out).toEqual({ colors: [{ name: "Rojo" }, { name: "Azul" }] });
@@ -88,6 +93,11 @@ describe("curateAttrs", () => {
     expect(curateAttrs({ orders: "1,200 sold" })).toEqual({ orders: "1,200 sold" });
     expect(curateAttrs({ orders: 1200 })).toEqual({ orders: 1200 });
     expect(curateAttrs({ orders: true })).toBeUndefined();
+  });
+
+  test("orders: 0 is preserved as valid boundary", () => {
+    const out = curateAttrs({ orders: 0 });
+    expect(out).toEqual({ orders: 0 });
   });
 
   test("brand: empty/whitespace string discarded, non-string discarded", () => {

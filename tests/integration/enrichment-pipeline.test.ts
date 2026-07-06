@@ -127,4 +127,33 @@ describe("processProduct (REAL Anthropic + REAL Voyage + REAL Postgres)", () => 
       expect(md.attrs.brand).toBe("Acme");
     });
   }, 30_000);
+
+  test("old mock shape {generated, seedIndex, cat} → no attrs key in metadata (regression)", async () => {
+    await withTestDb(async (pg) => {
+      const raw = {
+        id: "old-mock-test",
+        source: "amazon" as const,
+        source_product_id: "old-mock-test",
+        title: "Producto de prueba antiguo",
+        description: "Descripción del producto antiguo.",
+        image_url: "https://img.example/old.jpg",
+        price_cents: 9999,
+        brand: "OldMock",
+        raw_category: "electronica",
+        attributes: {
+          generated: true,
+          seedIndex: 3,
+          cat: "electronica",
+        },
+      };
+
+      const result = await processProduct(raw, pg);
+      expect(result.enrichmentStatus).toBe("ok");
+
+      const stored = await pg.query(`SELECT metadata FROM products WHERE id = $1`, [result.productId]);
+      const md = stored.rows[0].metadata;
+      expect(VALID_CATEGORIES).toContain(md.category);
+      expect(md.attrs).toBeUndefined();
+    });
+  }, 30_000);
 });
