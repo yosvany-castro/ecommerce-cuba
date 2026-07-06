@@ -3,6 +3,9 @@ import { randomUUID } from "node:crypto";
 import { withTestDb, truncateTestTables } from "@/../tests/helpers/db";
 import { resetCallCount, getCallCount } from "@/sectors/b-catalog/mock/aggregator";
 import { hybridSearch } from "@/sectors/c-search/search";
+import { seedProductWithEmbedding } from "@/../tests/helpers/seed";
+import { recordQueryAggregatorCall } from "@/sectors/c-search/decide/freshness";
+import { hashQuery } from "@/sectors/c-search/cache/hash";
 
 beforeEach(async () => {
   await truncateTestTables(["product_query_cache", "searches", "products", "mock_calls"]);
@@ -110,4 +113,39 @@ describe("hybridSearch mock fallback (REAL APIs, capped at 2 products per call)"
       expect(mc.rows[0].c).toBe(0);
     });
   }, 60_000);
+
+  // F4 T7: 15 productos LOCALES recuperados por coseno pero SEMÁNTICAMENTE lejanos
+  // (score ~0.2, sin match léxico BM25) NO son "hits fuertes". Con la política vieja
+  // (fused.length=15 ≥ 12) esto marcaba "enough_local_hits" y mataba la ingesta; con
+  // el piso 0.55 la decisión ya no los cuenta. Freshness reciente suprime la llamada
+  // pagada para que el test sea determinista y barato.
+  test("15 vecinos coseno flojos (score < piso) NO cuentan como hits fuertes", async () => {
+    await withTestDb(async (pg) => {
+      for (let i = 0; i < 15; i++) {
+        await seedProductWithEmbedding(pg, {
+          title: `Auriculares inalambricos bluetooth modelo ${i}`,
+          description: "audio, cancelacion de ruido, para musica",
+          metadata: { category: "electronica" },
+          raw_category: "electronica",
+        });
+      }
+      const q = "bujia para motor fuera de borda nautico repuesto";
+      // Ya aggregada hace 1s ⇒ freshness suprime el pago; la decisión es determinista.
+      await recordQueryAggregatorCall(hashQuery(q), 0, pg);
+
+      const callsBefore = getCallCount();
+      const result = await hybridSearch(q, { pg, anonymous_id: randomUUID(), user_id: null }, { trace: true });
+      const decision = result.trace!.decision;
+
+      // Los 15 productos SÍ fueron recuperados por coseno...
+      expect(result.trace!.retrieval.cosine.length).toBeGreaterThan(0);
+      // ...pero NINGUNO es fuerte (score < 0.55, 0 BM25) ⇒ la decisión ve < 12.
+      expect(decision.strong_hits).toBeLessThan(12);
+      // ⇒ jamás es "enough_local_hits" (la política vieja lo habría sido).
+      expect(decision.reason).not.toBe("enough_local_hits");
+      // Sin pago (freshness), determinista.
+      expect(result.calledMock).toBe(false);
+      expect(getCallCount() - callsBefore).toBe(0);
+    });
+  }, 120_000);
 });

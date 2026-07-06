@@ -33,7 +33,7 @@ export interface SearchTrace {
       title: string;
     }[];
   };
-  decision: { should_call_mock: boolean; reason: string };
+  decision: { should_call_mock: boolean; reason: string; strong_hits?: number };
   mock_fallback: {
     invoked: boolean;
     products_fetched?: number;
