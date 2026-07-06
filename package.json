@@ -11,6 +11,7 @@
     "build": "next build",
     "apify:smoke": "tsx scripts/apify-smoke.ts",
     "cron:catalog-fill": "tsx scripts/cron-catalog-fill.ts",
+    "cron:catalog-refresh": "tsx scripts/cron-catalog-refresh.ts",
     "cron:cohort-centroids": "tsx scripts/cron-cohort-centroids.ts",
     "cron:profile-recompute": "tsx scripts/cron-profile-recompute.ts",
     "cron:npmi-recompute": "tsx scripts/cron-npmi-recompute.ts",
