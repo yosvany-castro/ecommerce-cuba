@@ -12,6 +12,7 @@ import {
   shouldCallMock,
   countStrongHits,
   currentStrongHitMinScore,
+  LOCAL_HITS_THRESHOLD,
   FRESHNESS_THRESHOLD_HOURS,
 } from "./decide/shouldCallMock";
 import { getQueryFreshness, recordQueryAggregatorCall } from "./decide/freshness";
@@ -284,7 +285,7 @@ export async function hybridSearch(
   if (normalized) {
     let should = shouldCallMock(strongHits, normalized.confidence, lastRefreshedAt);
     if (!should) {
-      if (strongHits >= 12) decisionReason = "enough_local_hits";
+      if (strongHits >= LOCAL_HITS_THRESHOLD) decisionReason = "enough_local_hits";
       else if (normalized.confidence <= 0.5) decisionReason = "low_confidence";
       else if (
         lastRefreshedAt &&

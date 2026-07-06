@@ -20,6 +20,7 @@ export function currentStrongHitMinScore(): number {
 /**
  * Cuenta hits "fuertes" únicos: un producto es fuerte si (a) apareció en BM25
  * (match léxico = relevante por definición) O (b) su score coseno ≥ minScore.
+ * Si minScore ≤ 0, desactiva el piso por completo (todos los hits coseno cuentan).
  * Devuelve el tamaño del UNION por id (un producto en ambas listas cuenta 1).
  */
 export function countStrongHits(
@@ -29,7 +30,7 @@ export function countStrongHits(
 ): number {
   const strong = new Set<string>(bm25Ids);
   for (const h of cosineHits) {
-    if (h.score >= minScore) strong.add(h.id);
+    if (minScore <= 0 || h.score >= minScore) strong.add(h.id);
   }
   return strong.size;
 }

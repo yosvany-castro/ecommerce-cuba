@@ -95,6 +95,14 @@ describe("countStrongHits (F4 T7) — piso de similitud para hits fuertes", () =
     expect(countStrongHits([], cos(40, 0.3), 0)).toBe(40);
   });
 
+  test("minScore 0 con scores negativos → cuenta todos ([-0.2, 0.3] = 2)", () => {
+    const cosine = [
+      { id: "a", score: -0.2 },
+      { id: "b", score: 0.3 },
+    ];
+    expect(countStrongHits([], cosine, 0)).toBe(2);
+  });
+
   test("bm25 cuenta aunque su score coseno sea flojo (match léxico = fuerte)", () => {
     expect(countStrongHits(["a"], [{ id: "a", score: 0.1 }], 0.55)).toBe(1);
   });
