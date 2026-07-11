@@ -8,6 +8,9 @@ import { makeMultiProvider } from "./multi";
 import * as amazonRtd from "./rapidapi/sources/amazon-rtd";
 import * as aliexpressDatahub from "./rapidapi/sources/aliexpress-datahub";
 import * as axessoAmazon from "./rapidapi/sources/axesso-amazon";
+import * as walmartAxesso from "./rapidapi/sources/walmart-axesso";
+import * as sheinPinto from "./rapidapi/sources/shein-pinto";
+import * as sheinOtapi from "./rapidapi/sources/shein-otapi";
 
 export interface AggregatorProvider {
   name: string;
@@ -31,19 +34,40 @@ const rapidapiAxessoAmazon: AggregatorProvider = {
   name: axessoAmazon.PROVIDER_NAME,
   fetch: axessoAmazon.fetchProducts,
 };
+const rapidapiWalmart: AggregatorProvider = {
+  name: walmartAxesso.PROVIDER_NAME,
+  fetch: walmartAxesso.fetchProducts,
+};
+const rapidapiSheinPinto: AggregatorProvider = {
+  name: sheinPinto.PROVIDER_NAME,
+  fetch: sheinPinto.fetchProducts,
+};
+const rapidapiSheinOtapi: AggregatorProvider = {
+  name: sheinOtapi.PROVIDER_NAME,
+  fetch: sheinOtapi.fetchProducts,
+};
+const apifyShein = makeApifyProvider("shein");
 
 const PROVIDERS: Record<string, AggregatorProvider> = {
   mock,
   "apify-amazon": apifyAmazon,
   "apify-aliexpress": apifyAliexpress,
-  "apify-shein": makeApifyProvider("shein"),
+  "apify-shein": apifyShein,
   "rapidapi-amazon": rapidapiAmazon,
   "rapidapi-aliexpress": rapidapiAliexpress,
   "rapidapi-axesso-amazon": rapidapiAxessoAmazon,
+  "rapidapi-axesso-walmart": rapidapiWalmart,
+  "rapidapi-shein-pinto": rapidapiSheinPinto,
+  "rapidapi-otapi-shein": rapidapiSheinOtapi,
   // Producción: apify primero (más rico en atributos), RapidAPI como red de
   // seguridad si el actor de Apify falla o no trae nada.
   "amazon-prod": withFallback(apifyAmazon, rapidapiAmazon),
   "aliexpress-prod": withFallback(apifyAliexpress, rapidapiAliexpress),
+  // No hay actor Apify de walmart todavía — sin fallback por ahora.
+  "walmart-prod": rapidapiWalmart,
+  // apify (pay-per-event, más rico) → otapi (fallback intermedio) → pinto
+  // (última instancia, 10 req/mes — ver comentario de cuota en shein-pinto.ts).
+  "shein-prod": withFallback(apifyShein, withFallback(rapidapiSheinOtapi, rapidapiSheinPinto)),
 };
 
 // "multi": fan-out sobre otras entradas del registry por nombre — se construye

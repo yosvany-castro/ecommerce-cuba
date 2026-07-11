@@ -1,0 +1,1092 @@
+{
+  "responseStatus": "PRODUCT_FOUND_RESPONSE",
+  "responseMessage": "Product successfully found!",
+  "keyword": "mens jeans",
+  "domainCode": "com",
+  "sortStrategy": "best_match",
+  "item": {
+    "props": {
+      "pageProps": {
+        "initialData": {
+          "searchResult": {
+            "itemStacks": [
+              {
+                "items": [
+                  {
+                    "__typename": "Product",
+                    "availabilityStatusDisplayValue": "In stock",
+                    "productLocationDisplayValue": "D34",
+                    "externalInfoUrl": "",
+                    "canonicalUrl": "/ip/Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex/388037456?classType=VARIANT&athbdg=L1600",
+                    "canAddToCart": false,
+                    "showOptions": false,
+                    "description": "",
+                    "flag": "Best seller",
+                    "fulfillmentBadges": [],
+                    "fulfillmentType": "STORE",
+                    "id": "5A66NNKSC5PJ",
+                    "usItemId": "388037456",
+                    "image": "https://i5.walmartimages.com/seo/Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex_defc5d5c-2739-428b-ab3b-cfbc0b261b5f.100c6c41b42f50e8b2aa05c4c32a1fae.jpeg?odnHeight=180&odnWidth=180&odnBg=FFFFFF",
+                    "isOutOfStock": false,
+                    "name": "Men's and Big Men's Relaxed Fit Jeans with Flex",
+                    "price": 20,
+                    "preOrder": {
+                      "isPreOrder": false,
+                      "streetDateDisplayable": null,
+                      "streetDateType": null,
+                      "releaseDate": null,
+                      "streetDate": null
+                    },
+                    "priceInfo": {
+                      "itemPrice": "",
+                      "linePrice": "$20.98",
+                      "wasPrice": "",
+                      "unitPrice": "",
+                      "shipPrice": "",
+                      "minPriceForVariant": "",
+                      "subscriptionPrice": "",
+                      "subscriptionString": "",
+                      "priceDisplayCondition": "",
+                      "finalCostByWeight": false,
+                      "submapType": "",
+                      "priceRangeString": "",
+                      "dutyFee": null,
+                      "linePriceDisplay": "$20.98",
+                      "wasPriceSupportText": "",
+                      "memberPriceString": "",
+                      "subscriptionDiscountPrice": "",
+                      "priceDisplayType": "UNKNOWN",
+                      "eaPricingPreText": "",
+                      "subscriptionPercentage": null,
+                      "savingsAmt": 0,
+                      "minPrice": 0,
+                      "savings": "",
+                      "subscriptionDualPrice": null,
+                      "eaPricingText": "",
+                      "isB2BPrice": false
+                    },
+                    "rating": {
+                      "averageRating": 4,
+                      "numberOfReviews": 44310
+                    },
+                    "salesUnit": "EACH",
+                    "variantList": [],
+                    "isVariantTypeSwatch": false,
+                    "brand": "Wrangler",
+                    "offerId": "A4D9704639BF4F758923BB385B4025F0",
+                    "sellerId": "F55CDC31AB754BB68FE0B39041159D63",
+                    "sellerName": "Walmart.com",
+                    "sponsoredProduct": {
+                      "spQs": "BnmxRREQ0bhmagIpXKXCqRWEALveCaknCPJBDgmN9gG8nQ1yJ_9hOq2CmwWjGW4agrLZoJH82KFORJ4LP6437cCZdyK5wiRMvwyZNKOks4r3n0UXnlnBFfZFOo5u34vqaWWl7z669LFuS_lEUIPpp7Y1IbfP1LL4op-wWw0EU1xSRhcZ6ozSYuYnP7S3PcPAyns0CyoRJPkJNdPQeNwysjdlExP4MQThgq7cAs-u7-0MQirsukazwUKXk-Gc5k9o6mNCe6o70v3ZjZ60GphzPA",
+                      "clickBeacon": "https://www.walmart.com/sp/track?adUid=00b33ec4-b189-4c81-9bd4-9d72420fb5f0-0-0&pgId=mens+jeans&spQs=BnmxRREQ0bhmagIpXKXCqRWEALveCaknCPJBDgmN9gG8nQ1yJ_9hOq2CmwWjGW4agrLZoJH82KFORJ4LP6437cCZdyK5wiRMvwyZNKOks4r3n0UXnlnBFfZFOo5u34vqaWWl7z669LFuS_lEUIPpp7Y1IbfP1LL4op-wWw0EU1xSRhcZ6ozSYuYnP7S3PcPAyns0CyoRJPkJNdPQeNwysjdlExP4MQThgq7cAs-u7-0MQirsukazwUKXk-Gc5k9o6mNCe6o70v3ZjZ60GphzPA&storeId=3709&pt=search&mloc=sp-search-middle&bkt=ace1_default%7Cace2_14116%7Cace3_default%7Cbb_1_14247%7Ccoldstart_on%7Csearch_default&pltfm=desktop&rdf=0&plmt=__plmt__&eventST=__eventST__&pos=__pos__&bt=__bt__&tn=WMT&wtn=elh9ie&tax=5438_133197_6127105_1224674&qc=qenv&et=head_torso&st=torso&dr=true",
+                      "spTags": null,
+                      "viewBeacon": null,
+                      "metaInfo": "{\"polarisMatchType\":\"EM\"}"
+                    },
+                    "quickShop": null,
+                    "numberOfReviews": 44310,
+                    "collectibles": null,
+                    "imageInfo": {
+                      "id": "7F6282D0A7204EAD8D51376D0581A87E",
+                      "name": "Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex_defc5d5c-2739-428b-ab3b-cfbc0b261b5f.100c6c41b42f50e8b2aa05c4c32a1fae.jpeg",
+                      "thumbnailUrl": "https://i5.walmartimages.com/seo/Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex_defc5d5c-2739-428b-ab3b-cfbc0b261b5f.100c6c41b42f50e8b2aa05c4c32a1fae.jpeg?odnHeight=180&odnWidth=180&odnBg=FFFFFF",
+                      "size": "290-392",
+                      "allImages": []
+                    },
+                    "type": "VARIANT",
+                    "moqText": null,
+                    "specialBuy": false,
+                    "conditionPriceRange": null,
+                    "pac": null,
+                    "priceFlip": false,
+                    "buyNowEligible": true,
+                    "isCustomizable": false,
+                    "earlyAccessEvent": false,
+                    "preOrderBadge": null,
+                    "fulfillmentIcon": {
+                      "key": "SAVE_WITH_W_PLUS",
+                      "label": "Save with"
+                    },
+                    "preEarlyAccessEvent": false,
+                    "groupMetaData": {
+                      "groupType": null,
+                      "groupSubType": null,
+                      "numberOfComponents": 0,
+                      "groupComponents": null
+                    },
+                    "plItem": {
+                      "isPLItemToBoost": false,
+                      "plItemTagString": ""
+                    },
+                    "petRx": {
+                      "eligible": false,
+                      "singleDispense": null
+                    },
+                    "pglsCondition": null,
+                    "preownedCondition": null,
+                    "promoData": [],
+                    "departmentName": "Clothing",
+                    "imageName": "Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex_defc5d5c-2739-428b-ab3b-cfbc0b261b5f.100c6c41b42f50e8b2aa05c4c32a1fae.jpeg",
+                    "fulfillmentBadgeGroups": [
+                      {
+                        "text": "Delivery as soon as ",
+                        "slaText": "27 mins",
+                        "isSlaTextBold": true,
+                        "templates": null,
+                        "textTemplate": null,
+                        "textValues": null,
+                        "sla": null,
+                        "className": "w-fit items-center br1 ph1 bg-blue-130 white ff-thunderbolt",
+                        "key": "FF_DELIVERY",
+                        "styleId": "FF_STYLE_THUNDERBOLT",
+                        "imageProps": {
+                          "alt": "",
+                          "src": "//i5.walmartimages.com/dfw/63fd9f59-a53c/14c2b8c6-d48a-4302-924f-7817f0c0737c/v1/thunderbolt.svg",
+                          "preload": false,
+                          "height": 10,
+                          "width": 8
+                        },
+                        "isThunderboltStyle": false
+                      },
+                      {
+                        "text": "Shipping arrives ",
+                        "slaText": "today",
+                        "isSlaTextBold": true,
+                        "templates": null,
+                        "textTemplate": null,
+                        "textValues": null,
+                        "sla": null,
+                        "className": "dark-gray",
+                        "key": "FF_SHIPPING",
+                        "styleId": "FF_STYLE"
+                      },
+                      {
+                        "text": "Pickup as soon as ",
+                        "slaText": "11am",
+                        "isSlaTextBold": true,
+                        "templates": null,
+                        "textTemplate": null,
+                        "textValues": null,
+                        "sla": null,
+                        "className": "dark-gray",
+                        "key": "FF_PICKUP",
+                        "styleId": "FF_STYLE"
+                      }
+                    ],
+                    "weightIncrement": 1,
+                    "itemStackPosition": 1,
+                    "shortDescription": null,
+                    "isEarlyAccessItem": false,
+                    "catalogProductType": "Jeans",
+                    "fulfillmentTitle": "title_store_not_available",
+                    "buyBoxSuppression": false,
+                    "vision": {
+                      "ageGroup": null,
+                      "visionCenterApproved": false
+                    },
+                    "badge": {
+                      "__typename": "BaseBadge",
+                      "key": "BESTSELLER",
+                      "text": "Best seller",
+                      "type": "LABEL",
+                      "id": "L1600",
+                      "styleId": "TERTIARY_BLUE_BOLD"
+                    },
+                    "blitzItem": false,
+                    "socialProofBadges": null,
+                    "discountsRaw": null,
+                    "sellerType": null,
+                    "classType": "VARIANT",
+                    "annualEventV2": false,
+                    "rewards": null,
+                    "isLeftSideGridItem": true,
+                    "seeShippingEligibility": false,
+                    "itemType": null,
+                    "topResult": null,
+                    "isPreowned": false,
+                    "imageID": "7F6282D0A7204EAD8D51376D0581A87E",
+                    "gradingTypeCode": null,
+                    "aspectInfo": {
+                      "name": null,
+                      "header": null,
+                      "id": null,
+                      "snippet": null
+                    },
+                    "externalInfo": null,
+                    "variantCriteria": [],
+                    "productLocation": [
+                      {
+                        "displayValue": "D34",
+                        "aisle": {
+                          "zone": "D",
+                          "aisle": 34
+                        }
+                      }
+                    ],
+                    "subscription": {
+                      "__typename": "SubscriptionData",
+                      "subscriptionEligible": false,
+                      "showSubscriptionCTA": false,
+                      "subscriptionTransactable": false
+                    },
+                    "isBadSplit": false,
+                    "salesUnitType": "EACH",
+                    "seeSimilar": true,
+                    "additionalOfferCount": null,
+                    "isSponsoredFlag": true,
+                    "averageRating": 4.6,
+                    "droneAttributes": null,
+                    "arExperiences": {
+                      "isARHome": false,
+                      "isZeekit": false,
+                      "isAROptical": false
+                    },
+                    "swipeableImages": [],
+                    "fulfillmentSummary": [
+                      {
+                        "fulfillment": "DELIVERY",
+                        "storeId": "3709",
+                        "deliveryDate": null,
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED",
+                          "SCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      },
+                      {
+                        "fulfillment": "DELIVERY",
+                        "storeId": "3709",
+                        "deliveryDate": null,
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED",
+                          "SCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      },
+                      {
+                        "fulfillment": "DELIVERY",
+                        "storeId": "3709",
+                        "deliveryDate": "2026-07-11T17:00:00.000Z",
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED",
+                          "SCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      },
+                      {
+                        "fulfillment": "PICKUP",
+                        "storeId": "3709",
+                        "deliveryDate": "2026-07-11T15:44:22.437Z",
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED",
+                          "SCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      },
+                      {
+                        "fulfillment": "PICKUP",
+                        "storeId": "3709",
+                        "deliveryDate": "2026-07-11T16:00:00.000Z",
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED",
+                          "SCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      },
+                      {
+                        "fulfillment": "DELIVERY",
+                        "storeId": "0",
+                        "deliveryDate": "2026-07-11T21:59:00.000Z",
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      }
+                    ],
+                    "hasCarePlans": false,
+                    "imageSize": "290-392",
+                    "promoDiscount": null,
+                    "modularStackKey": "00b33ec4-b189-4c81-9bd4-9d72420fb5f0-0-0",
+                    "addOnServices": null,
+                    "groupsV2": [
+                      {
+                        "name": "flags",
+                        "pos": "ProdTileBadgeModule1",
+                        "flow": "HORIZONTAL",
+                        "members": [
+                          {
+                            "memType": "badge",
+                            "memId": "L1600",
+                            "memStyleId": "TERTIARY_LAVENDER",
+                            "content": [
+                              {
+                                "type": "TEXT",
+                                "value": "Best seller",
+                                "styleId": "HYPERBLUE_BOLD",
+                                "contDesc": null,
+                                "url": null,
+                                "actionId": null,
+                                "actionContent": null
+                              }
+                            ],
+                            "contentVariants": null
+                          }
+                        ]
+                      }
+                    ],
+                    "quickShopCTALabel": null,
+                    "availabilityInNearbyStore": null,
+                    "checkStoreAvailabilityATC": false,
+                    "eventAttributes": {
+                      "priceFlip": false,
+                      "specialBuy": false
+                    },
+                    "isQSRItem": false,
+                    "productIndex": 0,
+                    "showAtc": false,
+                    "similarItems": false,
+                    "newConditionProductId": null,
+                    "keyAttributes": [],
+                    "productAttributes": {},
+                    "returnPolicy": {
+                      "returnable": null,
+                      "freeReturns": null,
+                      "returnWindow": {
+                        "value": null,
+                        "unitType": "Day"
+                      },
+                      "returnPolicyText": null
+                    },
+                    "annualEvent": false,
+                    "itemBeacon": null,
+                    "carrierDownpaymentPrice": "",
+                    "badges": {
+                      "flags": [
+                        {
+                          "__typename": "BaseBadge",
+                          "key": "BESTSELLER",
+                          "text": "Best seller",
+                          "type": "LABEL",
+                          "id": "L1600",
+                          "styleId": "TERTIARY_BLUE_BOLD"
+                        }
+                      ],
+                      "tags": [
+                        {
+                          "__typename": "BaseBadge",
+                          "key": "SAVE_WITH_W_PLUS",
+                          "text": "Save with",
+                          "type": "ICON"
+                        }
+                      ],
+                      "groups": [
+                        {
+                          "__typename": "UnifiedBadgeGroup",
+                          "name": "fulfillment",
+                          "members": [
+                            {
+                              "__typename": "BadgeGroupMember",
+                              "id": "L1052",
+                              "key": "FF_DELIVERY",
+                              "memberType": "badge",
+                              "otherInfo": null,
+                              "rank": 1,
+                              "textTemplate": null,
+                              "textValues": null,
+                              "slaText": "27 mins",
+                              "slaDate": null,
+                              "slaDateISO": null,
+                              "sla": null,
+                              "styleId": "FF_STYLE_THUNDERBOLT",
+                              "text": "Delivery as soon as ",
+                              "type": null,
+                              "iconId": null,
+                              "templates": null,
+                              "badgeContent": null
+                            },
+                            {
+                              "__typename": "BadgeGroupMember",
+                              "id": "L1053",
+                              "key": "FF_SHIPPING",
+                              "memberType": "badge",
+                              "otherInfo": null,
+                              "rank": 2,
+                              "textTemplate": null,
+                              "textValues": null,
+                              "slaText": "today",
+                              "slaDate": null,
+                              "slaDateISO": null,
+                              "sla": null,
+                              "styleId": "FF_STYLE",
+                              "text": "Shipping arrives ",
+                              "type": "LABEL",
+                              "iconId": null,
+                              "templates": null,
+                              "badgeContent": null
+                            },
+                            {
+                              "__typename": "BadgeGroupMember",
+                              "id": "L1051",
+                              "key": "FF_PICKUP",
+                              "memberType": "badge",
+                              "otherInfo": null,
+                              "rank": 3,
+                              "textTemplate": null,
+                              "textValues": null,
+                              "slaText": "11am",
+                              "slaDate": null,
+                              "slaDateISO": null,
+                              "sla": null,
+                              "styleId": "FF_STYLE",
+                              "text": "Pickup as soon as ",
+                              "type": "LABEL",
+                              "iconId": null,
+                              "templates": null,
+                              "badgeContent": null
+                            }
+                          ]
+                        }
+                      ],
+                      "groupsV2": [
+                        {
+                          "name": "flags",
+                          "pos": "ProdTileBadgeModule1",
+                          "flow": "HORIZONTAL",
+                          "members": [
+                            {
+                              "memType": "badge",
+                              "memId": "L1600",
+                              "memStyleId": "TERTIARY_LAVENDER",
+                              "content": [
+                                {
+                                  "type": "TEXT",
+                                  "value": "Best seller",
+                                  "styleId": "HYPERBLUE_BOLD",
+                                  "contDesc": null,
+                                  "url": null,
+                                  "actionId": null,
+                                  "actionContent": null
+                                }
+                              ],
+                              "contentVariants": null
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "snapEligible": false,
+                    "conditionV2": {
+                      "code": 1,
+                      "groupCode": 1
+                    },
+                    "mhmdFlag": false,
+                    "showBuyNow": false,
+                    "showExploreOtherConditionsCTA": false,
+                    "availabilityStatusV2": {
+                      "display": "In stock",
+                      "value": "IN_STOCK"
+                    },
+                    "averageWeight": null,
+                    "category": {
+                      "categoryPathId": "0:5438:133197:6127105:1224674",
+                      "path": null
+                    },
+                    "shouldLazyLoad": false
+                  },
+                  {
+                    "__typename": "Product",
+                    "availabilityStatusDisplayValue": "In stock",
+                    "externalInfoUrl": "",
+                    "canonicalUrl": "/ip/Genuine-Dickies-Men-s-Flex-Duck-Utility-Work-Jean/1871709632?classType=VARIANT",
+                    "canAddToCart": false,
+                    "showOptions": false,
+                    "description": "",
+                    "flag": "",
+                    "fulfillmentBadges": [],
+                    "fulfillmentType": "FC",
+                    "id": "3Z2S81XBZY06",
+                    "usItemId": "1871709632",
+                    "image": "https://i5.walmartimages.com/seo/Genuine-Dickies-Men-s-Flex-Duck-Utility-Work-Jean_a78a5865-b9f2-49a0-9fbf-882e5c21942e.674e6e20d8180e3d34499a797746d8ba.jpeg?odnHeight=180&odnWidth=180&odnBg=FFFFFF",
+                    "isOutOfStock": false,
+                    "name": "Men's Flex Duck Utility Work Jean",
+                    "price": 29,
+                    "preOrder": {
+                      "isPreOrder": false,
+                      "streetDateDisplayable": null,
+                      "streetDateType": null,
+                      "releaseDate": null,
+                      "streetDate": null
+                    },
+                    "priceInfo": {
+                      "itemPrice": "",
+                      "linePrice": "$29.98",
+                      "wasPrice": "",
+                      "unitPrice": "",
+                      "shipPrice": "",
+                      "minPriceForVariant": "",
+                      "subscriptionPrice": "",
+                      "subscriptionString": "",
+                      "priceDisplayCondition": "",
+                      "finalCostByWeight": false,
+                      "submapType": "",
+                      "priceRangeString": "",
+                      "dutyFee": null,
+                      "linePriceDisplay": "$29.98",
+                      "wasPriceSupportText": "",
+                      "memberPriceString": "",
+                      "subscriptionDiscountPrice": "",
+                      "priceDisplayType": "UNKNOWN",
+                      "eaPricingPreText": "",
+                      "subscriptionPercentage": null,
+                      "savingsAmt": 0,
+                      "minPrice": 0,
+                      "savings": "",
+                      "subscriptionDualPrice": null,
+                      "eaPricingText": "",
+                      "isB2BPrice": false
+                    },
+                    "rating": {
+                      "averageRating": 4,
+                      "numberOfReviews": 3825
+                    },
+                    "salesUnit": "EACH",
+                    "variantList": [],
+                    "isVariantTypeSwatch": false,
+                    "brand": "Genuine Dickies",
+                    "offerId": "99D90C0219414C83969758701BB901E9",
+                    "sellerId": "F55CDC31AB754BB68FE0B39041159D63",
+                    "sellerName": "Walmart.com",
+                    "sponsoredProduct": {
+                      "spQs": "JG6HM47I8XdMK6VFeZz5JwmSqyRgUqzXw2laPCV1ovnSRyfONNrf6uY-fSb9TNLD00p3q0vTizx7WFQHxMtZeBqLOhSZVx_awHcs-KUDNgyMnGap8Ysv0lXeqdNn9gDN5Db4cJK39Fa4883_-L4iS__SJK9O7IZV-YnTzptuYcBUj3Mn6wOtm9EeNK9kiwaFXYdJT8XaLrSKzKlQMRasxo39eoixIvBV6qVT2vNi-WJ6uGm-ZTrbtTOJ_jco50tJ6nIxvQ9UVXAMeUIG4WlvI01W4npF0CgQVQWN2JG24uA02tK_EpexPog1xxjxKqBS",
+                      "clickBeacon": "https://www.walmart.com/sp/track?adUid=00b33ec4-b189-4c81-9bd4-9d72420fb5f0-0-0&pgId=mens+jeans&spQs=JG6HM47I8XdMK6VFeZz5JwmSqyRgUqzXw2laPCV1ovnSRyfONNrf6uY-fSb9TNLD00p3q0vTizx7WFQHxMtZeBqLOhSZVx_awHcs-KUDNgyMnGap8Ysv0lXeqdNn9gDN5Db4cJK39Fa4883_-L4iS__SJK9O7IZV-YnTzptuYcBUj3Mn6wOtm9EeNK9kiwaFXYdJT8XaLrSKzKlQMRasxo39eoixIvBV6qVT2vNi-WJ6uGm-ZTrbtTOJ_jco50tJ6nIxvQ9UVXAMeUIG4WlvI01W4npF0CgQVQWN2JG24uA02tK_EpexPog1xxjxKqBS&storeId=3709&pt=search&mloc=sp-search-middle&bkt=ace1_default%7Cace2_14116%7Cace3_default%7Cbb_1_14247%7Ccoldstart_on%7Csearch_default&pltfm=desktop&rdf=0&plmt=__plmt__&eventST=__eventST__&pos=__pos__&bt=__bt__&tn=WMT&wtn=elh9ie&tax=5438_133197_6127105_1224674&qc=qenv&et=head_torso&st=torso&dr=false",
+                      "spTags": null,
+                      "viewBeacon": null,
+                      "metaInfo": "{\"polarisMatchType\":\"EM\"}"
+                    },
+                    "quickShop": null,
+                    "numberOfReviews": 3825,
+                    "collectibles": null,
+                    "imageInfo": {
+                      "id": "4CDE7FC194724E468F94936D6EA29E9D",
+                      "name": "Genuine-Dickies-Men-s-Flex-Duck-Utility-Work-Jean_a78a5865-b9f2-49a0-9fbf-882e5c21942e.674e6e20d8180e3d34499a797746d8ba.jpeg",
+                      "thumbnailUrl": "https://i5.walmartimages.com/seo/Genuine-Dickies-Men-s-Flex-Duck-Utility-Work-Jean_a78a5865-b9f2-49a0-9fbf-882e5c21942e.674e6e20d8180e3d34499a797746d8ba.jpeg?odnHeight=180&odnWidth=180&odnBg=FFFFFF",
+                      "size": "290-392",
+                      "allImages": []
+                    },
+                    "type": "VARIANT",
+                    "moqText": null,
+                    "specialBuy": false,
+                    "conditionPriceRange": null,
+                    "pac": null,
+                    "priceFlip": false,
+                    "buyNowEligible": true,
+                    "isCustomizable": false,
+                    "earlyAccessEvent": false,
+                    "preOrderBadge": null,
+                    "fulfillmentIcon": {
+                      "key": "SAVE_WITH_W_PLUS",
+                      "label": "Save with"
+                    },
+                    "preEarlyAccessEvent": false,
+                    "groupMetaData": {
+                      "groupType": null,
+                      "groupSubType": null,
+                      "numberOfComponents": 0,
+                      "groupComponents": null
+                    },
+                    "plItem": {
+                      "isPLItemToBoost": false,
+                      "plItemTagString": ""
+                    },
+                    "petRx": {
+                      "eligible": false,
+                      "singleDispense": null
+                    },
+                    "pglsCondition": null,
+                    "preownedCondition": null,
+                    "promoData": [],
+                    "departmentName": "Clothing",
+                    "imageName": "Genuine-Dickies-Men-s-Flex-Duck-Utility-Work-Jean_a78a5865-b9f2-49a0-9fbf-882e5c21942e.674e6e20d8180e3d34499a797746d8ba.jpeg",
+                    "fulfillmentBadgeGroups": [
+                      {
+                        "text": "Shipping arrives ",
+                        "slaText": "tomorrow",
+                        "isSlaTextBold": true,
+                        "templates": null,
+                        "textTemplate": null,
+                        "textValues": null,
+                        "sla": null,
+                        "className": "dark-gray",
+                        "key": "FF_SHIPPING",
+                        "styleId": "FF_STYLE"
+                      }
+                    ],
+                    "weightIncrement": 1,
+                    "itemStackPosition": 1,
+                    "shortDescription": null,
+                    "isEarlyAccessItem": false,
+                    "catalogProductType": "Jeans",
+                    "fulfillmentTitle": "title_shipToHome_not_available",
+                    "buyBoxSuppression": false,
+                    "vision": {
+                      "ageGroup": null,
+                      "visionCenterApproved": false
+                    },
+                    "badge": {
+                      "text": "",
+                      "id": "",
+                      "type": "",
+                      "key": "",
+                      "bundleId": ""
+                    },
+                    "blitzItem": false,
+                    "socialProofBadges": null,
+                    "discountsRaw": null,
+                    "sellerType": null,
+                    "classType": "VARIANT",
+                    "annualEventV2": false,
+                    "rewards": null,
+                    "isLeftSideGridItem": false,
+                    "seeShippingEligibility": false,
+                    "itemType": null,
+                    "topResult": null,
+                    "isPreowned": false,
+                    "imageID": "4CDE7FC194724E468F94936D6EA29E9D",
+                    "gradingTypeCode": null,
+                    "aspectInfo": {
+                      "name": null,
+                      "header": null,
+                      "id": null,
+                      "snippet": null
+                    },
+                    "externalInfo": null,
+                    "variantCriteria": [],
+                    "productLocation": null,
+                    "subscription": {
+                      "__typename": "SubscriptionData",
+                      "subscriptionEligible": false,
+                      "showSubscriptionCTA": false,
+                      "subscriptionTransactable": false
+                    },
+                    "isBadSplit": false,
+                    "salesUnitType": "EACH",
+                    "seeSimilar": true,
+                    "additionalOfferCount": null,
+                    "isSponsoredFlag": true,
+                    "averageRating": 4.5,
+                    "droneAttributes": null,
+                    "arExperiences": {
+                      "isARHome": false,
+                      "isZeekit": false,
+                      "isAROptical": false
+                    },
+                    "swipeableImages": [],
+                    "fulfillmentSummary": [
+                      {
+                        "fulfillment": "DELIVERY",
+                        "storeId": "0",
+                        "deliveryDate": "2026-07-12T21:59:00.000Z",
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      }
+                    ],
+                    "hasCarePlans": false,
+                    "imageSize": "290-392",
+                    "promoDiscount": null,
+                    "modularStackKey": "00b33ec4-b189-4c81-9bd4-9d72420fb5f0-0-0",
+                    "addOnServices": null,
+                    "groupsV2": [],
+                    "quickShopCTALabel": null,
+                    "availabilityInNearbyStore": null,
+                    "checkStoreAvailabilityATC": false,
+                    "eventAttributes": {
+                      "priceFlip": false,
+                      "specialBuy": false
+                    },
+                    "isQSRItem": false,
+                    "productIndex": 1,
+                    "showAtc": false,
+                    "similarItems": false,
+                    "newConditionProductId": null,
+                    "keyAttributes": [],
+                    "productAttributes": {},
+                    "returnPolicy": {
+                      "returnable": null,
+                      "freeReturns": null,
+                      "returnWindow": {
+                        "value": null,
+                        "unitType": "Day"
+                      },
+                      "returnPolicyText": null
+                    },
+                    "annualEvent": false,
+                    "itemBeacon": null,
+                    "carrierDownpaymentPrice": "",
+                    "badges": {
+                      "flags": null,
+                      "tags": [
+                        {
+                          "__typename": "BaseBadge",
+                          "key": "SAVE_WITH_W_PLUS",
+                          "text": "Save with",
+                          "type": "ICON"
+                        }
+                      ],
+                      "groups": [
+                        {
+                          "__typename": "UnifiedBadgeGroup",
+                          "name": "fulfillment",
+                          "members": [
+                            {
+                              "__typename": "BadgeGroupMember",
+                              "id": "L1053",
+                              "key": "FF_SHIPPING",
+                              "memberType": "badge",
+                              "otherInfo": null,
+                              "rank": 1,
+                              "textTemplate": null,
+                              "textValues": null,
+                              "slaText": "tomorrow",
+                              "slaDate": null,
+                              "slaDateISO": null,
+                              "sla": null,
+                              "styleId": "FF_STYLE",
+                              "text": "Shipping arrives ",
+                              "type": "LABEL",
+                              "iconId": null,
+                              "templates": null,
+                              "badgeContent": null
+                            }
+                          ]
+                        }
+                      ],
+                      "groupsV2": []
+                    },
+                    "snapEligible": false,
+                    "conditionV2": {
+                      "code": 1,
+                      "groupCode": 1
+                    },
+                    "mhmdFlag": false,
+                    "showBuyNow": false,
+                    "showExploreOtherConditionsCTA": false,
+                    "availabilityStatusV2": {
+                      "display": "In stock",
+                      "value": "IN_STOCK"
+                    },
+                    "averageWeight": null,
+                    "category": {
+                      "categoryPathId": "0:5438:133197:6127105:2553692",
+                      "path": null
+                    },
+                    "shouldLazyLoad": false
+                  },
+                  {
+                    "__typename": "Product",
+                    "availabilityStatusDisplayValue": "In stock",
+                    "externalInfoUrl": "",
+                    "canonicalUrl": "/ip/Wrangler-Men-s-and-Big-Men-s-Regular-Fit-Jeans/930452?classType=VARIANT",
+                    "canAddToCart": false,
+                    "showOptions": false,
+                    "description": "",
+                    "flag": "",
+                    "fulfillmentBadges": [],
+                    "fulfillmentType": "FC",
+                    "id": "3LUPYLLR2075",
+                    "usItemId": "930452",
+                    "image": "https://i5.walmartimages.com/seo/Wrangler-Men-s-and-Big-Men-s-Regular-Fit-Jeans_1fad2c77-e8c6-4fd7-91f3-7184efd356eb.e2c9cab94095cff13228e65d2d182257.jpeg?odnHeight=180&odnWidth=180&odnBg=FFFFFF",
+                    "isOutOfStock": false,
+                    "name": "Men's and Big Men's Regular Fit Cotton Jeans",
+                    "price": 19,
+                    "preOrder": {
+                      "isPreOrder": false,
+                      "streetDateDisplayable": null,
+                      "streetDateType": null,
+                      "releaseDate": null,
+                      "streetDate": null
+                    },
+                    "priceInfo": {
+                      "itemPrice": "",
+                      "linePrice": "$19.98",
+                      "wasPrice": "",
+                      "unitPrice": "",
+                      "shipPrice": "",
+                      "minPriceForVariant": "",
+                      "subscriptionPrice": "",
+                      "subscriptionString": "",
+                      "priceDisplayCondition": "",
+                      "finalCostByWeight": false,
+                      "submapType": "",
+                      "priceRangeString": "Options from $18.98",
+                      "dutyFee": null,
+                      "linePriceDisplay": "$19.98",
+                      "wasPriceSupportText": "",
+                      "memberPriceString": "",
+                      "subscriptionDiscountPrice": "",
+                      "priceDisplayType": "UNKNOWN",
+                      "eaPricingPreText": "",
+                      "subscriptionPercentage": null,
+                      "savingsAmt": 0,
+                      "minPrice": 18.98,
+                      "savings": "",
+                      "subscriptionDualPrice": null,
+                      "eaPricingText": "",
+                      "isB2BPrice": false
+                    },
+                    "rating": {
+                      "averageRating": 4,
+                      "numberOfReviews": 24132
+                    },
+                    "salesUnit": "EACH",
+                    "variantList": [],
+                    "isVariantTypeSwatch": false,
+                    "brand": "Wrangler",
+                    "offerId": "BDAADC85A1EC424381E03F33C9E93EC1",
+                    "sellerId": "F55CDC31AB754BB68FE0B39041159D63",
+                    "sellerName": "Walmart.com",
+                    "sponsoredProduct": {
+                      "spQs": "kbME_0VWeyeOAWKRlQZ0JzQ91Qw7KtoFTS7gEOfc26GMUwy65zVmE6OtUBAwtW7mSXUErYJsARjKz2qPUTAK3j6dpIBJAt1tokymRZXy4MbA3V8UmhZQ1U2ePjPGrkk71_8ISksn_J5XHwYiFjqw6dJcgd91fZJpSVec-vbyhubjKYZJmQoVP9ITtJBv4KgoAalRPYDS-PHnuG7FWPVnmZFqf-qBavNj05T1Nq2pNej0I1vqa1krsjJ9lGsidap521MdHKCsizG5wPNwiCokFg",
+                      "clickBeacon": "https://www.walmart.com/sp/track?adUid=00b33ec4-b189-4c81-9bd4-9d72420fb5f0-0-0&pgId=mens+jeans&spQs=kbME_0VWeyeOAWKRlQZ0JzQ91Qw7KtoFTS7gEOfc26GMUwy65zVmE6OtUBAwtW7mSXUErYJsARjKz2qPUTAK3j6dpIBJAt1tokymRZXy4MbA3V8UmhZQ1U2ePjPGrkk71_8ISksn_J5XHwYiFjqw6dJcgd91fZJpSVec-vbyhubjKYZJmQoVP9ITtJBv4KgoAalRPYDS-PHnuG7FWPVnmZFqf-qBavNj05T1Nq2pNej0I1vqa1krsjJ9lGsidap521MdHKCsizG5wPNwiCokFg&storeId=3709&pt=search&mloc=sp-search-middle&bkt=ace1_default%7Cace2_14116%7Cace3_default%7Cbb_1_14247%7Ccoldstart_on%7Csearch_default&pltfm=desktop&rdf=0&plmt=__plmt__&eventST=__eventST__&pos=__pos__&bt=__bt__&tn=WMT&wtn=elh9ie&tax=5438_133197_6127105_1224674&qc=qenv&et=head_torso&st=torso&dr=false",
+                      "spTags": null,
+                      "viewBeacon": null,
+                      "metaInfo": "{\"polarisMatchType\":\"EM\"}"
+                    },
+                    "quickShop": null,
+                    "numberOfReviews": 24132,
+                    "collectibles": null,
+                    "imageInfo": {
+                      "id": "0B2DAA4E163B48218DFA64BC962EF4CF",
+                      "name": "Wrangler-Men-s-and-Big-Men-s-Regular-Fit-Jeans_1fad2c77-e8c6-4fd7-91f3-7184efd356eb.e2c9cab94095cff13228e65d2d182257.jpeg",
+                      "thumbnailUrl": "https://i5.walmartimages.com/seo/Wrangler-Men-s-and-Big-Men-s-Regular-Fit-Jeans_1fad2c77-e8c6-4fd7-91f3-7184efd356eb.e2c9cab94095cff13228e65d2d182257.jpeg?odnHeight=180&odnWidth=180&odnBg=FFFFFF",
+                      "size": "290-392",
+                      "allImages": []
+                    },
+                    "type": "VARIANT",
+                    "moqText": null,
+                    "specialBuy": false,
+                    "conditionPriceRange": null,
+                    "pac": null,
+                    "priceFlip": false,
+                    "buyNowEligible": true,
+                    "isCustomizable": false,
+                    "earlyAccessEvent": false,
+                    "preOrderBadge": null,
+                    "fulfillmentIcon": {
+                      "key": "SAVE_WITH_W_PLUS",
+                      "label": "Save with"
+                    },
+                    "preEarlyAccessEvent": false,
+                    "groupMetaData": {
+                      "groupType": null,
+                      "groupSubType": null,
+                      "numberOfComponents": 0,
+                      "groupComponents": null
+                    },
+                    "plItem": {
+                      "isPLItemToBoost": false,
+                      "plItemTagString": ""
+                    },
+                    "petRx": {
+                      "eligible": false,
+                      "singleDispense": null
+                    },
+                    "pglsCondition": null,
+                    "preownedCondition": null,
+                    "promoData": [],
+                    "departmentName": "Clothing",
+                    "imageName": "Wrangler-Men-s-and-Big-Men-s-Regular-Fit-Jeans_1fad2c77-e8c6-4fd7-91f3-7184efd356eb.e2c9cab94095cff13228e65d2d182257.jpeg",
+                    "fulfillmentBadgeGroups": [
+                      {
+                        "text": "Shipping arrives ",
+                        "slaText": "tomorrow",
+                        "isSlaTextBold": true,
+                        "templates": null,
+                        "textTemplate": null,
+                        "textValues": null,
+                        "sla": null,
+                        "className": "dark-gray",
+                        "key": "FF_SHIPPING",
+                        "styleId": "FF_STYLE"
+                      }
+                    ],
+                    "weightIncrement": 1,
+                    "itemStackPosition": 1,
+                    "shortDescription": null,
+                    "isEarlyAccessItem": false,
+                    "catalogProductType": "Jeans",
+                    "fulfillmentTitle": "title_shipToHome_not_available",
+                    "buyBoxSuppression": false,
+                    "vision": {
+                      "ageGroup": null,
+                      "visionCenterApproved": false
+                    },
+                    "badge": {
+                      "text": "",
+                      "id": "",
+                      "type": "",
+                      "key": "",
+                      "bundleId": ""
+                    },
+                    "blitzItem": false,
+                    "socialProofBadges": null,
+                    "discountsRaw": null,
+                    "sellerType": null,
+                    "classType": "VARIANT",
+                    "annualEventV2": false,
+                    "rewards": null,
+                    "isLeftSideGridItem": true,
+                    "seeShippingEligibility": false,
+                    "itemType": null,
+                    "topResult": null,
+                    "isPreowned": false,
+                    "imageID": "0B2DAA4E163B48218DFA64BC962EF4CF",
+                    "gradingTypeCode": null,
+                    "aspectInfo": {
+                      "name": null,
+                      "header": null,
+                      "id": null,
+                      "snippet": null
+                    },
+                    "externalInfo": null,
+                    "variantCriteria": [],
+                    "productLocation": null,
+                    "subscription": {
+                      "__typename": "SubscriptionData",
+                      "subscriptionEligible": false,
+                      "showSubscriptionCTA": false,
+                      "subscriptionTransactable": false
+                    },
+                    "isBadSplit": false,
+                    "salesUnitType": "EACH",
+                    "seeSimilar": true,
+                    "additionalOfferCount": null,
+                    "isSponsoredFlag": true,
+                    "averageRating": 4.5,
+                    "droneAttributes": null,
+                    "arExperiences": {
+                      "isARHome": false,
+                      "isZeekit": false,
+                      "isAROptical": false
+                    },
+                    "swipeableImages": [],
+                    "fulfillmentSummary": [
+                      {
+                        "fulfillment": "DELIVERY",
+                        "storeId": "0",
+                        "deliveryDate": "2026-07-12T21:59:00.000Z",
+                        "fulfillmentMethods": [
+                          "UNSCHEDULED"
+                        ],
+                        "fulfillmentBadge": null,
+                        "outOfCountryEligible": null
+                      }
+                    ],
+                    "hasCarePlans": false,
+                    "imageSize": "290-392",
+                    "promoDiscount": null,
+                    "modularStackKey": "00b33ec4-b189-4c81-9bd4-9d72420fb5f0-0-0",
+                    "addOnServices": null,
+                    "groupsV2": [],
+                    "quickShopCTALabel": null,
+                    "availabilityInNearbyStore": null,
+                    "checkStoreAvailabilityATC": false,
+                    "eventAttributes": {
+                      "priceFlip": false,
+                      "specialBuy": false
+                    },
+                    "isQSRItem": false,
+                    "productIndex": 2,
+                    "showAtc": false,
+                    "similarItems": false,
+                    "newConditionProductId": null,
+                    "keyAttributes": [],
+                    "productAttributes": {},
+                    "returnPolicy": {
+                      "returnable": null,
+                      "freeReturns": null,
+                      "returnWindow": {
+                        "value": null,
+                        "unitType": "Day"
+                      },
+                      "returnPolicyText": null
+                    },
+                    "annualEvent": false,
+                    "itemBeacon": null,
+                    "carrierDownpaymentPrice": "",
+                    "badges": {
+                      "flags": null,
+                      "tags": [
+                        {
+                          "__typename": "BaseBadge",
+                          "key": "SAVE_WITH_W_PLUS",
+                          "text": "Save with",
+                          "type": "ICON"
+                        }
+                      ],
+                      "groups": [
+                        {
+                          "__typename": "UnifiedBadgeGroup",
+                          "name": "fulfillment",
+                          "members": [
+                            {
+                              "__typename": "BadgeGroupMember",
+                              "id": "L1053",
+                              "key": "FF_SHIPPING",
+                              "memberType": "badge",
+                              "otherInfo": null,
+                              "rank": 1,
+                              "textTemplate": null,
+                              "textValues": null,
+                              "slaText": "tomorrow",
+                              "slaDate": null,
+                              "slaDateISO": null,
+                              "sla": null,
+                              "styleId": "FF_STYLE",
+                              "text": "Shipping arrives ",
+                              "type": "LABEL",
+                              "iconId": null,
+                              "templates": null,
+                              "badgeContent": null
+                            }
+                          ]
+                        }
+                      ],
+                      "groupsV2": []
+                    },
+                    "snapEligible": false,
+                    "conditionV2": {
+                      "code": 1,
+                      "groupCode": 1
+                    },
+                    "mhmdFlag": false,
+                    "showBuyNow": false,
+                    "showExploreOtherConditionsCTA": false,
+                    "availabilityStatusV2": {
+                      "display": "In stock",
+                      "value": "IN_STOCK"
+                    },
+                    "averageWeight": null,
+                    "category": {
+                      "categoryPathId": "0:5438:133197:6127105:1253617",
+                      "path": null
+                    },
+                    "shouldLazyLoad": false
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
