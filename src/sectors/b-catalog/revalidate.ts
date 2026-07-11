@@ -37,6 +37,16 @@ export interface RevalidateProductRow {
   last_refreshed_at: string | Date;
 }
 
+export interface ProviderRef {
+  source: string;
+  source_product_id: string;
+  url: string | null;
+}
+interface DetailFetch {
+  source: string;
+  json: unknown;
+}
+
 /** Resultado vivo, ya normalizado, de cualquiera de los 4 parsers de abajo. */
 export interface DetailResult {
   price_cents: number;
@@ -128,50 +138,74 @@ export function computeVerdict(storedPriceCents: number, detail: DetailResult | 
 // (prohibido llamar red en tests); lo cubren los parsers puros de arriba +
 // computeVerdict, más el fail-open de revalidateProduct.
 // ---------------------------------------------------------------------------
-async function liveLookup(p: RevalidateProductRow): Promise<DetailResult | null> {
+// Fetch crudo por source — reusado por revalidate.ts (precio) y hydrate.ts
+// (variantes) para no duplicar el switch de hosts/paths/params.
+export async function fetchDetailJson(p: ProviderRef): Promise<DetailFetch | null> {
   switch (p.source) {
-    case "amazon": {
-      const json = await rapidApiGet(
-        "real-time-amazon-data.p.rapidapi.com",
-        "/product-details",
-        { asin: p.source_product_id, country: "US" },
-        LOOKUP_TIMEOUT_MS,
-      );
-      return parseAmazonDetail(json);
-    }
-    case "aliexpress": {
-      const json = await rapidApiGet(
-        "aliexpress-datahub.p.rapidapi.com",
-        "/item_detail_2",
-        { itemId: p.source_product_id },
-        LOOKUP_TIMEOUT_MS,
-      );
-      return parseAliexpressDetail(json);
-    }
+    case "amazon":
+      return {
+        source: p.source,
+        json: await rapidApiGet(
+          "real-time-amazon-data.p.rapidapi.com",
+          "/product-details",
+          { asin: p.source_product_id, country: "US" },
+          LOOKUP_TIMEOUT_MS,
+        ),
+      };
+    case "aliexpress":
+      return {
+        source: p.source,
+        json: await rapidApiGet(
+          "aliexpress-datahub.p.rapidapi.com",
+          "/item_detail_2",
+          { itemId: p.source_product_id },
+          LOOKUP_TIMEOUT_MS,
+        ),
+      };
     case "walmart": {
       if (!p.url) return null; // sin url no hay cómo re-consultar walmart (lookup es por url, no por id)
-      const json = await rapidApiGet(
-        "axesso-walmart-data-service.p.rapidapi.com",
-        "/wlm/walmart-lookup-product",
-        { url: p.url },
-        LOOKUP_TIMEOUT_MS,
-      );
-      return parseWalmartDetail(json);
+      return {
+        source: p.source,
+        json: await rapidApiGet(
+          "axesso-walmart-data-service.p.rapidapi.com",
+          "/wlm/walmart-lookup-product",
+          { url: p.url },
+          LOOKUP_TIMEOUT_MS,
+        ),
+      };
     }
-    case "shein": {
+    case "shein":
       // El mapper de búsqueda (rapidapi/sources/shein-otapi.ts) le QUITA el
       // prefijo "sh-" al id para quedarse con el id numérico real. El endpoint
       // de detalle lo exige de vuelta, así que acá se re-antepone.
-      const json = await rapidApiGet(
-        "otapi-shein.p.rapidapi.com",
-        "/BatchGetItemFullInfo",
-        { language: "en", itemId: `sh-${p.source_product_id}` },
-        LOOKUP_TIMEOUT_MS,
-      );
-      return parseSheinDetail(json);
-    }
+      return {
+        source: p.source,
+        json: await rapidApiGet(
+          "otapi-shein.p.rapidapi.com",
+          "/BatchGetItemFullInfo",
+          { language: "en", itemId: `sh-${p.source_product_id}` },
+          LOOKUP_TIMEOUT_MS,
+        ),
+      };
     default:
       return null; // source desconocido → unverifiable (nunca throw)
+  }
+}
+
+async function liveLookup(p: RevalidateProductRow): Promise<DetailResult | null> {
+  const fetched = await fetchDetailJson(p);
+  if (!fetched) return null;
+  switch (fetched.source) {
+    case "amazon":
+      return parseAmazonDetail(fetched.json);
+    case "aliexpress":
+      return parseAliexpressDetail(fetched.json);
+    case "walmart":
+      return parseWalmartDetail(fetched.json);
+    case "shein":
+      return parseSheinDetail(fetched.json);
+    default:
+      return null;
   }
 }
 

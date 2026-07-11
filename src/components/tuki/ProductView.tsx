@@ -50,6 +50,19 @@ export function ProductView({
     track("product_view", { product_id: card.id, source });
   }, [card.id, source]);
 
+  // Hidratación de detalle bajo demanda: dispara UNA vez por producto real
+  // (source amazon/aliexpress/walmart/shein) que aún no tiene attrs.hydrated_at.
+  // Gate cliente = puro ahorro de request; el gate atómico real vive en el
+  // UPDATE...WHERE...IS NULL del servidor (ver route.ts).
+  const hydratedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (card.attrs?.hydrated_at || hydratedFor.current === card.id) return;
+    hydratedFor.current = card.id;
+    const ctrl = new AbortController();
+    fetch(`/api/products/${card.id}/hydrate`, { method: "POST", signal: ctrl.signal }).catch(() => {});
+    return () => ctrl.abort();
+  }, [card.id, card.attrs?.hydrated_at]);
+
   const onAdd = () =>
     add(
       { id: card.id, title: card.title, price_cents: card.price_cents, category: card.category ?? null, image_url: card.image_url },

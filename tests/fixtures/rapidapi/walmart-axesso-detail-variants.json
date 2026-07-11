@@ -1,0 +1,40 @@
+{
+  "item": {
+    "props": {
+      "pageProps": {
+        "initialData": {
+          "data": {
+            "product": {
+              "variantCriteria": [
+                { "id": "actual_color", "name": "Color", "variantList": [
+                  { "id": "actual_color-coalblack", "name": "Coal Black" },
+                  { "id": "actual_color-mediumstone", "name": "Medium Stone" }
+                ]},
+                { "id": "clothing_size", "name": "Clothing Size", "variantList": [
+                  { "id": "clothing_size-38x29", "name": "38X29" },
+                  { "id": "clothing_size-38x32", "name": "38X32" }
+                ]}
+              ],
+              "variantsMap": {
+                "1KJZ47Z7XGQZ": {
+                  "id": "1KJZ47Z7XGQZ",
+                  "variants": ["actual_color-coalblack", "clothing_size-38x32"],
+                  "availabilityStatus": "IN_STOCK",
+                  "priceInfo": { "currentPrice": { "price": 20.98 } },
+                  "imageInfo": { "allImages": [{ "url": "https://i5.walmartimages.com/seo/Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex_5406a8e4-57fd-4086-98be-f5e27e533557.156f6b596695bb3fce1d74434644ad15.jpeg" }] }
+                },
+                "1H0PCOMO1E3D": {
+                  "id": "1H0PCOMO1E3D",
+                  "variants": ["actual_color-mediumstone", "clothing_size-38x29"],
+                  "availabilityStatus": "IN_STOCK",
+                  "priceInfo": { "currentPrice": { "price": 20.98 } },
+                  "imageInfo": { "allImages": [{ "url": "https://i5.walmartimages.com/seo/Wrangler-Men-s-and-Big-Men-s-Relaxed-Fit-Jeans-with-Flex_560563ca-9edb-41dc-bcd9-e14fd7868fed.1970619230618e280e04ca05d8430e65.jpeg" }] }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

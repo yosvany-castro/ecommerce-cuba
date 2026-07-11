@@ -32,7 +32,19 @@ export async function processProduct(
        image_url = EXCLUDED.image_url,
        raw_category = EXCLUDED.raw_category,
        url = EXCLUDED.url,
-       metadata = EXCLUDED.metadata,
+       metadata = CASE
+         WHEN products.metadata->'attrs'->>'hydrated_at' IS NOT NULL THEN
+           jsonb_set(
+             EXCLUDED.metadata, '{attrs}',
+             (EXCLUDED.metadata->'attrs')
+               || jsonb_build_object('hydrated_at', products.metadata->'attrs'->'hydrated_at')
+               || CASE WHEN products.metadata->'attrs' ? 'variants'
+                       THEN jsonb_build_object('variants', products.metadata->'attrs'->'variants')
+                       ELSE '{}'::jsonb END,
+             true
+           )
+         ELSE EXCLUDED.metadata
+       END,
        embedding = EXCLUDED.embedding,
        last_refreshed_at = now()
      RETURNING id, (xmax = 0) AS inserted`,

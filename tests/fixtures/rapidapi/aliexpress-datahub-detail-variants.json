@@ -1,0 +1,28 @@
+{
+  "result": {
+    "status": { "code": 200 },
+    "item": {
+      "sku": {
+        "props": [
+          { "pid": 14, "name": "Color", "values": [{ "vid": 691, "name": "GRAY", "propTips": "GRAY" }] },
+          { "pid": 5, "name": "Size", "values": [
+            { "vid": 100014064, "name": "S", "propTips": "S" },
+            { "vid": 361386, "name": "M", "propTips": "M" },
+            { "vid": 361385, "name": "L", "propTips": "L" },
+            { "vid": 100014065, "name": "XL", "propTips": "XL" },
+            { "vid": 4182, "name": "XXL", "propTips": "XXL" },
+            { "vid": 4183, "name": "XXXL", "propTips": "XXXL" }
+          ]},
+          { "pid": 200007763, "name": "Ships From", "values": [{ "vid": 201336106, "name": "United States", "propTips": "United States" }] },
+          { "pid": 200370261, "name": "Sale by Pack", "values": [{ "vid": 581452131, "name": "Pack of 1", "propTips": "Pack of 1" }] }
+        ],
+        "base": [
+          { "skuId": "12000058970112493", "propMap": "14:691;5:100014065;200007763:201336106;200370261:581452131", "price": 57.46, "promotionPrice": 10.77, "quantity": 30 },
+          { "skuId": "12000058970112492", "propMap": "14:691;5:361385;200007763:201336106;200370261:581452131", "price": 57.46, "promotionPrice": 10.77, "quantity": 30 },
+          { "skuId": "12000058970112495", "propMap": "14:691;5:4183;200007763:201336106;200370261:581452131", "price": 57.46, "promotionPrice": 10.77, "quantity": 30 }
+        ],
+        "skuImages": []
+      }
+    }
+  }
+}

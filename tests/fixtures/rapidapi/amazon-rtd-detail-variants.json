@@ -1,0 +1,10 @@
+{
+  "data": {
+    "all_product_variations": {
+      "B0G1YXJ7Z9": { "special_size_type": "Standard", "size": "36W x 30L", "color": "River Bank Cool" },
+      "B0DJV6VYJ4": { "special_size_type": "Standard", "size": "35W x 30L", "color": "Olive Night" },
+      "B00GW7HILO": { "special_size_type": "Tall", "size": "32W x 32L", "color": "Rinse" },
+      "B0018OKMBO": { "special_size_type": "Standard", "size": "32W x 32L", "color": "Rinse" }
+    }
+  }
+}

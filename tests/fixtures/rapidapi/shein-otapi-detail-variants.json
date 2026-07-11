@@ -1,0 +1,19 @@
+{
+  "ErrorCode": "Ok",
+  "Result": {
+    "Item": {
+      "Attributes": [
+        { "Pid": "87", "Vid": "568", "PropertyName": "Size", "Value": "S", "IsConfigurator": true },
+        { "Pid": "87", "Vid": "417", "PropertyName": "Size", "Value": "M", "IsConfigurator": true },
+        { "Pid": "87", "Vid": "387", "PropertyName": "Size", "Value": "L", "IsConfigurator": true },
+        { "Pid": "87", "Vid": "754", "PropertyName": "Size", "Value": "XL", "IsConfigurator": true }
+      ],
+      "ConfiguredItems": [
+        { "Id": "I97lw8t16823", "Configurators": [{ "Pid": "87", "Vid": "754" }], "Quantity": 20, "Price": { "ConvertedPriceList": { "Internal": { "Price": 17.0, "Code": "USD", "Sign": "$" } } } },
+        { "Id": "I97lw8t12a0g", "Configurators": [{ "Pid": "87", "Vid": "387" }], "Quantity": 20, "Price": { "ConvertedPriceList": { "Internal": { "Price": 20.0, "Code": "USD", "Sign": "$" } } } },
+        { "Id": "I97lw8t0qgus", "Configurators": [{ "Pid": "87", "Vid": "568" }], "Quantity": 3, "Price": { "ConvertedPriceList": { "Internal": { "Price": 13.0, "Code": "USD", "Sign": "$" } } } },
+        { "Id": "I97lw8t0ws60", "Configurators": [{ "Pid": "87", "Vid": "417" }], "Quantity": 20, "Price": { "ConvertedPriceList": { "Internal": { "Price": 16.0, "Code": "USD", "Sign": "$" } } } }
+      ]
+    }
+  }
+}

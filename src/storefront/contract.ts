@@ -16,6 +16,7 @@ export interface StorefrontCard {
     old_price_cents?: number;
     rating?: number;
     sold?: string; // ya formateado ("1.2k"), no el `orders` crudo
+    hydrated_at?: string; // nuevo — gate cliente
   };
 }
 export interface StorefrontSection {

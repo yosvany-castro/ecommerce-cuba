@@ -25,6 +25,7 @@ function toCardAttrs(attrs: CuratedAttrs | undefined): StorefrontCard["attrs"] {
     ...(attrs.old_price_cents !== undefined ? { old_price_cents: attrs.old_price_cents } : {}),
     ...(attrs.rating !== undefined ? { rating: attrs.rating } : {}),
     ...(attrs.orders !== undefined ? { sold: formatSold(attrs.orders) } : {}),
+    ...(attrs.hydrated_at ? { hydrated_at: attrs.hydrated_at } : {}),
   };
 }
 

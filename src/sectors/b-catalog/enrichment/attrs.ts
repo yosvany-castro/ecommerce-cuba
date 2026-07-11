@@ -17,6 +17,8 @@ export interface CuratedAttrs {
   rating?: number;
   orders?: string | number;
   brand?: string;
+  variants?: CuratedVariant[];
+  hydrated_at?: string;
 }
 
 function curateColor(c: unknown): CuratedColor | undefined {
@@ -35,17 +37,60 @@ function curateColor(c: unknown): CuratedColor | undefined {
 
 // colors puede venir como string[] u objetos {name,hex?}[] (o mezclado) — se normaliza
 // TODO a objetos {name} (+hex si viene) para que el consumidor solo maneje una forma.
-function curateColors(v: unknown): CuratedColor[] | undefined {
+export function curateColors(v: unknown): CuratedColor[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out = v.map(curateColor).filter((c): c is CuratedColor => c !== undefined).slice(0, CAP);
   return out.length ? out : undefined;
 }
 
-function curateStrings(v: unknown): string[] | undefined {
+export function curateStrings(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out = v
     .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
     .slice(0, CAP);
+  return out.length ? out : undefined;
+}
+
+const CAP_VARIANTS = 30;
+
+export interface CuratedVariant {
+  color?: string;
+  size?: string;
+  price_cents?: number;
+  available?: boolean;
+  image?: string;
+}
+
+function curateVariant(v: unknown): CuratedVariant | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  const color = typeof o.color === "string" && o.color.trim() ? o.color.trim() : undefined;
+  const size = typeof o.size === "string" && o.size.trim() ? o.size.trim() : undefined;
+  if (!color && !size) return undefined; // sin ninguna dimensión no es una variante útil
+  const price_cents = typeof o.price_cents === "number" && Number.isInteger(o.price_cents) && o.price_cents > 0 ? o.price_cents : undefined;
+  const available = typeof o.available === "boolean" ? o.available : undefined;
+  const image = typeof o.image === "string" && o.image.trim() ? o.image.trim() : undefined;
+  return {
+    ...(color && { color }), ...(size && { size }),
+    ...(price_cents !== undefined && { price_cents }),
+    ...(available !== undefined && { available }),
+    ...(image && { image }),
+  };
+}
+
+export function curateVariants(v: unknown): CuratedVariant[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const seen = new Set<string>();
+  const out: CuratedVariant[] = [];
+  for (const item of v) {
+    const c = curateVariant(item);
+    if (!c) continue;
+    const key = `${c.color ?? ""}|${c.size ?? ""}`;
+    if (seen.has(key)) continue; // dedupe antes de cortar
+    seen.add(key);
+    out.push(c);
+    if (out.length >= CAP_VARIANTS) break;
+  }
   return out.length ? out : undefined;
 }
 

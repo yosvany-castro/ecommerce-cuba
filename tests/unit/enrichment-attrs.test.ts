@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { curateAttrs, attrsForStorage } from "@/sectors/b-catalog/enrichment/attrs";
+import { curateAttrs, attrsForStorage, curateVariants } from "@/sectors/b-catalog/enrichment/attrs";
 
 describe("curateAttrs", () => {
   test("full valid attrs pass through", () => {
@@ -125,5 +125,27 @@ describe("attrsForStorage (hueco de honestidad — F4 review)", () => {
 
   test("producto real con atributos curables -> objeto curado tal cual", () => {
     expect(attrsForStorage({ brand: "Nike", rating: 4.5 })).toEqual({ brand: "Nike", rating: 4.5 });
+  });
+});
+
+describe("curateVariants", () => {
+  test("dedupe por color+size", () => {
+    const out = curateVariants([{ color: "Rojo", size: "M" }, { color: "Rojo", size: "M" }, { color: "Azul", size: "M" }]);
+    expect(out).toHaveLength(2);
+  });
+  test("CAP 30", () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({ color: `C${i}`, size: "M" }));
+    expect(curateVariants(many)).toHaveLength(30);
+  });
+  test("entradas sin color ni size se descartan", () => {
+    expect(curateVariants([{ price_cents: 100 }])).toBeUndefined();
+  });
+  test("tipos inválidos se descartan campo por campo (price_cents no-entero, available no-boolean)", () => {
+    const out = curateVariants([{ color: "Rojo", price_cents: 12.5, available: "yes" }]);
+    expect(out).toEqual([{ color: "Rojo" }]);
+  });
+  test("[] o no-array → undefined", () => {
+    expect(curateVariants([])).toBeUndefined();
+    expect(curateVariants("x")).toBeUndefined();
   });
 });
