@@ -84,10 +84,24 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     let variants: CuratedVariant[] | undefined;
+    let lookupFailed = false;
     try {
       variants = await liveLookupVariants(row as ProviderRef);
     } catch {
       variants = undefined; // fail-open, mismo criterio que revalidateProduct
+      lookupFailed = true;
+    }
+
+    // Error transitorio (timeout/red) ≠ "hidratado": se revierte el claim para
+    // que una visita futura reintente. El caso cuota (aliexpress) NO pasa por
+    // acá — ese sí conserva el claim a propósito para no re-gastar. Visto en
+    // vivo 2026-07-11: el primer lookup frío superó el timeout y el producto
+    // quedaba marcado para siempre sin variantes.
+    if (lookupFailed) {
+      await pg.query(
+        `UPDATE products SET metadata = jsonb_set(metadata, '{attrs}', (metadata->'attrs') - 'hydrated_at', true) WHERE id = $1`,
+        [id],
+      );
     }
 
     if (variants?.length) {
@@ -113,8 +127,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     if (row.source !== "aliexpress") {
       await pg.query(
-        `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, was_error) VALUES ($1::jsonb, $2, 0, false)`,
-        [JSON.stringify({ source: `hydrate_${row.source}`, product_id: id }), variants?.length ?? 0],
+        `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, was_error) VALUES ($1::jsonb, $2, 0, $3)`,
+        [JSON.stringify({ source: `hydrate_${row.source}`, product_id: id }), variants?.length ?? 0, lookupFailed],
       );
     }
     return NextResponse.json({ ok: true });

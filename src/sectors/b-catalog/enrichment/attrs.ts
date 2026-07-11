@@ -39,15 +39,30 @@ function curateColor(c: unknown): CuratedColor | undefined {
 // TODO a objetos {name} (+hex si viene) para que el consumidor solo maneje una forma.
 export function curateColors(v: unknown): CuratedColor[] | undefined {
   if (!Array.isArray(v)) return undefined;
-  const out = v.map(curateColor).filter((c): c is CuratedColor => c !== undefined).slice(0, CAP);
+  // dedupe por nombre: al aplanar variantes, varias tallas comparten color y el
+  // swatch se repetiría (visto en vivo con la hidratación, 2026-07-11)
+  const seen = new Set<string>();
+  const out: CuratedColor[] = [];
+  for (const c of v.map(curateColor)) {
+    if (!c || seen.has(c.name)) continue;
+    seen.add(c.name);
+    out.push(c);
+    if (out.length >= CAP) break;
+  }
   return out.length ? out : undefined;
 }
 
 export function curateStrings(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
-  const out = v
-    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-    .slice(0, CAP);
+  // mismo dedupe: tallas iguales llegan repetidas desde variantes de distinto color
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of v) {
+    if (typeof x !== "string" || x.trim().length === 0 || seen.has(x)) continue;
+    seen.add(x);
+    out.push(x);
+    if (out.length >= CAP) break;
+  }
   return out.length ? out : undefined;
 }
 

@@ -140,7 +140,10 @@ export function computeVerdict(storedPriceCents: number, detail: DetailResult | 
 // ---------------------------------------------------------------------------
 // Fetch crudo por source — reusado por revalidate.ts (precio) y hydrate.ts
 // (variantes) para no duplicar el switch de hosts/paths/params.
-export async function fetchDetailJson(p: ProviderRef): Promise<DetailFetch | null> {
+export async function fetchDetailJson(
+  p: ProviderRef,
+  timeoutMs: number = LOOKUP_TIMEOUT_MS,
+): Promise<DetailFetch | null> {
   switch (p.source) {
     case "amazon":
       return {
@@ -149,7 +152,7 @@ export async function fetchDetailJson(p: ProviderRef): Promise<DetailFetch | nul
           "real-time-amazon-data.p.rapidapi.com",
           "/product-details",
           { asin: p.source_product_id, country: "US" },
-          LOOKUP_TIMEOUT_MS,
+          timeoutMs,
         ),
       };
     case "aliexpress":
@@ -159,7 +162,7 @@ export async function fetchDetailJson(p: ProviderRef): Promise<DetailFetch | nul
           "aliexpress-datahub.p.rapidapi.com",
           "/item_detail_2",
           { itemId: p.source_product_id },
-          LOOKUP_TIMEOUT_MS,
+          timeoutMs,
         ),
       };
     case "walmart": {
@@ -170,7 +173,7 @@ export async function fetchDetailJson(p: ProviderRef): Promise<DetailFetch | nul
           "axesso-walmart-data-service.p.rapidapi.com",
           "/wlm/walmart-lookup-product",
           { url: p.url },
-          LOOKUP_TIMEOUT_MS,
+          timeoutMs,
         ),
       };
     }
@@ -184,7 +187,7 @@ export async function fetchDetailJson(p: ProviderRef): Promise<DetailFetch | nul
           "otapi-shein.p.rapidapi.com",
           "/BatchGetItemFullInfo",
           { language: "en", itemId: `sh-${p.source_product_id}` },
-          LOOKUP_TIMEOUT_MS,
+          timeoutMs,
         ),
       };
     default:
