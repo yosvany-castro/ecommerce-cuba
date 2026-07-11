@@ -1,0 +1,19 @@
+{
+  "ErrorCode": "Ok",
+  "Result": {
+    "Item": {
+      "Id": "sh-64037112",
+      "Title": "SHEIN Clasi 2pcs Women Casual Minimalist Polka Dot Pattern Set, Suitable For Summer,Summer Outfits For Women Summer Outfits For Women",
+      "MasterQuantity": 20,
+      "Price": {
+        "ConvertedPriceList": {
+          "Internal": {
+            "Price": 13.0,
+            "Sign": "$",
+            "Code": "USD"
+          }
+        }
+      }
+    }
+  }
+}

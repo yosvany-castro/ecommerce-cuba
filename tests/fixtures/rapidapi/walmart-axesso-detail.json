@@ -1,0 +1,30 @@
+{
+  "responseStatus": "PRODUCT_FOUND_RESPONSE",
+  "item": {
+    "props": {
+      "pageProps": {
+        "initialData": {
+          "data": {
+            "product": {
+              "usItemId": "388037456",
+              "name": "Wrangler Men's and Big Men's Relaxed Fit Jeans with Flex",
+              "availabilityStatus": "IN_STOCK",
+              "priceInfo": {
+                "currentPrice": {
+                  "price": 20.98,
+                  "priceString": "$20.98",
+                  "variantPriceString": "$20.98",
+                  "currencyUnit": "USD",
+                  "priceDisplay": "$20.98",
+                  "supportText": null,
+                  "bestValue": null
+                },
+                "wasPrice": null
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

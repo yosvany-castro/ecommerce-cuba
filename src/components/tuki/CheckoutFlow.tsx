@@ -10,6 +10,11 @@ import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
 import { etaLine, shipOptions, validateBilling, validateShipping } from "./checkout-core";
 
+// Nota de re-validación por product_id (ver POST /api/checkout/revalidate).
+// El precio vivo YA quedó escrito en products al llegar la respuesta — esto
+// es solo para que la UI no muestre un total desactualizado.
+type RevalidateNote = { status: "ok" | "price_changed" | "unavailable" | "unverifiable"; live_price_cents?: number };
+
 const STEP_LABELS = ["Envío", "Entrega", "Pago", "Revisar"];
 const PAY_DEFS = [
   { id: "tarjeta", label: "Tarjeta", sub: "crédito o débito", mark: "💳" },
@@ -35,12 +40,14 @@ const inputBase: React.CSSProperties = {
 export function CheckoutFlow() {
   const router = useRouter();
   const toast = useToast();
-  const { items, subtotal, weightLb, clear, hydrated } = useTukiCart();
+  const { items, weightLb, clear, hydrated, remove } = useTukiCart();
 
   const [step, setStep] = useState(1);
   const [ckTried, setCkTried] = useState(false);
   const [pending, setPending] = useState(false);
   const doneRef = useRef(false);
+  const [revalidateMap, setRevalidateMap] = useState<Record<string, RevalidateNote>>({});
+  const revalidatedIdsRef = useRef<string | null>(null);
 
   // Carrito vacío en /checkout → volver al feed. Espera a `hydrated` (el primer
   // paint siempre es vacío) y salta si acabamos de confirmar (doneRef): ahí el
@@ -48,6 +55,41 @@ export function CheckoutFlow() {
   useEffect(() => {
     if (hydrated && items.length === 0 && !doneRef.current) router.push("/");
   }, [hydrated, items.length, router]);
+
+  // Al ENTRAR al paso 4 (Revisar): re-valida precio/stock del carrito contra el
+  // marketplace origen — el dueño revende, un precio viejo es venderle a
+  // pérdida (ver src/sectors/b-catalog/revalidate.ts). El precio vivo ya queda
+  // escrito en products al responder; acá solo reflejamos el aviso + el total.
+  // sig evita re-disparar para el mismo set de ids (p.ej. un simple re-render).
+  // Fail-open: cualquier error/abort deja el checkout seguir sin aviso.
+  useEffect(() => {
+    if (step !== 4 || items.length === 0) return;
+    const ids = Array.from(new Set(items.map((i) => i.product_id)));
+    const sig = ids.join(",");
+    if (revalidatedIdsRef.current === sig) return;
+    revalidatedIdsRef.current = sig;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/checkout/revalidate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ product_ids: ids }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as {
+          items: { product_id: string; status: RevalidateNote["status"]; live_price_cents?: number }[];
+        };
+        const map: Record<string, RevalidateNote> = {};
+        for (const it of body.items) map[it.product_id] = { status: it.status, live_price_cents: it.live_price_cents };
+        setRevalidateMap(map);
+      } catch {
+        // red caída / abort: sin aviso, el checkout sigue andando (fail-open)
+      }
+    })();
+    return () => ctrl.abort();
+  }, [step, items]);
 
   const [f, setF] = useState({
     nombre: "Dani Torres",
@@ -70,12 +112,19 @@ export function CheckoutFlow() {
   const setFbK = (k: keyof typeof fb) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setFb((s) => ({ ...s, [k]: e.target.value }));
 
-  const opts = shipOptions(weightLb, subtotal);
+  // Precio efectivo: usa el live_price_cents de la re-validación cuando lo hay
+  // (el dato en products ya se actualizó server-side; esto solo refleja el
+  // total en pantalla — ver el useEffect de arriba).
+  const priceOf = (ri: { product_id: string; price_cents: number }) =>
+    revalidateMap[ri.product_id]?.live_price_cents ?? ri.price_cents;
+  const effectiveSubtotal = items.reduce((s, ri) => s + priceOf(ri) * ri.qty, 0);
+
+  const opts = shipOptions(weightLb, effectiveSubtotal);
   const selBlocked = opts.find((o) => o.id === shipSel)?.blocked ?? false;
   const sel: ShipId = selBlocked ? "estandar" : shipSel;
   const cur = opts.find((o) => o.id === sel)!;
   const shipCostCents = items.length ? cur.effectivePriceCents : 0;
-  const totalCents = subtotal + shipCostCents;
+  const totalCents = effectiveSubtotal + shipCostCents;
   const wS = weightLb.toFixed(1).replace(".0", "");
 
   const shipErrs = validateShipping(f);
@@ -387,6 +436,37 @@ export function CheckoutFlow() {
             <>
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26, marginBottom: 18 }}>revisa y listo</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11, maxWidth: 520 }}>
+                {items.some((ri) => revalidateMap[ri.product_id]) && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    {items.map((ri) => {
+                      const rv = revalidateMap[ri.product_id];
+                      if (!rv) return null;
+                      if (rv.status === "price_changed" && rv.live_price_cents != null) {
+                        return (
+                          <div key={ri.key} style={{ fontSize: 12, color: "#B4533F" }}>
+                            el precio de «{ri.title}» cambió: {fmt(ri.price_cents)} → {fmt(rv.live_price_cents)}
+                          </div>
+                        );
+                      }
+                      if (rv.status === "unavailable") {
+                        return (
+                          <div key={ri.key} style={{ fontSize: 12, color: "#B4533F" }}>
+                            «{ri.title}» ya no está disponible —{" "}
+                            <span onClick={() => remove(ri.key)} style={{ textDecoration: "underline", cursor: "pointer" }}>quítalo</span>
+                          </div>
+                        );
+                      }
+                      if (rv.status === "unverifiable") {
+                        return (
+                          <div key={ri.key} style={{ fontSize: 11.5, color: "#9A9B9F" }}>
+                            «{ri.title}»: precio sujeto a confirmación
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                )}
                 <ReviewCard title="ENVÍO" onEdit={() => setStep(1)}>
                   <div style={{ fontSize: 14.5, marginTop: 6, lineHeight: 1.5 }}>{f.nombre} · {f.dir}, {f.ciudad}</div>
                   <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 2 }}>ID {f.ci} · tel. {f.tel}</div>
@@ -429,13 +509,13 @@ export function CheckoutFlow() {
               return (
                 <div key={ri.key} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13.5, color: "#55565B" }}>
                   <span style={{ minWidth: 0 }}>{ri.qty}× {ri.title}{varLine ? ` (${varLine})` : ""}</span>
-                  <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(ri.price_cents * ri.qty)}</span>
+                  <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(priceOf(ri) * ri.qty)}</span>
                 </div>
               );
             })}
           </div>
           <div style={{ height: 1, background: "#F1F1EE", margin: "14px 0" }} />
-          <Row label="Subtotal" value={fmt(subtotal)} />
+          <Row label="Subtotal" value={fmt(effectiveSubtotal)} />
           <Row label="Peso de la caja" value={`${wS} lb`} />
           <Row label={`Envío · ${cur.name.toLowerCase()}`} value={shipCostCents === 0 ? "Gratis" : fmt(shipCostCents)} valueColor={shipCostCents === 0 ? "#557A55" : "#55565B"} />
           <div style={{ height: 1, background: "#F1F1EE", margin: "14px 0" }} />
