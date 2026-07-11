@@ -19,6 +19,7 @@ export interface MockProduct {
   brand: string;
   raw_category: string;
   attributes: Record<string, unknown>;
+  url?: string | null; // URL original del producto en el marketplace (mock/LLM no la generan)
 }
 
 export const TARGET_DISTRIBUTION: Record<MockCategory, number> = {

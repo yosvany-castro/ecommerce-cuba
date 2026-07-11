@@ -1,0 +1,105 @@
+{
+  "result": {
+    "status": {
+      "code": 200,
+      "attempt": 1,
+      "p": "true",
+      "data": "success",
+      "executionTime": "1.75",
+      "requestTime": "2026-07-11 13:44:00",
+      "requestId": "41b26a2bd3ac6090e8351b71136c0496",
+      "endpoint": "item_search_2",
+      "apiVersion": "4.0.5",
+      "functionsVersion": "4.0.8",
+      "la": "0.35",
+      "pmu": 1231272,
+      "mu": 970544
+    },
+    "settings": {
+      "q": "mens jeans",
+      "catId": "",
+      "brandId": "",
+      "loc": "",
+      "attr": "",
+      "switches": "",
+      "sort": "default",
+      "page": "1",
+      "startPrice": "",
+      "endPrice": "",
+      "region": "US",
+      "locale": "en_US",
+      "currency": "USD"
+    },
+    "base": {
+      "totalResults": "26707",
+      "pageSize": "20",
+      "q": "mens jeans",
+      "sortValues": [
+        "default",
+        "salesDesc",
+        "priceAsc",
+        "priceDesc"
+      ],
+      "switchesList": []
+    },
+    "resultList": [
+      {
+        "item": {
+          "itemId": "3256812460504572",
+          "title": "HME Men's Casual Denim Pants, Light Blue Straight Fit Jeans with Vintage Wash for Daily Wear",
+          "sales": 0,
+          "itemUrl": "//www.aliexpress.com/item/3256812460504572.html",
+          "image": "//ae-pic-a1.aliexpress-media.com/kf/Seaeae057665745519815ee06dd849619a.jpg",
+          "sku": {
+            "def": {
+              "price": null,
+              "promotionPrice": 10.77
+            }
+          },
+          "averageStarRate": null,
+          "type": "natural"
+        },
+        "delivery": null,
+        "sellingPoints": null
+      },
+      {
+        "item": {
+          "itemId": "3256805882958982",
+          "title": "new Jeans Men Pants Wash Solid Color Multi Pockets Denim Mid Waist Cargo Jeans Plus Size Fahsion Casual Trousers Male Daily Wear",
+          "sales": "1697",
+          "itemUrl": "//www.aliexpress.com/item/3256805882958982.html",
+          "image": "//ae-pic-a1.aliexpress-media.com/kf/S9f7ce38ad6824db5a8faeecb00acb1214.jpg",
+          "sku": {
+            "def": {
+              "price": null,
+              "promotionPrice": 0.99
+            }
+          },
+          "averageStarRate": 4.3,
+          "type": "ad"
+        },
+        "delivery": null,
+        "sellingPoints": null
+      },
+      {
+        "item": {
+          "itemId": "3256812474590020",
+          "title": "UP.THE Men Vintage Washed Baggy Wide Leg Jeans, Y2K Hip Hop High Street Loose Oversized Denim Pants, Patchwork Seam Streetwear Trousers for Street Activities",
+          "sales": "1",
+          "itemUrl": "//www.aliexpress.com/item/3256812474590020.html",
+          "image": "//ae-pic-a1.aliexpress-media.com/kf/Sa8dcf28d820c447cb4f3122051bda341U.jpg",
+          "sku": {
+            "def": {
+              "price": null,
+              "promotionPrice": 9.49
+            }
+          },
+          "averageStarRate": null,
+          "type": "natural"
+        },
+        "delivery": null,
+        "sellingPoints": null
+      }
+    ]
+  }
+}

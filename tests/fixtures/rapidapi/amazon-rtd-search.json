@@ -1,0 +1,79 @@
+{
+  "status": "OK",
+  "request_id": "956f64bb-e87b-42cb-b918-8910415eecc1",
+  "parameters": {
+    "query": "jeans for men",
+    "country": "US",
+    "sort_by": "RELEVANCE",
+    "page": 1,
+    "language": "en_US"
+  },
+  "data": {
+    "total_products": 57736,
+    "country": "US",
+    "domain": "www.amazon.com",
+    "products": [
+      {
+        "asin": "B0018QS5HU",
+        "product_title": "Levi&#x27;s Men&#x27;s 505 Regular Fit Jeans (Also Available in Big &amp; Tall)",
+        "product_price": "$36.42",
+        "product_original_price": "$74.95",
+        "currency": "USD",
+        "product_star_rating": "4.5",
+        "product_num_ratings": 30100,
+        "product_url": "https://www.amazon.com/dp/B0018QS5HU",
+        "product_photo": "https://m.media-amazon.com/images/I/51XquqDhOgL._AC_UL960_QL65_.jpg",
+        "product_num_offers": 1,
+        "product_minimum_offer_price": "$36.42",
+        "is_best_seller": false,
+        "is_amazon_choice": false,
+        "is_prime": true,
+        "climate_pledge_friendly": false,
+        "sales_volume": "1K+ bought in past month",
+        "delivery": "Join Prime to get FREE delivery Overnight 7 AM - 11 AMOr Non-members get FREE delivery Wed, Jul 15",
+        "has_variations": true
+      },
+      {
+        "asin": "B07LGVSPKF",
+        "product_title": "Rustler Men&#x27;s Classic Relaxed Fit",
+        "product_price": "$14.98",
+        "product_original_price": null,
+        "currency": "USD",
+        "product_star_rating": "4.5",
+        "product_num_ratings": 43116,
+        "product_url": "https://www.amazon.com/dp/B07LGVSPKF",
+        "product_photo": "https://m.media-amazon.com/images/I/71HVSFd9fyL._AC_UL960_QL65_.jpg",
+        "product_num_offers": 1,
+        "product_minimum_offer_price": "$14.98",
+        "is_best_seller": false,
+        "is_amazon_choice": false,
+        "is_prime": false,
+        "climate_pledge_friendly": false,
+        "sales_volume": "900+ bought in past month",
+        "delivery": null,
+        "has_variations": true
+      },
+      {
+        "asin": "B0H3269XHX",
+        "product_title": "Mens Baggy Jeans Wide Leg Loose Fit Hip Hop Vintage Jeans Relaxed Fit Elastic Waist Denim Pants Skate Streetwear Y2K",
+        "product_price": "$39.99",
+        "product_original_price": null,
+        "currency": "USD",
+        "product_star_rating": "4.8",
+        "product_num_ratings": 9,
+        "product_url": "https://www.amazon.com/dp/B0H3269XHX",
+        "product_photo": "https://m.media-amazon.com/images/I/71uRfr3QlbL._AC_UL960_QL65_.jpg",
+        "product_num_offers": 1,
+        "product_minimum_offer_price": "$39.99",
+        "is_best_seller": false,
+        "is_amazon_choice": false,
+        "is_prime": true,
+        "climate_pledge_friendly": false,
+        "sales_volume": "New on Amazon in past month",
+        "delivery": "Join Prime to get FREE delivery Sun, Jul 12Or Non-members get FREE delivery Thu, Jul 16",
+        "coupon_text": "You pay $34.99 with coupon (some sizes/colors)",
+        "has_variations": true
+      }
+    ]
+  }
+}

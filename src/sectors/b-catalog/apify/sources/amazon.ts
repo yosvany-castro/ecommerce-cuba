@@ -14,6 +14,8 @@ export function buildInput(opts: FetchOptions): Record<string, unknown> {
     categoryOrProductUrls: [{ url: `https://www.amazon.com/s?k=${encodeURIComponent(q)}` }],
     maxItemsPerStartUrl: opts.limit ?? 20,
     proxyCountry: "US",
+    // evitar precios cacheados — verificar en smoke live que el actor lo acepta
+    cacheTtlHours: 0,
   };
 }
 
@@ -65,6 +67,7 @@ export function mapItem(raw: unknown): MockProduct | null {
     price_cents: price,
     brand: brand ?? "",
     raw_category: str(o.breadCrumbs) ?? "",
+    url: str(o.url) ?? `https://www.amazon.com/dp/${id}`,
     attributes: compactAttrs({
       old_price_cents: oldPrice,
       rating: toNumber(o.stars),

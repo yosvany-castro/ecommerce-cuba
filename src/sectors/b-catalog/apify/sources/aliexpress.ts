@@ -39,6 +39,7 @@ export function mapItem(raw: unknown): MockProduct | null {
     brand: str(o.brand) ?? "",
     // categoryName no viene en el output real; searchQuery sí — hint para el normalizador LLM.
     raw_category: str(o.categoryName) ?? str(o.searchQuery) ?? "",
+    url: str(o.productUrl) ?? null,
     attributes: compactAttrs({
       old_price_cents: oldPrice !== null && oldPrice > price ? oldPrice : undefined,
       rating: toNumber(o.ratingValue ?? o.rating),

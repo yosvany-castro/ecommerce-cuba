@@ -61,7 +61,7 @@ export interface HybridSearchResult {
 async function resolveProducts(ids: string[], pg: Client): Promise<ProductListRow[]> {
   if (ids.length === 0) return [];
   const r = await pg.query(
-    `SELECT id, title, description, price_cents, currency, image_url, metadata, created_at
+    `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at
      FROM products
      WHERE id = ANY($1::uuid[]) AND is_active = true`,
     [ids],

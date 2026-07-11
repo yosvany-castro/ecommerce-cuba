@@ -43,6 +43,9 @@ export function mapItem(raw: unknown): MockProduct | null {
   const images = Array.isArray(o.detail_image)
     ? o.detail_image.filter((x): x is string => typeof x === "string")
     : undefined;
+  // El output real no trae una URL de producto directa. goods_url_name es el
+  // slug SEO; junto a goods_id arma la URL real de SHEIN (patrón {slug}-p-{id}.html).
+  const urlName = str(o.goods_url_name);
 
   return {
     id: `shein:${id}`,
@@ -54,6 +57,7 @@ export function mapItem(raw: unknown): MockProduct | null {
     price_cents: price,
     brand: "",
     raw_category: str(o.cate_name) ?? "",
+    url: urlName ? `https://us.shein.com/${urlName}-p-${id}.html` : null,
     attributes: compactAttrs({
       old_price_cents: retail !== null && retail > price ? retail : undefined,
       images,

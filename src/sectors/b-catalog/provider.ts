@@ -3,6 +3,10 @@
 // con proveedores reales. El swap ocurre AQUÍ (AGGREGATOR_PROVIDER), no en los call-sites.
 import { fetchFromAggregator, type FetchOptions, type FetchResult } from "./mock/aggregator";
 import { makeApifyProvider } from "./apify/provider";
+import { withFallback } from "./fallback";
+import * as amazonRtd from "./rapidapi/sources/amazon-rtd";
+import * as aliexpressDatahub from "./rapidapi/sources/aliexpress-datahub";
+import * as axessoAmazon from "./rapidapi/sources/axesso-amazon";
 
 export interface AggregatorProvider {
   name: string;
@@ -13,11 +17,32 @@ const mock: AggregatorProvider = { name: "mock", fetch: fetchFromAggregator };
 
 // makeApifyProvider no toca la red ni el APIFY_TOKEN hasta que se llame a fetch,
 // así que construir el registry con env sin setear es inocuo (suite entera verde).
+// Lo mismo aplica a los providers RapidAPI: RAPIDAPI_KEY solo se lee dentro de
+// rapidApiGet, al momento de fetch().
+const apifyAmazon = makeApifyProvider("amazon");
+const apifyAliexpress = makeApifyProvider("aliexpress");
+const rapidapiAmazon: AggregatorProvider = { name: amazonRtd.PROVIDER_NAME, fetch: amazonRtd.fetchProducts };
+const rapidapiAliexpress: AggregatorProvider = {
+  name: aliexpressDatahub.PROVIDER_NAME,
+  fetch: aliexpressDatahub.fetchProducts,
+};
+const rapidapiAxessoAmazon: AggregatorProvider = {
+  name: axessoAmazon.PROVIDER_NAME,
+  fetch: axessoAmazon.fetchProducts,
+};
+
 const PROVIDERS: Record<string, AggregatorProvider> = {
   mock,
-  "apify-amazon": makeApifyProvider("amazon"),
-  "apify-aliexpress": makeApifyProvider("aliexpress"),
+  "apify-amazon": apifyAmazon,
+  "apify-aliexpress": apifyAliexpress,
   "apify-shein": makeApifyProvider("shein"),
+  "rapidapi-amazon": rapidapiAmazon,
+  "rapidapi-aliexpress": rapidapiAliexpress,
+  "rapidapi-axesso-amazon": rapidapiAxessoAmazon,
+  // Producción: apify primero (más rico en atributos), RapidAPI como red de
+  // seguridad si el actor de Apify falla o no trae nada.
+  "amazon-prod": withFallback(apifyAmazon, rapidapiAmazon),
+  "aliexpress-prod": withFallback(apifyAliexpress, rapidapiAliexpress),
 };
 
 const envProvider = process.env.AGGREGATOR_PROVIDER;

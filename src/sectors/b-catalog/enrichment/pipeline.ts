@@ -23,14 +23,15 @@ export async function processProduct(
 
   const r = await pg.query(
     `INSERT INTO products
-      (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, metadata, embedding)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::vector)
+      (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, url, metadata, embedding)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::vector)
      ON CONFLICT (source, source_product_id) DO UPDATE SET
        title = EXCLUDED.title,
        description = EXCLUDED.description,
        price_cents = EXCLUDED.price_cents,
        image_url = EXCLUDED.image_url,
        raw_category = EXCLUDED.raw_category,
+       url = EXCLUDED.url,
        metadata = EXCLUDED.metadata,
        embedding = EXCLUDED.embedding,
        last_refreshed_at = now()
@@ -44,6 +45,7 @@ export async function processProduct(
       "USD",
       raw.image_url,
       raw.raw_category,
+      raw.url ?? null,
       JSON.stringify(metadata),
       `[${embedding.join(",")}]`,
     ],

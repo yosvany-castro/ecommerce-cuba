@@ -16,7 +16,7 @@ export async function retrieveTopKByVector(
   pg: Client,
 ): Promise<FeedItem[]> {
   const r = await pg.query(
-    `SELECT id, title, description, price_cents, currency, image_url, metadata, created_at,
+    `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at,
             1 - (embedding <=> $1::vector) AS similarity
      FROM products
      WHERE is_active = true
@@ -34,6 +34,7 @@ export async function retrieveTopKByVector(
       price_cents: row.price_cents,
       currency: row.currency,
       image_url: row.image_url,
+      url: row.url,
       metadata: row.metadata,
       created_at: row.created_at,
     },

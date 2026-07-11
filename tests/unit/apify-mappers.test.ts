@@ -87,6 +87,7 @@ describe("amazon.mapItem", () => {
     expect(p!.attributes.colors).toEqual(["Black"]);
     expect(p!.attributes.sizes).toEqual(["One Size"]);
     expect(p!.attributes.brand).toBe("Acme");
+    expect(p!.url).toBe("https://www.amazon.com/dp/B0RICH123");
   });
 
   test("minimal item: description falls back to title, no old_price", () => {
@@ -96,6 +97,11 @@ describe("amazon.mapItem", () => {
     expect(p!.description).toBe("Cheap thing");
     expect(p!.attributes.old_price_cents).toBeUndefined();
     expect(p!.attributes.colors).toBeUndefined();
+  });
+
+  test("no url in raw item → construye dp/{asin}", () => {
+    const p = amazon.mapItem({ asin: "B0NOURL", title: "No url field", price: { value: 9.99 } });
+    expect(p!.url).toBe("https://www.amazon.com/dp/B0NOURL");
   });
 
   test("listPrice not greater than price → no old_price", () => {
@@ -126,6 +132,7 @@ describe("amazon.mapItem", () => {
     ]);
     expect(input.maxItemsPerStartUrl).toBe(5);
     expect(input.proxyCountry).toBe("US");
+    expect(input.cacheTtlHours).toBe(0); // forceFresh — sin precios cacheados
   });
 });
 
@@ -152,6 +159,7 @@ describe("aliexpress.mapItem", () => {
     expect(p.image_url).toBe(aliexpressFx[0].imageUrl);
     // categoryName ausente en el output real; cae a searchQuery.
     expect(p.raw_category).toBe("audifonos bluetooth");
+    expect(p.url).toBe(aliexpressFx[0].productUrl);
   });
 
   test("minimal item via alias legacy: productId + salePrice", () => {
@@ -160,6 +168,7 @@ describe("aliexpress.mapItem", () => {
     expect(p!.source_product_id).toBe("9999");
     expect(p!.price_cents).toBe(300);
     expect(p!.attributes.old_price_cents).toBeUndefined();
+    expect(p!.url).toBeNull();
   });
 
   test("garbage (no id, no price) → null", () => {
@@ -199,6 +208,7 @@ describe("shein.mapItem", () => {
       "https://img.example/sh1.jpg",
       "https://img.example/sh2.jpg",
     ]);
+    expect(p!.url).toBeNull(); // rich no trae goods_url_name
   });
 
   test("minimal item: usdAmount only, no old_price, no images", () => {
@@ -211,6 +221,16 @@ describe("shein.mapItem", () => {
     expect(p!.price_cents).toBe(250);
     expect(p!.attributes.old_price_cents).toBeUndefined();
     expect(p!.attributes.images).toBeUndefined();
+  });
+
+  test("goods_url_name presente → arma URL real de SHEIN", () => {
+    const p = shein.mapItem({
+      goods_id: "sg777",
+      goods_name: "Hoodie",
+      salePrice: { amount: "9.00" },
+      goods_url_name: "Cozy-Hoodie",
+    });
+    expect(p!.url).toBe("https://us.shein.com/Cozy-Hoodie-p-sg777.html");
   });
 
   test("falls back to salePrice.amount when usdAmount missing", () => {
@@ -258,6 +278,7 @@ describe("real fixtures — batch mapping (capturado en vivo T3)", () => {
     expect(p.attributes.rating).toBe(4.4); // stars
     expect((p.attributes.images as string[]).length).toBe(8); // highResolutionImages
     expect(p.attributes.colors).toEqual(["Green"]); // variantAttributes Color
+    expect(p.url).toBe("https://www.amazon.com/dp/B0CRTR3PMF"); // url real del fixture
   });
 
   test("shein: mapea todo; precio usdAmount, galería detail_image, categoría cate_name", () => {
@@ -268,5 +289,6 @@ describe("real fixtures — batch mapping (capturado en vivo T3)", () => {
     expect(p0.attributes.old_price_cents).toBe(2228); // retailPrice.usdAmount 22.28
     expect(p0.raw_category).toBe("Wireless Earbuds");
     expect((p0.attributes.images as string[]).length).toBe(10);
+    expect(p0.url).toBe("https://us.shein.com/Lenovo-LP75-Bluetooth-Earphones-Hanging-Ear-Style-With-Digital-Display-Ultra-Long-Battery-Life-5-3H-HIFI-Sound-Low-Latency-Music-Gaming-Running-Waterproof-Microphone-Wireless-Headphones-p-207687426.html");
   });
 });
