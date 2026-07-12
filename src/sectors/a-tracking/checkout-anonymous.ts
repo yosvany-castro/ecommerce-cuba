@@ -2,11 +2,15 @@ import type { Client } from "pg";
 import { getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { insertEvent } from "./events/insert";
 import { attributePurchaseAndExclude } from "./attribution";
+import { findVariantPriceCents, type CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
 
 export interface AnonymousOrderInput {
   anonymous_id: string;
   session_id: string;
-  items: { product_id: string; quantity: number }[];
+  // color/size: selección del comprador, opcional (products sin variantes o
+  // combos sin variant matching no las traen). El precio NUNCA sale de acá —
+  // se valida contra products.metadata.attrs.variants abajo.
+  items: { product_id: string; quantity: number; color?: string | null; size?: string | null }[];
   // Datos de envío ya validados en la ruta (zod strict) — se guardan tal cual en orders.shipping.
   shipping: Record<string, unknown> & { nombre?: string; metodo?: "rapido" | "estandar" | "lento" };
 }
@@ -67,15 +71,20 @@ export async function createAnonymousOrder(
     const byId = new Map(prodRows.rows.map((r) => [r.product_id, r]));
 
     // Empareja cada item del body con su producto real; descarta ids inexistentes
-    // (precio siempre del catálogo, jamás del cliente).
-    const lineItems: { item: { product_id: string; quantity: number }; prod: ProdRow }[] = [];
+    // (precio siempre del catálogo, jamás del cliente). Si el item trae
+    // color/size, se valida contra products.metadata.attrs.variants — el
+    // precio del cliente JAMÁS se usa, solo la combinación elegida.
+    const lineItems: { item: AnonymousOrderInput["items"][number]; prod: ProdRow; unitPriceCents: number }[] = [];
     for (const item of input.items) {
       const prod = byId.get(item.product_id);
-      if (prod) lineItems.push({ item, prod });
+      if (!prod) continue;
+      const meta = prod.metadata as { attrs?: CuratedAttrs } | null;
+      const variantPrice = findVariantPriceCents(meta?.attrs?.variants, item.color ?? null, item.size ?? null);
+      lineItems.push({ item, prod, unitPriceCents: variantPrice ?? prod.price_cents });
     }
     if (lineItems.length === 0) throw new Error("empty_cart");
 
-    const totalCharged = lineItems.reduce((s, { item, prod }) => s + prod.price_cents * item.quantity, 0);
+    const totalCharged = lineItems.reduce((s, { item, unitPriceCents }) => s + unitPriceCents * item.quantity, 0);
     const totalCost = Math.round(totalCharged * 0.6);
     // total_charged_cents es solo-productos (igual que createCheckoutOrder); el
     // envío no se suma al cobro confirmado, se guarda aparte abajo.
@@ -92,20 +101,22 @@ export async function createAnonymousOrder(
     );
     const orderId: string = order.rows[0].id;
 
-    for (const { item, prod } of lineItems) {
+    for (const { item, prod, unitPriceCents } of lineItems) {
       const snapshot = {
         title: prod.title,
         description: prod.description,
         currency: prod.currency,
         image_url: prod.image_url,
         metadata: prod.metadata,
+        color: item.color ?? null,
+        size: item.size ?? null,
       };
-      const unitCost = Math.round(prod.price_cents * 0.6);
+      const unitCost = Math.round(unitPriceCents * 0.6);
       await pg.query(
         `INSERT INTO order_items
           (order_id, product_id, product_snapshot, quantity, unit_price_cents, unit_cost_cents)
          VALUES ($1, $2, $3::jsonb, $4, $5, $6)`,
-        [orderId, item.product_id, JSON.stringify(snapshot), item.quantity, prod.price_cents, unitCost],
+        [orderId, item.product_id, JSON.stringify(snapshot), item.quantity, unitPriceCents, unitCost],
       );
     }
 
@@ -131,9 +142,9 @@ export async function createAnonymousOrder(
         user_id: userId,
         anonymous_id: input.anonymous_id,
         session_id: input.session_id,
-        items: lineItems.map(({ item, prod }) => ({
+        items: lineItems.map(({ item, unitPriceCents }) => ({
           product_id: item.product_id,
-          unit_price_cents: prod.price_cents,
+          unit_price_cents: unitPriceCents,
           quantity: item.quantity,
         })),
       });

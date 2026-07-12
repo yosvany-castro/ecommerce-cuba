@@ -6,9 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard } from "@/storefront/contract";
-import { attrsOf, catOf, fmt, ratingLine, stripe } from "./lib";
+import { attrsOf, catOf, fmt, matchVariant, ratingLine, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
+
+type CardAttrs = NonNullable<StorefrontCard["attrs"]>;
 
 // Sin reseñas reales en el catálogo aún — antes había 2 testimonios fijos falsos
 // (dc.html 1289) puestos en TODOS los productos; se quitaron por deshonestos.
@@ -27,9 +29,22 @@ export function ProductView({
 }) {
   const router = useRouter();
   const { add } = useTukiCart();
-  const da = attrsOf(card);
+
+  // Attrs "vivos": arrancan con lo que trajo el server (card.attrs) y se
+  // repintan si la hidratación bajo demanda (efecto de abajo) trae
+  // colores/tallas/variantes frescos (primera visita, T-attrs). Reset SOLO al
+  // navegar a otro producto (patrón React: ajustar estado durante el render
+  // en vez de un useEffect que dispara setState — evita el render extra).
+  const [liveAttrs, setLiveAttrs] = useState(card.attrs);
+  const [liveAttrsId, setLiveAttrsId] = useState(card.id);
+  if (card.id !== liveAttrsId) {
+    setLiveAttrsId(card.id);
+    setLiveAttrs(card.attrs);
+  }
+
+  const da = attrsOf({ ...card, attrs: liveAttrs });
   const cat = catOf(card.category);
-  const thumbs = card.attrs?.images && card.attrs.images.length > 1 ? card.attrs.images.slice(0, 4) : null;
+  const thumbs = liveAttrs?.images && liveAttrs.images.length > 1 ? liveAttrs.images.slice(0, 4) : null;
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
   const rl = ratingLine(da.rating, da.sold);
@@ -38,6 +53,29 @@ export function ProductView({
   const [selSize, setSelSize] = useState<string | null>(da.sizes[0] ?? null);
   const [qty, setQty] = useState(1);
   const [acc, setAcc] = useState<string>("desc");
+
+  const variants = liveAttrs?.variants;
+  // Variante que matchea color+talla elegidos: precio/foto/disponibilidad de
+  // ESA combinación exacta si el proveedor la trajo; sin match -> base de arriba.
+  const variant = matchVariant(variants, selColor, selSize);
+  const effectivePriceCents = variant?.price_cents ?? card.price_cents;
+  const mainImage = variant?.image ?? card.image_url;
+  const isSoldOut = variant?.available === false;
+
+  // Tallas imposibles para el color elegido (p.ej. "M" no existe en "Rojo"):
+  // solo se calcula cuando TODAS las variantes traen color+talla juntas (ya
+  // está todo en memoria, barato) — si el catálogo mezcla variantes
+  // parciales (algunas sin color, otras sin talla) no se puede inferir con
+  // certeza qué combo falta, así que no se restringe nada (ponytail: caso
+  // raro con datos incompletos del proveedor, sin reportar).
+  const sizesLockedToColor =
+    !!selColor && !!variants?.length && variants.every((v) => v.color !== undefined && v.size !== undefined);
+  const possibleSizesRaw = sizesLockedToColor
+    ? new Set(variants!.filter((v) => v.color === selColor).map((v) => v.size).filter((s): s is string => !!s))
+    : null;
+  // set vacío = datos incompletos para ese color -> no restringir (evita
+  // bloquear TODAS las tallas por un hueco en la data del proveedor).
+  const possibleSizes = possibleSizesRaw && possibleSizesRaw.size > 0 ? possibleSizesRaw : null;
 
   // product_view UNA vez por producto: ref por id dedupe el doble-mount de
   // StrictMode (mismo id → skip) y re-dispara al navegar a otra PDP (id cambia).
@@ -57,17 +95,37 @@ export function ProductView({
     if (card.attrs?.hydrated_at || hydratedFor.current === card.id) return;
     hydratedFor.current = card.id;
     const ctrl = new AbortController();
-    fetch(`/api/products/${card.id}/hydrate`, { method: "POST", signal: ctrl.signal }).catch(() => {});
+    fetch(`/api/products/${card.id}/hydrate`, { method: "POST", signal: ctrl.signal })
+      .then((res) => (res.ok ? (res.json() as Promise<{ attrs?: Partial<CardAttrs> }>) : null))
+      .then((body) => {
+        if (!body?.attrs) return; // sin variantes nuevas / hidratación skip: fail-open silencioso
+        const fresh = body.attrs;
+        setLiveAttrs((prev) => ({
+          ...prev,
+          ...(fresh.colors && { colors: fresh.colors }),
+          ...(fresh.sizes && { sizes: fresh.sizes }),
+          ...(fresh.images && { images: fresh.images }),
+          ...(fresh.variants && { variants: fresh.variants }),
+          ...(fresh.hydrated_at && { hydrated_at: fresh.hydrated_at }),
+        }));
+        // Primera visita: colores/tallas llegaron vacíos y selColor/selSize
+        // arrancaron en null — con datos frescos, arrancar el selector.
+        setSelColor((c) => c ?? fresh.colors?.[0]?.name ?? null);
+        setSelSize((s) => s ?? fresh.sizes?.[0] ?? null);
+      })
+      .catch(() => {});
     return () => ctrl.abort();
   }, [card.id, card.attrs?.hydrated_at]);
 
-  const onAdd = () =>
+  const onAdd = () => {
+    if (isSoldOut) return;
     add(
-      { id: card.id, title: card.title, price_cents: card.price_cents, category: card.category ?? null, image_url: card.image_url, source: card.source },
+      { id: card.id, title: card.title, price_cents: effectivePriceCents, category: card.category ?? null, image_url: card.image_url, source: card.source },
       qty,
       selColor,
       selSize,
     );
+  };
 
   const specs = [
     { k: "Categoría", v: cat.label },
@@ -136,9 +194,9 @@ export function ProductView({
         {/* galería */}
         <div>
           <div style={{ position: "relative", height: 440, borderRadius: 26, background: stripe(cat), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            {card.image_url ? (
+            {mainImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={mainImage} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9a9b98" }}>foto producto grande</span>
             )}
@@ -182,7 +240,7 @@ export function ProductView({
             {card.source && ` · de ${card.source}`}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
-            <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>{fmt(card.price_cents)}</span>
+            <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>{fmt(effectivePriceCents)}</span>
             {oldC != null && (
               <>
                 <span style={{ fontSize: 16, color: "#B0B1AE", textDecoration: "line-through" }}>{fmt(oldC)}</span>
@@ -215,11 +273,12 @@ export function ProductView({
               <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                 {da.sizes.map((sz) => {
                   const on = selSize === sz;
+                  const disabled = possibleSizes ? !possibleSizes.has(sz) : false;
                   return (
                     <div
                       key={sz}
-                      onClick={() => setSelSize(sz)}
-                      style={{ minWidth: 46, height: 42, padding: "0 13px", boxSizing: "border-box", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, cursor: "pointer", background: on ? "#1C1D20" : "#fff", color: on ? "#fff" : "#55565B", border: `1.5px solid ${on ? "#1C1D20" : "#ECECE7"}` }}
+                      onClick={() => { if (!disabled) setSelSize(sz); }}
+                      style={{ minWidth: 46, height: 42, padding: "0 13px", boxSizing: "border-box", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, cursor: disabled ? "default" : "pointer", background: on ? "#1C1D20" : "#fff", color: on ? "#fff" : disabled ? "#C7C8CB" : "#55565B", border: `1.5px solid ${on ? "#1C1D20" : "#ECECE7"}`, opacity: disabled ? 0.55 : 1 }}
                     >
                       {sz}
                     </div>
@@ -242,9 +301,9 @@ export function ProductView({
             <div
               onClick={onAdd}
               className="tk-hov-cta"
-              style={{ flex: 1, maxWidth: 340, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 54, borderRadius: 999, background: "#1C1D20", color: "#fff", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}
+              style={{ flex: 1, maxWidth: 340, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 54, borderRadius: 999, background: isSoldOut ? "#D8D8D3" : "#1C1D20", color: isSoldOut ? "#8E8F94" : "#fff", fontSize: 15.5, fontWeight: 700, cursor: isSoldOut ? "default" : "pointer" }}
             >
-              Agregar · {fmt(card.price_cents * qty)}
+              {isSoldOut ? "agotado en esta combinación" : `Agregar · ${fmt(effectivePriceCents * qty)}`}
             </div>
           </div>
 

@@ -107,6 +107,11 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
+    // attrs frescos (solo si hubo variantes nuevas): la primera visita a la PDP
+    // dispara la hidratación DESPUÉS del primer paint, así que el server-render
+    // inicial nunca las tiene — devolverlas acá deja a ProductView repintar sin
+    // esperar a un segundo request/reload (ver el useEffect de hidratación).
+    let freshAttrs: CuratedAttrs | undefined;
     if (variants?.length) {
       const before = row.attrs_before ?? {};
       const colors = curateColors([
@@ -122,10 +127,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         ...(images && { images }),
         variants,
       };
-      await pg.query(`UPDATE products SET metadata = jsonb_set(metadata, '{attrs}', $1::jsonb, true) WHERE id = $2`, [
-        JSON.stringify(attrs),
-        id,
-      ]);
+      const updated = await pg.query<{ attrs: CuratedAttrs }>(
+        `UPDATE products SET metadata = jsonb_set(metadata, '{attrs}', $1::jsonb, true) WHERE id = $2
+         RETURNING metadata->'attrs' AS attrs`,
+        [JSON.stringify(attrs), id],
+      );
+      freshAttrs = updated.rows[0]?.attrs;
     }
 
     if (row.source !== "aliexpress") {
@@ -134,6 +141,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         [JSON.stringify({ source: `hydrate_${row.source}`, product_id: id }), variants?.length ?? 0, lookupFailed],
       );
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(freshAttrs ? { ok: true, attrs: freshAttrs } : { ok: true });
   });
 }

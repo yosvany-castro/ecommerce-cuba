@@ -69,6 +69,23 @@ export function attrsOf(card: StorefrontCard): ProductAttrs {
   };
 }
 
+export type CardVariant = NonNullable<NonNullable<StorefrontCard["attrs"]>["variants"]>[number];
+
+/** Variante cuyos campos DEFINIDOS coinciden con la selección actual (mismo
+ * criterio que findVariantPriceCents en b-catalog/enrichment/attrs.ts, pero
+ * sin exigir price_cents: acá también interesan foto/disponibilidad). Sin
+ * color ni talla pedidos, o sin variantes -> undefined (precio/foto base). */
+export function matchVariant(
+  variants: CardVariant[] | undefined,
+  color: string | null,
+  size: string | null,
+): CardVariant | undefined {
+  if (!variants || (color === null && size === null)) return undefined;
+  return variants.find(
+    (v) => (v.color === undefined || v.color === color) && (v.size === undefined || v.size === size),
+  );
+}
+
 /** "★ rating · sold vendidos" con lo real que haya; null si no hay nada que mostrar. */
 export function ratingLine(rating?: number, sold?: string): string | null {
   if (rating != null && sold != null) return `★ ${rating} · ${sold} vendidos`;

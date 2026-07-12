@@ -93,6 +93,29 @@ function curateVariant(v: unknown): CuratedVariant | undefined {
   };
 }
 
+/**
+ * Precio de la variante elegida (color/talla) para VALIDAR precio server-side
+ * en el checkout — el cliente nunca decide el precio, solo la combinación.
+ * Matchea la primera variante cuyos campos DEFINIDOS coincidan exactamente
+ * (string===string) con lo pedido y que además traiga price_cents; sin match
+ * o sin price_cents -> undefined (el caller cae al price_cents base de
+ * products, comportamiento actual).
+ */
+export function findVariantPriceCents(
+  variants: CuratedVariant[] | undefined,
+  color: string | null,
+  size: string | null,
+): number | undefined {
+  if (!variants || (color === null && size === null)) return undefined;
+  const hit = variants.find(
+    (v) =>
+      (v.color === undefined || v.color === color) &&
+      (v.size === undefined || v.size === size) &&
+      v.price_cents !== undefined,
+  );
+  return hit?.price_cents;
+}
+
 export function curateVariants(v: unknown): CuratedVariant[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const seen = new Set<string>();

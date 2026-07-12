@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attrsOf, CATS, catOf, fmt, ratingLine, sectionize, stripe, weightLbFor } from "@/components/tuki/lib";
+import { attrsOf, CATS, catOf, fmt, matchVariant, ratingLine, sectionize, stripe, weightLbFor } from "@/components/tuki/lib";
 import type { StorefrontCard } from "@/storefront/contract";
 
 const card = (id: string, category: string, attrs?: StorefrontCard["attrs"]): StorefrontCard => ({
@@ -64,6 +64,18 @@ describe("tuki lib", () => {
     expect(ratingLine(undefined, "1.6k")).toBe("1.6k vendidos");
     expect(ratingLine(undefined, undefined)).toBeNull();
   });
+  it("matchVariant: PDP reacciona a la selección color/talla (precio/foto/stock por combinación)", () => {
+    const variants = [
+      { color: "Rojo", size: "M", price_cents: 1200, image: "/rojo-m.jpg" },
+      { color: "Azul", size: "M", price_cents: 1300, available: false },
+    ];
+    expect(matchVariant(variants, "Rojo", "M")).toEqual(variants[0]);
+    expect(matchVariant(variants, "Azul", "M")?.available).toBe(false);
+    expect(matchVariant(variants, "Verde", "M")).toBeUndefined();
+    expect(matchVariant(variants, null, null)).toBeUndefined();
+    expect(matchVariant(undefined, "Rojo", "M")).toBeUndefined();
+  });
+
   it("sectionize agrupa en [aisle6, focus1, grid4] cíclico sin perder cards", () => {
     const cards = Array.from({ length: 13 }, (_, i) => card(String(i), "hogar"));
     const secs = sectionize(cards);

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { curateAttrs, attrsForStorage, curateVariants } from "@/sectors/b-catalog/enrichment/attrs";
+import { curateAttrs, attrsForStorage, curateVariants, findVariantPriceCents } from "@/sectors/b-catalog/enrichment/attrs";
 
 describe("curateAttrs", () => {
   test("full valid attrs pass through", () => {
@@ -147,5 +147,45 @@ describe("curateVariants", () => {
   test("[] o no-array → undefined", () => {
     expect(curateVariants([])).toBeUndefined();
     expect(curateVariants("x")).toBeUndefined();
+  });
+});
+
+describe("findVariantPriceCents (validación de precio server-side del checkout)", () => {
+  const variants = [
+    { color: "Rojo", size: "M", price_cents: 1200 },
+    { color: "Azul", size: "M", price_cents: 1300 },
+    { color: "Verde", size: "L" }, // sin price_cents
+    { color: "Negro", price_cents: 900 }, // sin dimensión size
+  ];
+
+  test("match exacto color+size con price_cents -> ese precio", () => {
+    expect(findVariantPriceCents(variants, "Rojo", "M")).toBe(1200);
+    expect(findVariantPriceCents(variants, "Azul", "M")).toBe(1300);
+  });
+
+  test("sin match (combinación inexistente) -> undefined", () => {
+    expect(findVariantPriceCents(variants, "Rojo", "L")).toBeUndefined();
+    expect(findVariantPriceCents(variants, "Amarillo", "M")).toBeUndefined();
+  });
+
+  test("variante matchea pero sin price_cents -> undefined (cae a products.price_cents)", () => {
+    expect(findVariantPriceCents(variants, "Verde", "L")).toBeUndefined();
+  });
+
+  test("variante sin dimensión size definida matchea cualquier size pedida", () => {
+    expect(findVariantPriceCents(variants, "Negro", "XL")).toBe(900);
+    expect(findVariantPriceCents(variants, "Negro", null)).toBe(900);
+  });
+
+  test("ni color ni size pedidos -> undefined sin intentar matchear", () => {
+    expect(findVariantPriceCents(variants, null, null)).toBeUndefined();
+  });
+
+  test("sin variantes -> undefined", () => {
+    expect(findVariantPriceCents(undefined, "Rojo", "M")).toBeUndefined();
+  });
+
+  test("size pedida null pero la variante define size -> no matchea", () => {
+    expect(findVariantPriceCents(variants, "Rojo", null)).toBeUndefined();
   });
 });

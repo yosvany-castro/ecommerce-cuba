@@ -167,7 +167,7 @@ export function CheckoutFlow() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({ product_id: i.product_id, quantity: i.qty })),
+          items: items.map((i) => ({ product_id: i.product_id, quantity: i.qty, color: i.color, size: i.size })),
           shipping: {
             nombre: f.nombre,
             ci: f.ci,
@@ -505,12 +505,13 @@ export function CheckoutFlow() {
           <div style={{ fontSize: 15, fontWeight: 700 }}>Tu pedido</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
             {items.map((ri) => {
-              const varLine = [ri.color, ri.size].filter(Boolean).join(" · ");
+              // chico y gris, igual que el drawer (CartDrawer.itemVars): "M · azul · aliexpress"
+              const meta = [ri.color, ri.size, ri.source].filter(Boolean).join(" · ");
               return (
                 <div key={ri.key} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13.5, color: "#55565B" }}>
                   <span style={{ minWidth: 0 }}>
-                    {ri.qty}× {ri.title}{varLine ? ` (${varLine})` : ""}
-                    {ri.source && <span style={{ fontSize: 11, color: "#B0B1AE" }}> · {ri.source}</span>}
+                    <div>{ri.qty}× {ri.title}</div>
+                    {meta && <div style={{ fontSize: 11, color: "#B0B1AE", marginTop: 1 }}>{meta}</div>}
                   </span>
                   <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(priceOf(ri) * ri.qty)}</span>
                 </div>

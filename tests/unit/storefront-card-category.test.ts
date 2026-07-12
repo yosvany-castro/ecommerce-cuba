@@ -79,4 +79,14 @@ describe("toCard", () => {
     } as never);
     expect(c.attrs?.sold).toBe("10,000+");
   });
+
+  it("mapea metadata.attrs.variants tal cual al StorefrontCard (PDP reactiva a color/talla)", () => {
+    const c = toCard({
+      id: "x", title: "t", description: "", price_cents: 100, currency: "USD",
+      image_url: null,
+      metadata: { attrs: { variants: [{ color: "Rojo", size: "M", price_cents: 1200, available: true, image: "/a.jpg" }] } },
+      created_at: "",
+    } as never);
+    expect(c.attrs?.variants).toEqual([{ color: "Rojo", size: "M", price_cents: 1200, available: true, image: "/a.jpg" }]);
+  });
 });

@@ -18,6 +18,9 @@ export interface StorefrontCard {
     rating?: number;
     sold?: string; // ya formateado ("1.2k"), no el `orders` crudo
     hydrated_at?: string; // nuevo — gate cliente
+    // Combinaciones color/talla reales (Apify hydrate) — precio/foto/stock
+    // por combinación exacta. Ver matchVariant en components/tuki/lib.ts.
+    variants?: { color?: string; size?: string; price_cents?: number; available?: boolean; image?: string }[];
   };
 }
 export interface StorefrontSection {
