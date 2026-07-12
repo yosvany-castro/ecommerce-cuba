@@ -17,8 +17,10 @@
 // tarda 60-180s medidos en vivo, no 10-30s. ponytail: poll con setTimeout, no
 // SSE/WebSocket — es un job de fondo único, no un stream de eventos.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { track } from "@/lib/client/track";
+import { parseProductUrl } from "@/lib/client/product-url";
 
 interface ApiRow {
   id: string;
@@ -49,6 +51,7 @@ export interface TukiSearch {
   cards: StorefrontCard[];
   meta: SearchMeta | null;
   polling: boolean; // poll de fondo activo buscando más productos (called_mock)
+  resolvingUrl: boolean; // el texto sometido parseó como URL de producto — leyendo el link, no buscando
   run(q: string): void;
 }
 
@@ -91,11 +94,13 @@ function saveRecent(q: string): void {
 }
 
 export function useTukiSearch(): TukiSearch {
+  const router = useRouter();
   const [phase, setPhase] = useState<TukiSearch["phase"]>("idle");
   const [progress, setProgress] = useState(0);
   const [cards, setCards] = useState<StorefrontCard[]>([]);
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [polling, setPolling] = useState(false);
+  const [resolvingUrl, setResolvingUrl] = useState(false);
   const runId = useRef(0);
   const animTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,6 +132,45 @@ export function useTukiSearch(): TukiSearch {
       clearAnim();
       clearPoll();
       setPolling(false);
+      setResolvingUrl(false);
+
+      // Modelo de reventa: si pegan el link de un producto (amazon/aliexpress/
+      // shein/walmart) en vez de buscar por texto, no hay nada que buscar —
+      // resolvemos directo a la ficha de ESE producto (Tarea 2).
+      const parsedUrl = parseProductUrl(q);
+      if (parsedUrl) {
+        setPhase("loading");
+        setResolvingUrl(true);
+        let p = 0.15;
+        setProgress(p);
+        animTimer.current = setInterval(() => {
+          if (myId !== runId.current) return clearAnim();
+          p = Math.min(0.9, p + 0.08);
+          setProgress(p);
+        }, 200);
+        fetch("/api/products/resolve-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: q }),
+        })
+          .then((r) => (r.ok ? (r.json() as Promise<{ product_id: string }>) : Promise.reject()))
+          .then(({ product_id }) => {
+            if (myId !== runId.current) return;
+            clearAnim();
+            router.push(`/products/${product_id}`);
+          })
+          .catch(() => {
+            if (myId !== runId.current) return;
+            clearAnim();
+            setResolvingUrl(false);
+            setCards([]);
+            setMeta({ hit_cache: false, called_mock: false, method: "url_resolve_failed" });
+            setProgress(1);
+            setPhase("results");
+          });
+        return;
+      }
+
       setPhase("loading");
       setProgress(0);
       saveRecent(q); // guardar al INICIAR la búsqueda
@@ -199,8 +243,8 @@ export function useTukiSearch(): TukiSearch {
         // una búsqueda que no llegó al server no es evento medible: sin track.
         .catch(() => finish([], { hit_cache: false, called_mock: false, method: "error" }, false));
     },
-    [clearAnim, clearPoll],
+    [clearAnim, clearPoll, router],
   );
 
-  return { phase, progress, cards, meta, polling, run };
+  return { phase, progress, cards, meta, polling, resolvingUrl, run };
 }

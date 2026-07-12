@@ -7,8 +7,8 @@ import { normalizeQueryWithLLM } from "./normalizer/normalize";
 import type { NormalizedQuery } from "./normalizer/prompt";
 import { bm25Search, type SearchFilters } from "./retrieve/bm25";
 import { cosineSearch } from "./retrieve/cosine";
-import { RRF_K0, type FusedProduct, type RankedProduct } from "./retrieve/rrf";
-import { fuseWithPriceBoost } from "./retrieve/price-boost";
+import type { FusedProduct, RankedProduct } from "./retrieve/rrf";
+import { fuseRelevant } from "./retrieve/price-boost";
 import {
   shouldCallMock,
   countStrongHits,
@@ -267,9 +267,10 @@ export async function hybridSearch(
   });
   const [bm25, cos] = await Promise.all([bm25P, cosP]);
 
-  // 6. Fuse (T2a: incluye el reorden "barato primero" — ver retrieve/price-boost.ts)
+  // 6. Fuse (T2a: "barato primero" + piso de relevancia sobre lo devuelto —
+  // ver retrieve/price-boost.ts::fuseRelevant)
   tracer.start("rrf");
-  let fused: FusedProduct[] = fuseWithPriceBoost([bm25, cos], RRF_K0);
+  let fused: FusedProduct[] = fuseRelevant(bm25, cos);
   tracer.end("rrf");
 
   // 7. Freshness check (POR QUERY, F4 T4) + mock fallback decision.
@@ -390,7 +391,7 @@ export async function hybridSearch(
           bm25Search(searchTerms, filters, RETRIEVE_K, pg),
           cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg),
         ]);
-        fused = fuseWithPriceBoost([bm25Re, cosRe], RRF_K0);
+        fused = fuseRelevant(bm25Re, cosRe);
       } catch {
         try {
           await pg.query(

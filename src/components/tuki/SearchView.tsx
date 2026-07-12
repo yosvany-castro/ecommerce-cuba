@@ -13,15 +13,19 @@ const SEARCH_TIPS = [
   "casi listo — también comparamos reseñas, no solo precios",
 ];
 
-function Loader({ q, progress }: { q: string; progress: number }) {
+function Loader({ q, progress, resolvingUrl }: { q: string; progress: number; resolvingUrl: boolean }) {
   const spr = progress;
   const stageIdx = spr < 0.3 ? 0 : spr < 0.58 ? 1 : spr < 0.85 ? 2 : 3;
-  const searchPhrases = [
-    `buscando «${q}» por todo internet…`,
-    "leyendo precios y reseñas…",
-    "comparando tienda por tienda…",
-    "ordenando lo mejor para ti…",
-  ];
+  // Pegaron el link de un producto: no se está "buscando", se está leyendo
+  // ese enlace puntual (Tarea 2) — misma cáscara del loader, otra frase.
+  const searchPhrases = resolvingUrl
+    ? ["leyendo el enlace…", "leyendo el enlace…", "leyendo el enlace…", "leyendo el enlace…"]
+    : [
+        `buscando «${q}» por todo internet…`,
+        "leyendo precios y reseñas…",
+        "comparando tienda por tienda…",
+        "ordenando lo mejor para ti…",
+      ];
   const steps = ["rastrear tiendas", "leer precios", "comparar", "ordenar"].map((label, i) => ({
     label,
     mark: i < stageIdx ? "✓" : i === stageIdx ? "✦" : "·",
@@ -87,8 +91,17 @@ const pollingChip = (
   </div>
 );
 
+// Pegaron un link de producto que no pudimos leer (URL inválida para nuestros
+// parsers, fetch falló, cuota agotada, etc.) — mensaje discreto, mismo empty
+// state normal de Listing debajo (Tarea 2).
+const urlFailedNotice = (
+  <div style={{ display: "inline-flex", alignItems: "center", marginBottom: 14, padding: "5px 13px", borderRadius: 999, border: "1px solid #ECECE7", background: "#fff", fontSize: 11.5, color: "#55565B" }}>
+    no pudimos leer ese enlace
+  </div>
+);
+
 export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
-  const { phase, progress, cards, meta, polling } = search;
+  const { phase, progress, cards, meta, polling, resolvingUrl } = search;
 
   if (!q) {
     return (
@@ -102,7 +115,7 @@ export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
   const header = {
     crumb: "Búsqueda",
     title: `«${q}»`,
-    why: loading ? "buscando…" : `${cards.length} resultados ordenados para ti`,
+    why: loading ? (resolvingUrl ? "leyendo el enlace…" : "buscando…") : `${cards.length} resultados ordenados para ti`,
     deep: "#77787D",
     tint: "#F4F4F1",
   };
@@ -113,12 +126,13 @@ export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
       source="search"
       header={header}
       sidebar
-      overlay={loading ? <Loader q={q} progress={progress} /> : undefined}
+      overlay={loading ? <Loader q={q} progress={progress} resolvingUrl={resolvingUrl} /> : undefined}
       notice={
-        !loading && (meta?.hit_cache || polling) ? (
+        !loading && (meta?.hit_cache || polling || meta?.method === "url_resolve_failed") ? (
           <>
             {meta?.hit_cache && cacheBadge}
             {polling && pollingChip}
+            {meta?.method === "url_resolve_failed" && urlFailedNotice}
           </>
         ) : undefined
       }

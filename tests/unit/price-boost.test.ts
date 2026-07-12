@@ -4,6 +4,8 @@ import {
   priceFactorForProduct,
   applyPriceBoost,
   fuseWithPriceBoost,
+  filterByRelevanceFloor,
+  fuseRelevant,
   EXPENSIVE_EXCEPTION_REGEX,
 } from "@/sectors/c-search/retrieve/price-boost";
 import type { FusedProduct, RankedProduct } from "@/sectors/c-search/retrieve/rrf";
@@ -134,5 +136,82 @@ describe("fuseWithPriceBoost — integración fuse + boost", () => {
     const cos: RankedProduct[] = [];
     const out = fuseWithPriceBoost([bm25, cos]);
     expect(out.map((p) => p.id)).toEqual(["barato", "caro"]);
+  });
+});
+
+const rp = (id: string, rank: number, score: number): RankedProduct => ({
+  id,
+  rank,
+  score,
+  price_cents: 1000,
+  title: "x",
+});
+
+describe("filterByRelevanceFloor — piso de relevancia sobre lo DEVUELTO (bug 'fan 20000mah')", () => {
+  test("hit BM25 pasa aunque su coseno sea flojo", () => {
+    const bm25 = [rp("a", 1, 5)];
+    const cos = [rp("a", 1, 0.1)];
+    const fused = fuseWithPriceBoost([bm25, cos]);
+    const out = filterByRelevanceFloor(fused, bm25, cos, 0.55);
+    expect(out.map((f) => f.id)).toEqual(["a"]);
+  });
+
+  test("coseno alto pasa sin estar en BM25", () => {
+    const bm25: RankedProduct[] = [];
+    const cos = [rp("b", 1, 0.9)];
+    const fused = fuseWithPriceBoost([bm25, cos]);
+    const out = filterByRelevanceFloor(fused, bm25, cos, 0.55);
+    expect(out.map((f) => f.id)).toEqual(["b"]);
+  });
+
+  test("ambos bajos (sin match léxico, coseno flojo) → fuera", () => {
+    const bm25: RankedProduct[] = [];
+    const cos = [rp("mochila", 1, 0.3), rp("telescopio", 2, 0.2)];
+    const fused = fuseWithPriceBoost([bm25, cos]);
+    const out = filterByRelevanceFloor(fused, bm25, cos, 0.55);
+    expect(out).toEqual([]);
+  });
+
+  test("query sin nada relevante (bug real 'fan 20000mah') → lista vacía, no relleno", () => {
+    const bm25: RankedProduct[] = [];
+    const cos = [rp("mochila", 1, 0.4), rp("telescopio", 2, 0.35), rp("cargador", 3, 0.3)];
+    const out = fuseRelevant(bm25, cos);
+    expect(out).toEqual([]);
+  });
+
+  test("minScore 0 desactiva el piso (todo lo coseno cuenta, comportamiento viejo)", () => {
+    const bm25: RankedProduct[] = [];
+    const cos = [rp("flojo", 1, 0.1)];
+    const fused = fuseWithPriceBoost([bm25, cos]);
+    const out = filterByRelevanceFloor(fused, bm25, cos, 0);
+    expect(out.map((f) => f.id)).toEqual(["flojo"]);
+  });
+});
+
+describe("fuseRelevant — fuse + boost + piso en un solo paso (los dos sitios de search.ts)", () => {
+  const OLD = { ...process.env };
+  afterEach(() => {
+    process.env = { ...OLD };
+  });
+
+  test("mezcla hits fuertes y débiles: solo los fuertes sobreviven, orden por precio se conserva entre ellos", () => {
+    const bm25 = [rp("lexico", 1, 5)];
+    const cos = [
+      { ...rp("semantico_fuerte", 1, 0.9), price_cents: 200, title: "y" },
+      rp("semantico_flojo", 2, 0.2),
+    ];
+    const out = fuseRelevant(bm25, cos);
+    expect(out.map((f) => f.id).sort()).toEqual(["lexico", "semantico_fuerte"]);
+  });
+
+  test("respeta SEARCH_RESULT_MIN_SCORE por encima del default", () => {
+    process.env.SEARCH_RESULT_MIN_SCORE = "0.95";
+    const bm25: RankedProduct[] = [];
+    const cos = [rp("casi", 1, 0.9)]; // pasaría el default .55 pero no un piso .95
+    expect(fuseRelevant(bm25, cos)).toEqual([]);
+  });
+
+  test("lista vacía de entrada → vacía de salida (sin romper)", () => {
+    expect(fuseRelevant([], [])).toEqual([]);
   });
 });

@@ -3,6 +3,7 @@
 // solo relevancia léxico/semántica) reordenamos por
 // score' = rrf_score × factor(price_cents), un ajuste suave, no un filtro.
 import { rrfFuse, RRF_K0, type FusedProduct, type RankedProduct } from "./rrf";
+import { strongHitIdSet, currentResultMinScore } from "../decide/shouldCallMock";
 
 function envFloat(name: string, def: number): number {
   const v = process.env[name];
@@ -99,4 +100,40 @@ export function applyPriceBoost(
 export function fuseWithPriceBoost(lists: RankedProduct[][], k0: number = RRF_K0): FusedProduct[] {
   const fused = rrfFuse(lists, k0);
   return applyPriceBoost(fused, buildPriceMap(lists));
+}
+
+/** Piso de relevancia sobre lo DEVUELTO (bug real: "fan 20000mah" en catálogo
+ * sin ventiladores devolvía mochilas/telescopios — el fuse entrega los K
+ * vecinos aunque el coseno sea basura). Un producto sobrevive solo si
+ * apareció en BM25 (match léxico) o su score coseno ≥ minScore — misma
+ * definición de "hit fuerte" que decide/shouldCallMock.ts::strongHitIdSet. */
+export function filterByRelevanceFloor(
+  fused: FusedProduct[],
+  bm25: RankedProduct[],
+  cos: RankedProduct[],
+  minScore: number,
+): FusedProduct[] {
+  const allowed = strongHitIdSet(
+    bm25.map((b) => b.id),
+    cos,
+    minScore,
+  );
+  return fused.filter((f) => allowed.has(f.id));
+}
+
+/** fuseWithPriceBoost + piso de relevancia en un solo paso — la forma en que
+ * search.ts debe fusionar bm25/cosine en los DOS sitios (fuse inicial y
+ * re-fuse post-ingesta): un único punto que no duplica ni el fuse ni el
+ * filtro entre ambos call sites. */
+export function fuseRelevant(
+  bm25: RankedProduct[],
+  cos: RankedProduct[],
+  k0: number = RRF_K0,
+): FusedProduct[] {
+  return filterByRelevanceFloor(
+    fuseWithPriceBoost([bm25, cos], k0),
+    bm25,
+    cos,
+    currentResultMinScore(),
+  );
 }

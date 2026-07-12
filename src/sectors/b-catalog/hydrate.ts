@@ -152,9 +152,9 @@ export function parseSheinVariants(json: unknown): unknown[] {
 }
 
 // La hidratación tolera respuestas pesadas (el detalle de Amazon con ~1800
-// variantes tarda >8s en frío — visto en vivo 2026-07-11); no bloquea checkout,
-// así que su timeout es más generoso que el de revalidate.
-const HYDRATE_TIMEOUT_MS = 20_000;
+// variantes tarda >8s en frío y Otapi/Shein supera los 20s en su cola larga —
+// visto en vivo 2026-07-11/12); no bloquea checkout: timeout generoso.
+const HYDRATE_TIMEOUT_MS = 30_000;
 
 export async function liveLookupVariants(p: ProviderRef): Promise<CuratedVariant[] | undefined> {
   const fetched = await fetchDetailJson(p, HYDRATE_TIMEOUT_MS);

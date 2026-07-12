@@ -2,7 +2,9 @@ import { describe, test, expect, vi, afterEach } from "vitest";
 import {
   shouldCallMock,
   countStrongHits,
+  strongHitIdSet,
   currentStrongHitMinScore,
+  currentResultMinScore,
   DEFAULT_STRONG_HIT_MIN_SCORE,
   LOCAL_HITS_THRESHOLD,
   CONFIDENCE_THRESHOLD,
@@ -12,6 +14,7 @@ import {
 afterEach(() => {
   vi.useRealTimers();
   delete process.env.SEARCH_STRONG_HIT_MIN_SCORE;
+  delete process.env.SEARCH_RESULT_MIN_SCORE;
 });
 
 describe("shouldCallMock — base criteria (count + confidence)", () => {
@@ -124,5 +127,52 @@ describe("currentStrongHitMinScore (F4 T7) — env override", () => {
   test("garbage env falls back to default", () => {
     process.env.SEARCH_STRONG_HIT_MIN_SCORE = "not-a-number";
     expect(currentStrongHitMinScore()).toBe(0.55);
+  });
+});
+
+describe("strongHitIdSet — set subyacente de countStrongHits (piso de relevancia devuelto)", () => {
+  test("devuelve el set (no solo el tamaño): ids de bm25 + coseno fuerte", () => {
+    const set = strongHitIdSet(
+      ["a", "b"],
+      [
+        { id: "b", score: 0.9 }, // solapa con bm25
+        { id: "c", score: 0.9 }, // nuevo fuerte por coseno
+        { id: "d", score: 0.1 }, // flojo, fuera
+      ],
+      0.55,
+    );
+    expect([...set].sort()).toEqual(["a", "b", "c"]);
+  });
+
+  test("countStrongHits sigue siendo el tamaño del mismo set", () => {
+    const bm25 = ["a"];
+    const cosine = [{ id: "x", score: 0.9 }];
+    expect(countStrongHits(bm25, cosine, 0.55)).toBe(
+      strongHitIdSet(bm25, cosine, 0.55).size,
+    );
+  });
+});
+
+describe("currentResultMinScore (piso de relevancia devuelto) — env override", () => {
+  test("sin override, es el mismo strong-hit floor (0.55 default)", () => {
+    expect(currentResultMinScore()).toBe(0.55);
+    expect(currentResultMinScore()).toBe(currentStrongHitMinScore());
+  });
+
+  test("SEARCH_STRONG_HIT_MIN_SCORE override se hereda si SEARCH_RESULT_MIN_SCORE no está seteado", () => {
+    process.env.SEARCH_STRONG_HIT_MIN_SCORE = "0.7";
+    expect(currentResultMinScore()).toBe(0.7);
+  });
+
+  test("SEARCH_RESULT_MIN_SCORE propio desacopla del strong-hit floor", () => {
+    process.env.SEARCH_STRONG_HIT_MIN_SCORE = "0.7";
+    process.env.SEARCH_RESULT_MIN_SCORE = "0.3";
+    expect(currentResultMinScore()).toBe(0.3);
+    expect(currentStrongHitMinScore()).toBe(0.7);
+  });
+
+  test("SEARCH_RESULT_MIN_SCORE basura cae al strong-hit floor", () => {
+    process.env.SEARCH_RESULT_MIN_SCORE = "not-a-number";
+    expect(currentResultMinScore()).toBe(0.55);
   });
 });
