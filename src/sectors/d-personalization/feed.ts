@@ -582,7 +582,26 @@ export async function generateFeedInternal(
       )
         .map((x) => x.id)
         .filter((id) => !headSet.has(id));
-      const allCandidates = [...headOrdered, ...popTail];
+      let allCandidates = [...headOrdered, ...popTail];
+      // Top-up de catálogo: con señal de popularidad casi vacía (visto en vivo
+      // 2026-07-12: 1 solo producto en product_popularity_7d → la home servía
+      // 1 ítem), se completa el slate con los productos más nuevos. Es el mismo
+      // criterio honesto del fallback cold-start de arriba, aplicado cuando hay
+      // ALGO de señal pero no alcanza para llenar la vitrina.
+      if (allCandidates.length < SLATE_DEPTH) {
+        const known = new Set(allCandidates);
+        const topUp = await pg.query(
+          `SELECT id::text FROM products
+           WHERE is_active = true AND NOT (id = ANY($1::uuid[]))
+           ORDER BY created_at DESC, id ASC
+           LIMIT $2`,
+          [[...excluded, ...allCandidates], SLATE_DEPTH + SLATE_SPARES - allCandidates.length],
+        );
+        allCandidates = [
+          ...allCandidates,
+          ...(topUp.rows as { id: string }[]).map((r) => r.id).filter((id) => !known.has(id)),
+        ];
+      }
       const base: CachedRerankItem[] = allCandidates
         .slice(0, SLATE_DEPTH)
         .map((id, i) => ({ product_id: id, rank: i + 1, reason: "" }));
