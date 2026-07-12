@@ -27,6 +27,34 @@ const RAIL_SUBTITLES: Record<string, string> = {
   upsell: "misma categoría, un escalón arriba",
 };
 
+/** Rieles de recomendación de la PDP. Componente aparte para que la page los
+ * streamee con <Suspense>: el producto (LCP) pinta YA, los rieles —
+ * compose+resolve de la superficie pdp — llegan en un flush posterior. */
+export function ProductRails({ rails }: { rails: StorefrontSection[] }) {
+  return (
+    <>
+      {rails.map(
+        (rail) =>
+          rail.items.length > 0 && (
+            <div key={rail.placement_id}>
+              <div style={{ fontFamily: "var(--font-brico)", fontSize: 22, fontWeight: 700, margin: "44px 0 4px" }}>{rail.title}</div>
+              {RAIL_SUBTITLES[rail.section_type] && (
+                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14.5, color: "#8E8F94", marginBottom: 16 }}>
+                  {RAIL_SUBTITLES[rail.section_type]}
+                </div>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+                {rail.items.slice(0, 4).map((c) => (
+                  <ProductCard key={c.id} card={c} source="direct" variant="grid" />
+                ))}
+              </div>
+            </div>
+          ),
+      )}
+    </>
+  );
+}
+
 interface WeightInfo {
   grams: number;
   source: "measured" | "provider" | "llm" | "heuristic";
@@ -36,13 +64,14 @@ interface WeightInfo {
 export function ProductView({
   card,
   description,
-  rails,
+  railsSlot,
   source,
   providerShipDays = null,
 }: {
   card: StorefrontCard;
   description: string;
-  rails: StorefrontSection[];
+  /** <Suspense> con los rieles, armado por la page — streamea sin bloquear el producto. */
+  railsSlot?: React.ReactNode;
   source: CardSource;
   providerShipDays?: ProviderShipDays | null;
 }) {
@@ -436,17 +465,17 @@ export function ProductView({
 
           <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
             <div style={{ flex: "none", display: "flex", alignItems: "center", background: "#fff", border: "1px solid #ECECE7", borderRadius: 999 }}>
-              <div onClick={() => setQty((q) => Math.max(1, q - 1))} style={{ width: 44, height: 54, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: "#55565B" }}>
+              <div onClick={() => setQty((q) => Math.max(1, q - 1))} className="tk-hov-dark" style={{ width: 44, height: 54, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: "#55565B" }}>
                 −
               </div>
               <div style={{ width: 24, textAlign: "center", fontSize: 15.5, fontWeight: 700 }}>{qty}</div>
-              <div onClick={() => setQty((q) => q + 1)} style={{ width: 44, height: 54, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: "#55565B" }}>
+              <div onClick={() => setQty((q) => q + 1)} className="tk-hov-dark" style={{ width: 44, height: 54, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: "#55565B" }}>
                 +
               </div>
             </div>
             <div
               onClick={onAdd}
-              className="tk-hov-cta"
+              className={isSoldOut || priceIsGated ? "" : "tk-hov-cta"}
               style={{ flex: 1, maxWidth: 340, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 54, borderRadius: 999, background: isSoldOut || priceIsGated ? "#D8D8D3" : "#1C1D20", color: isSoldOut || priceIsGated ? "#8E8F94" : "#fff", fontSize: 15.5, fontWeight: 700, cursor: isSoldOut || priceIsGated ? "default" : "pointer" }}
             >
               {isSoldOut
@@ -474,24 +503,7 @@ export function ProductView({
         </div>
       </div>
 
-      {rails.map(
-        (rail) =>
-          rail.items.length > 0 && (
-            <div key={rail.placement_id}>
-              <div style={{ fontFamily: "var(--font-brico)", fontSize: 22, fontWeight: 700, margin: "44px 0 4px" }}>{rail.title}</div>
-              {RAIL_SUBTITLES[rail.section_type] && (
-                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14.5, color: "#8E8F94", marginBottom: 16 }}>
-                  {RAIL_SUBTITLES[rail.section_type]}
-                </div>
-              )}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
-                {rail.items.slice(0, 4).map((c) => (
-                  <ProductCard key={c.id} card={c} source="direct" variant="grid" />
-                ))}
-              </div>
-            </div>
-          ),
-      )}
+      {railsSlot}
     </div>
   );
 }

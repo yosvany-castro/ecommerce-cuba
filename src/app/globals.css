@@ -78,12 +78,45 @@ body {
   to { background-position: 28.28px 0; }
 }
 
-.tk-hov-dark:hover { color: #1c1d20 !important; }
-.tk-hov-bd-dark:hover { border-color: #1c1d20 !important; }
-.tk-hov-bg:hover { background: #fafaf8 !important; }
-.tk-hov-white:hover { color: #fff !important; }
-.tk-hov-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(28, 29, 32, 0.09); }
-.tk-hov-chip:hover { border-color: #1c1d20 !important; color: #1c1d20 !important; }
-.tk-hov-underline:hover { text-decoration: underline; }
-.tk-hov-plus:hover { transform: scale(1.12); }
-.tk-hov-cta:hover { transform: scale(1.04); }
+/* Feedback táctil/visual (queja del dueño: "no se sabe cuándo se tocó"):
+   - transición horneada en las clases (antes dependía de transition inline que
+     casi nadie tenía → hover a saltos secos)
+   - :hover SOLO con puntero real (@media hover) — en touch el hover se pega
+   - :active = presión, funciona igual con mouse y con DEDO (móvil no tiene
+     hover, y el preflight de Tailwind suprime el tap-highlight nativo) */
+.tk-hov-dark, .tk-hov-bd-dark, .tk-hov-bg, .tk-hov-white, .tk-hov-lift,
+.tk-hov-chip, .tk-hov-underline, .tk-hov-plus, .tk-hov-cta {
+  transition: transform .18s ease, box-shadow .18s ease, color .18s ease,
+    border-color .18s ease, background-color .18s ease, opacity .18s ease;
+  -webkit-tap-highlight-color: rgba(28, 29, 32, 0.08);
+}
+
+@media (hover: hover) {
+  .tk-hov-dark:hover { color: #1c1d20 !important; }
+  .tk-hov-bd-dark:hover { border-color: #1c1d20 !important; }
+  .tk-hov-bg:hover { background: #fafaf8 !important; }
+  .tk-hov-white:hover { color: #fff !important; }
+  .tk-hov-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(28, 29, 32, 0.09); }
+  .tk-hov-chip:hover { border-color: #1c1d20 !important; color: #1c1d20 !important; }
+  .tk-hov-underline:hover { text-decoration: underline; }
+  .tk-hov-plus:hover { transform: scale(1.12); }
+  .tk-hov-cta:hover { transform: scale(1.04); }
+}
+
+.tk-hov-lift:active { transform: scale(0.98); box-shadow: 0 4px 12px rgba(28, 29, 32, 0.08); transition-duration: .08s; }
+.tk-hov-cta:active { transform: scale(0.96); transition-duration: .08s; }
+.tk-hov-plus:active { transform: scale(0.92); transition-duration: .08s; }
+.tk-hov-dark:active, .tk-hov-white:active, .tk-hov-underline:active { opacity: 0.55; }
+.tk-hov-bd-dark:active, .tk-hov-chip:active { border-color: #1c1d20 !important; background: #f4f4f1 !important; }
+.tk-hov-bg:active { background: #f1f1ec !important; }
+
+/* teclado: foco visible en cualquier control del sitio */
+:focus-visible { outline: 2px solid #1c1d20; outline-offset: 2px; border-radius: 4px; }
+
+/* Barra de progreso de navegación (port de orbfit-suite NavigationProgress):
+   sweep indeterminado 1.5s mientras navega; al llegar se llena y se desvanece. */
+@keyframes progress-indeterminate {
+  0% { width: 0%; left: 0; }
+  50% { width: 70%; left: 15%; }
+  100% { width: 0%; left: 100%; }
+}

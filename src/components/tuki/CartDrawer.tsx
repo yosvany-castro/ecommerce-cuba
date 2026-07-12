@@ -249,11 +249,11 @@ export function CartDrawer() {
                         <div style={{ fontSize: 11.5, color: "#8E8F94", marginTop: 2 }}>{meta}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
                           <div style={{ display: "flex", alignItems: "center", border: "1px solid #ECECE7", borderRadius: 999, overflow: "hidden" }}>
-                            <div onClick={() => dec(item.key)} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: "#55565B" }}>
+                            <div onClick={() => dec(item.key)} className="tk-hov-dark" style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: "#55565B" }}>
                               −
                             </div>
                             <div style={{ width: 24, textAlign: "center", fontSize: 13, fontWeight: 700 }}>{item.qty}</div>
-                            <div onClick={() => inc(item.key)} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: "#55565B" }}>
+                            <div onClick={() => inc(item.key)} className="tk-hov-dark" style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: "#55565B" }}>
                               +
                             </div>
                           </div>

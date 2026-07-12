@@ -55,17 +55,23 @@ async function measure(label: string, url: string) {
   const t0 = Date.now();
   await page.goto(url, { waitUntil: "load", timeout: 300_000 });
   const loadMs = Date.now() - t0;
+  // FCP = cuándo el usuario VE algo (la métrica que debe estar bajo ~5s en 3G;
+  // el load completo a 50KB/s es física, no UX).
+  const fcpMs = await page.evaluate(() => {
+    const e = performance.getEntriesByType("paint").find((p) => p.name === "first-contentful-paint");
+    return e ? Math.round(e.startTime) : null;
+  });
   // deja terminar lo lazy visible del primer viewport
   await page.waitForTimeout(3_000);
   await browser.close();
 
   const total = Object.values(bytes).reduce((a, b) => a + b, 0);
   console.log(
-    `${label.padEnd(10)} load=${(loadMs / 1000).toFixed(1).padStart(5)}s req=${String(requests).padStart(3)}` +
+    `${label.padEnd(10)} FCP=${fcpMs != null ? (fcpMs / 1000).toFixed(1) : "?"}s load=${(loadMs / 1000).toFixed(1).padStart(5)}s req=${String(requests).padStart(3)}` +
       ` | KB total=${kb(total)} img=${kb(bytes.image)} js=${kb(bytes.script)} css=${kb(bytes.stylesheet)}` +
       ` font=${kb(bytes.font)} doc=${kb(bytes.document)} otro=${kb(bytes.other)}`,
   );
-  return { label, loadMs, requests, total, bytes };
+  return { label, loadMs, fcpMs, requests, total, bytes };
 }
 
 async function main() {

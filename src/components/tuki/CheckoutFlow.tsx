@@ -552,7 +552,7 @@ export function CheckoutFlow() {
                 </ReviewCard>
                 <div
                   onClick={ckConfirm}
-                  className="tk-hov-cta"
+                  className={pending ? "" : "tk-hov-cta"}
                   data-testid="tuki-checkout-confirm"
                   style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", height: 56, borderRadius: 999, background: "#1C1D20", color: "#fff", fontSize: 16, fontWeight: 700, cursor: pending ? "default" : "pointer", opacity: pending ? 0.6 : 1 }}
                 >

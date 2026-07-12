@@ -2,13 +2,17 @@
 // src/components/tuki/Shell.tsx — shell compartido del port Tuki (dc.html 33–123):
 // barra de avisos + navbar (buscador, menú perfil, botón carro). Omite el link "móvil ↗".
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import { CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
-import { CartDrawer } from "./CartDrawer";
 import { DEMO_PROFILES, AVATAR_COLORS, profileForAnonId, type DemoProfile } from "./profiles";
+
+// 3G: el drawer solo se ve al abrir el carro — fuera del First Load JS de
+// TODAS las páginas (client-only, cerrado por defecto: sin flash).
+const CartDrawer = dynamic(() => import("./CartDrawer").then((m) => m.CartDrawer), { ssr: false });
 
 // FREE = $50 (dc.html:1174 envioGratisDesde=50; freeS = "$50").
 const AVISO_MSGS = [
@@ -199,6 +203,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <div
               onClick={() => router.push("/")}
+              className="tk-hov-dark"
               style={{ fontFamily: "var(--font-brico)", fontSize: 25, fontWeight: 700, letterSpacing: "-0.6px", cursor: "pointer" }}
             >
               tuki
@@ -237,6 +242,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   borderRadius: 999,
                   background: "#fff",
                   border: `1px solid ${searchFocus ? "#1C1D20" : "#ECECE7"}`,
+                  boxShadow: searchFocus ? "0 0 0 3px rgba(28,29,32,.08)" : "none",
+                  transition: "border-color .18s ease, box-shadow .18s ease",
                   padding: "0 7px 0 16px",
                 }}
               >
