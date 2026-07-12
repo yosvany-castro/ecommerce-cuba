@@ -82,8 +82,16 @@ const cacheBadge = (
   </div>
 );
 
+// Chip discreto para el poll de fondo (item 1.1): visible mientras sigue buscando en
+// más tiendas tras pintar los resultados locales, desaparece solo cuando termina.
+const pollingChip = (
+  <div style={{ display: "inline-flex", alignItems: "center", marginBottom: 14, marginLeft: 8, padding: "5px 13px", borderRadius: 999, border: "1px solid #ECECE7", background: "#fff", fontSize: 11.5, color: "#55565B" }}>
+    ⋯ buscando en más tiendas…
+  </div>
+);
+
 export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
-  const { phase, progress, cards, meta } = search;
+  const { phase, progress, cards, meta, polling } = search;
 
   if (!q) {
     return (
@@ -109,7 +117,14 @@ export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
       header={header}
       sidebar
       overlay={loading ? <Loader q={q} progress={progress} /> : undefined}
-      notice={!loading && meta?.hit_cache ? cacheBadge : undefined}
+      notice={
+        !loading && (meta?.hit_cache || polling) ? (
+          <>
+            {meta?.hit_cache && cacheBadge}
+            {polling && pollingChip}
+          </>
+        ) : undefined
+      }
     />
   );
 }

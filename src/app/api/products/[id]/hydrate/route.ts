@@ -57,9 +57,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       await pg.query("BEGIN");
       try {
         await pg.query(`SELECT pg_advisory_xact_lock(hashtext('hydrate_aliexpress_quota'))`);
+        // 'rapidapi_aliexpress_search' (item 1.4 roadmap): el fallback de búsqueda
+        // aliexpress-datahub.ts audita ahí su propio consumo del mismo pozo de
+        // cuota — este guard también debe verlo, no solo el de hidratación PDP.
         const q = await pg.query(
           `SELECT count(*)::int AS n FROM mock_calls
-           WHERE params->>'source' IN ('hydrate_aliexpress','checkout_revalidate')
+           WHERE params->>'source' IN ('hydrate_aliexpress','checkout_revalidate','rapidapi_aliexpress_search')
              AND called_at >= date_trunc('month', now())`,
         );
         if (q.rows[0].n >= ALIEXPRESS_QUOTA) {

@@ -1,9 +1,12 @@
 "use client";
-// src/components/tuki/useTukiSearch.ts — búsqueda two-phase (el corazón de la conexión búsqueda).
-// r1 → si called_mock hay ingesta externa en vuelo (F4 T3): anima 0→1 en ~4200ms y re-fetch
-// la MISMA q (la caché exacta fue invalidada por la ingesta ⇒ r2 trae local + externo).
-// Si no: resultados ya completos, anima 0→1 en ~800ms con r1.
-// ponytail: 1 re-fetch fijo; si el ingest tarda >4.2s se ve en la PRÓXIMA búsqueda (igual que promete el backend).
+// src/components/tuki/useTukiSearch.ts — búsqueda: r1 pinta de inmediato (item 1.1 roadmap
+// pre-lanzamiento — antes esperaba ~4200/800ms fijos para mostrar datos que ya estaban).
+// Si called_mock (F4 T3, ingesta externa en vuelo) hay un poll de fondo con backoff (~3min
+// de ventana total) que re-llama la MISMA q (su caché exacta fue invalidada por la ingesta)
+// y hace append silencioso si trae más productos — sin reactivar el loader ni re-trackear.
+// La ventana es larga porque la ingesta real (actor Apify + enriquecimiento) tarda 60-180s
+// medidos en vivo, no 10-30s. ponytail: poll con setTimeout, no SSE/WebSocket — es un job
+// de fondo único, no un stream de eventos.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StorefrontCard } from "@/storefront/contract";
 import { track } from "@/lib/client/track";
@@ -35,10 +38,14 @@ export interface TukiSearch {
   progress: number; // 0..1 para la barra/etapas del loader
   cards: StorefrontCard[];
   meta: SearchMeta | null;
+  polling: boolean; // poll de fondo activo buscando más productos (called_mock)
   run(q: string): void;
 }
 
-const STEP_MS = 90;
+// Backoff: denso al inicio (ingestas rápidas) y espaciado después, ~3min en total.
+// Cada poll re-corre la búsqueda en el server (normalize LLM + embedding: fracciones
+// de centavo) — 10 polls acotados es el techo de ese gasto por búsqueda con ingesta.
+const POLL_SCHEDULE_MS = [3_000, 5_000, 10_000, 15_000, 20_000, 30_000, 30_000, 30_000, 30_000, 30_000];
 
 function toCards(rows: ApiRow[]): StorefrontCard[] {
   return rows.map((r) => ({
@@ -69,23 +76,25 @@ export function useTukiSearch(): TukiSearch {
   const [progress, setProgress] = useState(0);
   const [cards, setCards] = useState<StorefrontCard[]>([]);
   const [meta, setMeta] = useState<SearchMeta | null>(null);
+  const [polling, setPolling] = useState(false);
   const runId = useRef(0);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearTimer = useCallback(() => {
-    if (timer.current) {
-      clearInterval(timer.current);
-      timer.current = null;
+  const clearPoll = useCallback(() => {
+    if (pollTimer.current) {
+      clearTimeout(pollTimer.current);
+      pollTimer.current = null;
     }
   }, []);
-  useEffect(() => clearTimer, [clearTimer]); // limpia el interval al desmontar
+  useEffect(() => clearPoll, [clearPoll]); // cancela el poll de fondo al desmontar
 
   const run = useCallback(
     (rawQ: string) => {
       const q = rawQ.trim();
       if (!q) return;
-      const myId = ++runId.current; // invalida cualquier run previo en vuelo
-      clearTimer();
+      const myId = ++runId.current; // invalida cualquier run previo en vuelo (incluye su poll)
+      clearPoll();
+      setPolling(false);
       setPhase("loading");
       setProgress(0);
       saveRecent(q); // guardar al INICIAR la búsqueda
@@ -93,7 +102,6 @@ export function useTukiSearch(): TukiSearch {
       const fetchOnce = (): Promise<ApiResp> => fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => r.json());
       const finish = (finalCards: StorefrontCard[], finalMeta: SearchMeta, trackIt = true) => {
         if (myId !== runId.current) return;
-        clearTimer();
         setCards(finalCards);
         setMeta(finalMeta);
         setProgress(1);
@@ -101,29 +109,46 @@ export function useTukiSearch(): TukiSearch {
         if (trackIt) track("search", { raw_query: q, results_count: finalCards.length, method: finalMeta.method });
       };
 
+      // Poll de fondo: solo cuando called_mock (ingesta externa en vuelo). No
+      // reactiva el loader ni re-trackea, solo hace append si llega más que lo
+      // que ya se ve. Sigue hasta agotar intentos aunque un poll no traiga nada
+      // nuevo (la ingesta puede seguir en curso); se corta al desmontar o al
+      // arrancar un run nuevo (guard runId).
+      const pollForMore = (attempt: number, knownCount: number) => {
+        if (myId !== runId.current || attempt >= POLL_SCHEDULE_MS.length) {
+          if (myId === runId.current) setPolling(false);
+          return;
+        }
+        pollTimer.current = setTimeout(() => {
+          if (myId !== runId.current) return;
+          fetchOnce()
+            .then((rN) => {
+              if (myId !== runId.current) return;
+              if (rN.products.length > knownCount) {
+                setCards(toCards(rN.products));
+                setMeta(metaOf(rN));
+                knownCount = rN.products.length;
+              }
+              pollForMore(attempt + 1, knownCount);
+            })
+            .catch(() => pollForMore(attempt + 1, knownCount));
+        }, POLL_SCHEDULE_MS[attempt]);
+      };
+
       fetchOnce()
         .then((r1) => {
           if (myId !== runId.current) return;
-          const steps = Math.round((r1.called_mock ? 4200 : 800) / STEP_MS);
-          let i = 0;
-          clearTimer();
-          timer.current = setInterval(() => {
-            if (myId !== runId.current) return clearTimer();
-            if (++i < steps) return setProgress(i / steps);
-            clearTimer();
-            if (!r1.called_mock) return finish(toCards(r1.products), metaOf(r1));
-            // ingesta en vuelo: mantener ~0.98 hasta que r2 traiga las cards
-            setProgress(0.98);
-            fetchOnce()
-              .then((r2) => finish(toCards(r2.products), metaOf(r2)))
-              .catch(() => finish(toCards(r1.products), metaOf(r1))); // r2 falla → r1
-          }, STEP_MS);
+          finish(toCards(r1.products), metaOf(r1));
+          if (r1.called_mock) {
+            setPolling(true);
+            pollForMore(0, r1.products.length);
+          }
         })
         // una búsqueda que no llegó al server no es evento medible: sin track.
         .catch(() => finish([], { hit_cache: false, called_mock: false, method: "error" }, false));
     },
-    [clearTimer],
+    [clearPoll],
   );
 
-  return { phase, progress, cards, meta, run };
+  return { phase, progress, cards, meta, polling, run };
 }

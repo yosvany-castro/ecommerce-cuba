@@ -2,11 +2,17 @@ import type { Client } from "pg";
 import { activeProvider } from "@/sectors/b-catalog/provider";
 import type { MockCategory } from "@/sectors/b-catalog/mock/types";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
+import {
+  fetchSpentLast24h,
+  budgetExceeded,
+  AGGREGATOR_DAILY_BUDGET_CENTS,
+} from "@/sectors/c-search/decide/budget";
 
 export interface RunResult {
   totalCalls: number;
   totalProducts: number;
   errors: { context: string; message: string }[];
+  skippedByBudget: boolean;
 }
 
 export interface RunOptions {
@@ -16,6 +22,7 @@ export interface RunOptions {
   pg: Client;
   /** Override number of products per aggregator call. Default: 25. Use 2 in tests to minimize LLM cost. */
   productsPerCallOverride?: number;
+  budgetCents?: number; // override del breaker (default AGGREGATOR_DAILY_BUDGET_CENTS)
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -26,12 +33,24 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 export async function runCatalogFill(opts: RunOptions): Promise<RunResult> {
   const concurrency = opts.concurrency ?? 3;
+  const budget = opts.budgetCents ?? AGGREGATOR_DAILY_BUDGET_CENTS;
   const errors: RunResult["errors"] = [];
   let totalCalls = 0;
   let totalProducts = 0;
+  let skippedByBudget = false;
 
-  for (const category of opts.categories) {
+  outer: for (const category of opts.categories) {
     for (let page = 1; page <= opts.pagesPerCategory; page++) {
+      // Breaker: mismo guard que catalog-refresh.ts (item 1.4b roadmap) —
+      // chequear gasto real ANTES de cada llamada; si excede, corta TODO. Este
+      // cron es legacy y corre a mano (pnpm cron:catalog-fill), sin freno
+      // propio hasta ahora.
+      const spent = await fetchSpentLast24h(opts.pg);
+      if (budgetExceeded(spent, budget)) {
+        skippedByBudget = true;
+        break outer;
+      }
+
       const t0 = Date.now();
       let result;
       try {
@@ -79,5 +98,5 @@ export async function runCatalogFill(opts: RunOptions): Promise<RunResult> {
     }
   }
 
-  return { totalCalls, totalProducts, errors };
+  return { totalCalls, totalProducts, errors, skippedByBudget };
 }

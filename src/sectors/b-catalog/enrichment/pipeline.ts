@@ -1,7 +1,7 @@
 import type { Client } from "pg";
 import type { MockProduct } from "@/sectors/b-catalog/mock/types";
 import { embed } from "@/lib/embeddings/voyage";
-import { normalizeWithLLM, type NormalizedMetadata } from "./normalizer";
+import { normalizeWithLLM, type EnrichmentStatus, type NormalizedMetadata } from "./normalizer";
 import { buildCanonicalText } from "./canonical";
 import { attrsForStorage } from "./attrs";
 
@@ -15,6 +15,35 @@ export async function processProduct(
   raw: MockProduct,
   pg: Client,
 ): Promise<ProcessResult> {
+  // El enriquecimiento (DeepSeek+Voyage) es el único gasto de la tabla de costos
+  // sin techo y sin auditoría (AGGREGATOR_DAILY_BUDGET_CENTS no lo ve): el cron
+  // catalog-refresh trae básicamente las mismas top-queries cada 24h y sin este
+  // chequeo re-normaliza y re-embebe los mismos productos indefinidamente. Si el
+  // producto ya existe y ni title ni image_url cambiaron, saltamos LLM+embedding
+  // por completo y solo refrescamos precio/url/last_refreshed_at — sin tocar metadata.
+  const existing = await pg.query<{
+    id: string;
+    title: string;
+    image_url: string | null;
+    enrichment_status: EnrichmentStatus | null;
+  }>(
+    `SELECT id, title, image_url, metadata->>'enrichment_status' AS enrichment_status
+     FROM products WHERE source = $1 AND source_product_id = $2`,
+    [raw.source, raw.source_product_id],
+  );
+  const prev = existing.rows[0];
+  if (prev && prev.title === raw.title && prev.image_url === raw.image_url) {
+    await pg.query(
+      `UPDATE products SET price_cents = $1, url = COALESCE($2, url), last_refreshed_at = now() WHERE id = $3`,
+      [raw.price_cents, raw.url ?? null, prev.id],
+    );
+    return {
+      productId: prev.id,
+      inserted: false,
+      enrichmentStatus: prev.enrichment_status ?? "ok",
+    };
+  }
+
   const normalized = await normalizeWithLLM(raw);
   const attrs = attrsForStorage(raw.attributes);
   const metadata = { ...normalized, ...(attrs !== undefined ? { attrs } : {}) };

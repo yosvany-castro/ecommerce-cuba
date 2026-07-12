@@ -148,4 +148,29 @@ describe("hybridSearch mock fallback (REAL APIs, capped at 2 products per call)"
       expect(getCallCount() - callsBefore).toBe(0);
     });
   }, 120_000);
+
+  // Item 1.5 roadmap pre-lanzamiento: AGGREGATOR_DAILY_BUDGET_CENTS (400¢/día default)
+  // no tenía cobertura automatizada. El breaker lee el gasto real de mock_calls (budget.ts)
+  // ANTES de pagar; si ya se gastó ≥ el presupuesto en las últimas 24h, corta aunque la
+  // query cumpla todos los demás criterios para disparar ingesta (catálogo vacío,
+  // confianza alta, sin freshness reciente).
+  test("mock_calls con gasto ≥400¢ en 24h → breaker corta ANTES de pagar (daily_budget_exhausted)", async () => {
+    await withTestDb(async (pg) => {
+      await pg.query(`INSERT INTO mock_calls (params, simulated_cost_cents) VALUES ('{}'::jsonb, 400)`);
+
+      const callsBefore = getCallCount();
+      const result = await hybridSearch(
+        "bicicleta de montaña rodado 29",
+        { pg, anonymous_id: randomUUID(), user_id: null },
+        { trace: true },
+      );
+
+      expect(result.trace!.decision.reason).toBe("daily_budget_exhausted");
+      expect(result.calledMock).toBe(false);
+      expect(getCallCount() - callsBefore).toBe(0); // el breaker corta ANTES de invocar al provider
+
+      const mc = await pg.query(`SELECT count(*)::int AS c FROM mock_calls`);
+      expect(mc.rows[0].c).toBe(1); // solo la fila sembrada; el breaker no insertó nada nuevo
+    });
+  }, 120_000);
 });
