@@ -29,7 +29,7 @@ function UpsellMini({ p, onOpen, onAdd, wide }: { p: StorefrontCard; onOpen: () 
       <div style={{ height: wide ? 110 : 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {p.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.image_url} alt={p.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={p.image_url} alt={p.title} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
         )}
@@ -239,7 +239,7 @@ export function CartDrawer() {
                       <div onClick={navToProduct} style={{ flex: "none", width: 60, height: 60, borderRadius: 12, background: stripe(catOf(item.category)), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
                         {item.image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.image_url} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={item.image_url} alt={item.title} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         ) : (
                           <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#9a9b98" }}>foto</span>
                         )}

@@ -4,6 +4,7 @@ import type { ComposedPage } from "@/sectors/f-slate/compose";
 import type { ResolvedSection } from "@/sectors/f-slate/sections/types";
 import type { CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
 import type { StorefrontCard, StorefrontSection, StorefrontPage } from "./contract";
+import { imgSrc } from "@/lib/img";
 
 // orders crudo (string ya-formateado del proveedor, o número) -> `sold` legible.
 function formatSold(orders: string | number | undefined): string | undefined {
@@ -14,17 +15,20 @@ function formatSold(orders: string | number | undefined): string | undefined {
   return orders >= 1000 ? (orders / 1000).toFixed(1) + "k" : String(orders);
 }
 
-function toCardAttrs(attrs: CuratedAttrs | undefined): StorefrontCard["attrs"] {
+function toCardAttrs(attrs: CuratedAttrs | undefined, source: string): StorefrontCard["attrs"] {
   if (!attrs) return undefined;
+  // 3G: imágenes de galería/variantes pueden volverse la foto GRANDE de la PDP
+  // al elegir color → tamaño 640 (no 350). Ver src/lib/img.ts.
+  const img640 = (u: string | undefined) => (u ? (imgSrc(u, source, 640) ?? u) : undefined);
   return {
     ...(attrs.colors ? { colors: attrs.colors } : {}),
     ...(attrs.sizes ? { sizes: attrs.sizes } : {}),
-    ...(attrs.images ? { images: attrs.images } : {}),
+    ...(attrs.images ? { images: attrs.images.map((u) => img640(u)!).filter(Boolean) } : {}),
     ...(attrs.old_price_cents !== undefined ? { old_price_cents: attrs.old_price_cents } : {}),
     ...(attrs.rating !== undefined ? { rating: attrs.rating } : {}),
     ...(attrs.orders !== undefined ? { sold: formatSold(attrs.orders) } : {}),
     ...(attrs.hydrated_at ? { hydrated_at: attrs.hydrated_at } : {}),
-    ...(attrs.variants ? { variants: attrs.variants } : {}),
+    ...(attrs.variants ? { variants: attrs.variants.map((v) => ({ ...v, ...(v.image ? { image: img640(v.image) } : {}) })) } : {}),
   };
 }
 
@@ -49,13 +53,14 @@ export function toCard(
   position?: number,
 ): StorefrontCard {
   const meta = product.metadata as { category?: string; attrs?: CuratedAttrs } | undefined;
-  const attrs = toCardAttrs(meta?.attrs);
+  const attrs = toCardAttrs(meta?.attrs, product.source);
   return {
     id: product.id,
     title: product.title,
     price_cents: product.price_cents,
     currency: product.currency,
-    image_url: product.image_url,
+    // 3G: tamaño de card (350px) — la PDP pide su propia variante 640
+    image_url: imgSrc(product.image_url, product.source, 350),
     category: meta?.category ?? null,
     source: product.source,
     ...(product.weight_grams != null ? { weight_grams: product.weight_grams } : {}),

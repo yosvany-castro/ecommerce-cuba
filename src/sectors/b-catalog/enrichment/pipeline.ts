@@ -5,6 +5,7 @@ import { normalizeWithLLM, type EnrichmentStatus, type NormalizedMetadata } from
 import { buildCanonicalText } from "./canonical";
 import { attrsForStorage } from "./attrs";
 import { packagedGrams } from "@/lib/weight";
+import { normalizeImageUrl } from "@/lib/img";
 
 export interface ProcessResult {
   productId: string;
@@ -13,9 +14,13 @@ export interface ProcessResult {
 }
 
 export async function processProduct(
-  raw: MockProduct,
+  rawInput: MockProduct,
   pg: Client,
 ): Promise<ProcessResult> {
+  // Shein manda URLs protocolo-relativas ("//img.ltwebstatic.com/…"): se
+  // normalizan a https EN LA ENTRADA (punto único de ingesta) — en DB solo
+  // viven URLs absolutas.
+  const raw: MockProduct = { ...rawInput, image_url: normalizeImageUrl(rawInput.image_url) ?? rawInput.image_url };
   // El enriquecimiento (DeepSeek+Voyage) es el único gasto de la tabla de costos
   // sin techo y sin auditoría (AGGREGATOR_DAILY_BUDGET_CENTS no lo ve): el cron
   // catalog-refresh trae básicamente las mismas top-queries cada 24h y sin este

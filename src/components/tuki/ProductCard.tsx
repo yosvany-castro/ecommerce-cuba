@@ -102,8 +102,18 @@ export function ProductCard({
         }}
       >
         {card.image_url ? (
+          // 3G: lazy salvo las primeras posiciones del feed (LCP). Las 20 fotos
+          // de la home ya no compiten con JS/fuentes por el ancho de banda.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+          <img
+            src={card.image_url}
+            alt={card.title}
+            loading={(card.position ?? 99) <= 4 ? "eager" : "lazy"}
+            fetchPriority={(card.position ?? 99) <= 2 ? "high" : undefined}
+            decoding="async"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+          />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9a9b98" }}>foto producto</span>
         )}

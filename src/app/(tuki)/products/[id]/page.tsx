@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getById } from "@/sectors/b-catalog/repository/products";
 import { getProductSections } from "@/storefront/pages/product";
 import { toCard } from "@/storefront/map";
+import { imgSrc } from "@/lib/img";
 import { ProductView } from "@/components/tuki/ProductView";
 import type { CardSource } from "@/components/tuki/ProductCard";
 
@@ -23,7 +24,9 @@ export default async function ProductDetailPage({
   if (!product) return notFound();
 
   const category = (product.metadata as { category?: string } | null)?.category ?? null;
-  const card = toCard(product); // category ← metadata.category (single source)
+  const baseCard = toCard(product); // category ← metadata.category (single source)
+  // La PDP muestra la foto GRANDE: variante 640 del CDN (toCard da la de card, 350)
+  const card = { ...baseCard, image_url: imgSrc(product.image_url, product.source, 640) };
   const sections = await getProductSections(id, category);
   // Rieles de recomendación bajo los detalles, en orden de slot: similar (8),
   // cross_sell (10), upsell (30) — ver 0026/0035. Secciones vacías no llegan.

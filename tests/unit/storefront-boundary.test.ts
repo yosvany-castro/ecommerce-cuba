@@ -16,6 +16,7 @@ const ALLOWED = [
   // PDP/carrito que en el server — cobro = lo mostrado. Sin fetch/pg/sectors.
   /^@\/lib\/weight$/,
   /^@\/lib\/delivery$/,
+  /^@\/lib\/img$/,
   /^\.\.?\//, // relativo, dentro del propio directorio tuki
   /^react$/,
   /^react\//,

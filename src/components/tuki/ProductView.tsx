@@ -282,8 +282,9 @@ export function ProductView({
         <div>
           <div style={{ position: "relative", aspectRatio: "3 / 4", maxHeight: 620, borderRadius: 26, background: stripe(cat), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {mainImage ? (
+              // LCP de la PDP: prioridad alta, nunca lazy
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={mainImage} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+              <img src={mainImage} alt={card.title} fetchPriority="high" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
             ) : (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9a9b98" }}>foto producto grande</span>
             )}
@@ -301,6 +302,8 @@ export function ProductView({
                   key={src}
                   src={src}
                   alt={card.title}
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => { e.currentTarget.style.display = "none"; }}
                   style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", border: i === 0 ? "2px solid #1C1D20" : "2px solid transparent" }}
                 />

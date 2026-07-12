@@ -4,10 +4,13 @@ import { IdentityMergeOnLogin } from "@/components/IdentityMergeOnLogin";
 import { Bricolage_Grotesque, Instrument_Sans, Instrument_Serif, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const brico = Bricolage_Grotesque({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-brico" });
+// 3G: cada peso es un woff2 que compite con fotos y JS. Solo los pesos USADOS
+// (grep fontWeight por familia, 2026-07-12): brico solo 700/800, serif solo
+// itálica, mono solo 400. Si un componente nuevo usa otro peso, añadirlo aquí.
+const brico = Bricolage_Grotesque({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-brico" });
 const sans = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans" });
-const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
+const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["italic"], variable: "--font-serif" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "E-commerce Cuba",

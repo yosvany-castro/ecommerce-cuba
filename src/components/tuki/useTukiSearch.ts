@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { track } from "@/lib/client/track";
 import { parseProductUrl } from "@/lib/client/product-url";
+import { imgSrc } from "@/lib/img";
 
 interface ApiRow {
   id: string;
@@ -74,7 +75,8 @@ function toCards(rows: ApiRow[]): StorefrontCard[] {
     title: r.title,
     price_cents: r.price_cents,
     currency: r.currency,
-    image_url: r.image_url,
+    // los resultados de búsqueda no pasan por toCard del server → mismo resize 3G acá
+    image_url: imgSrc(r.image_url, r.source, 350),
     category: (r.metadata as { category?: string | null } | null)?.category ?? null,
     source: r.source,
   }));

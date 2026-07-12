@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import { isPopularityTableReady } from "@/sectors/d-personalization/popularity/recompute";
+import { imgSrc } from "@/lib/img";
 
 /**
  * Category landing data (D6): DETERMINISTIC, cookie-free, popularity-ordered
@@ -49,5 +50,10 @@ export async function fetchCategoryPage(
         [category, CATEGORY_PAGE_SIZE + 1, offset],
       );
   const rows = r.rows as CategoryPageItem[];
-  return { items: rows.slice(0, CATEGORY_PAGE_SIZE), hasNext: rows.length > CATEGORY_PAGE_SIZE };
+  return {
+    // 3G: la categoría no pasa por toCard (bug visto midiendo: aliexpress/shein
+    // salían a tamaño original acá) — mismo resize de card que el resto.
+    items: rows.slice(0, CATEGORY_PAGE_SIZE).map((it) => ({ ...it, image_url: imgSrc(it.image_url, it.source, 350) })),
+    hasNext: rows.length > CATEGORY_PAGE_SIZE,
+  };
 }
