@@ -6,15 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard } from "@/storefront/contract";
-import { catOf, demoAttrs, fmt, mergeAttrs, stripe } from "./lib";
+import { attrsOf, catOf, fmt, ratingLine, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
 
-// Reviews fijas del diseño (dc.html 1289) — no hay reseñas reales en el catálogo aún.
-const REVIEWS = [
-  { who: "Marta G.", stars: "★★★★★", text: "Llegó al día siguiente y es tal cual las fotos. Cero drama." },
-  { who: "Pablo R.", stars: "★★★★☆", text: "Muy buena relación calidad-precio. Repetiría sin pensarlo." },
-];
+// Sin reseñas reales en el catálogo aún — antes había 2 testimonios fijos falsos
+// (dc.html 1289) puestos en TODOS los productos; se quitaron por deshonestos.
 const DESC_ROWS = ["Devolución gratis hasta 30 días", "Garantía tuki de 12 meses"];
 
 export function ProductView({
@@ -30,11 +27,12 @@ export function ProductView({
 }) {
   const router = useRouter();
   const { add } = useTukiCart();
-  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
+  const da = attrsOf(card);
   const cat = catOf(card.category);
   const thumbs = card.attrs?.images && card.attrs.images.length > 1 ? card.attrs.images.slice(0, 4) : null;
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
+  const rl = ratingLine(da.rating, da.sold);
 
   const [selColor, setSelColor] = useState<string | null>(da.colors[0]?.name ?? null);
   const [selSize, setSelSize] = useState<string | null>(da.sizes[0] ?? null);
@@ -73,7 +71,7 @@ export function ProductView({
 
   const specs = [
     { k: "Categoría", v: cat.label },
-    { k: "Valoración", v: `★ ${da.rating} · ${da.sold} ventas` },
+    ...(rl ? [{ k: "Valoración", v: rl }] : []),
     { k: "Entrega", v: "24–48 h" },
     { k: "SKU", v: "TK-" + card.id.slice(0, 8).toUpperCase() },
   ];
@@ -116,23 +114,6 @@ export function ProductView({
       body: (
         <div style={{ fontSize: 14, color: "#55565B", lineHeight: 1.65, maxWidth: 560 }}>
           Envío estándar en 24–48 h. Gratis desde $50.00. Devolución sin costo dentro de 30 días: la recogemos en tu puerta.
-        </div>
-      ),
-    },
-    {
-      id: "rev",
-      label: "Opiniones",
-      body: (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 560 }}>
-          {REVIEWS.map((rv) => (
-            <div key={rv.who} style={{ background: "#fff", border: "1px solid #EFEFEA", borderRadius: 16, padding: "14px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ fontWeight: 700 }}>{rv.who}</span>
-                <span style={{ color: "#C99B3F", letterSpacing: 1 }}>{rv.stars}</span>
-              </div>
-              <div style={{ fontSize: 13.5, color: "#55565B", marginTop: 6, lineHeight: 1.55 }}>{rv.text}</div>
-            </div>
-          ))}
         </div>
       ),
     },
@@ -197,7 +178,7 @@ export function ProductView({
           <div style={{ display: "inline-block", background: cat.tint, color: cat.deep, borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 700 }}>{cat.label}</div>
           <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px", marginTop: 10, lineHeight: 1.1 }}>{card.title}</div>
           <div style={{ fontSize: 13.5, color: "#8E8F94", marginTop: 8 }}>
-            ★ {da.rating} · {da.sold} vendidos · envío 24–48 h
+            {rl ? `${rl} · envío 24–48 h` : "envío 24–48 h"}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
             <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>{fmt(card.price_cents)}</span>

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { observeSeen } from "@/lib/client/seen-reporter";
 import { track } from "@/lib/client/track";
-import { catOf, demoAttrs, fmt, mergeAttrs, sectionize, stripe, type TukiSection, CATS } from "./lib";
+import { attrsOf, catOf, fmt, ratingLine, sectionize, stripe, type TukiSection, CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { ProductCard } from "./ProductCard";
 
@@ -44,10 +44,11 @@ function FocusCard({
     return observeSeen(el, seenSlate, seenPos);
   }, [seenSlate, seenPos]);
 
-  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
+  const da = attrsOf(card);
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
   const cat = catOf(card.category);
+  const rl = ratingLine(da.rating, da.sold);
 
   return (
     <div
@@ -96,9 +97,7 @@ function FocusCard({
         )}
       </div>
       <div style={{ flex: 1, padding: "34px 38px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div style={{ fontSize: 12.5, color: "#8E8F94" }}>
-          ★ {da.rating} · {da.sold} vendidos
-        </div>
+        {rl && <div style={{ fontSize: 12.5, color: "#8E8F94" }}>{rl}</div>}
         <div style={{ fontFamily: "var(--font-brico)", fontSize: 29, fontWeight: 700, letterSpacing: "-0.5px", marginTop: 8 }}>
           {card.title}
         </div>

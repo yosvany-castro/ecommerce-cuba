@@ -4,8 +4,9 @@
 import { Listing } from "./Listing";
 import type { TukiSearch } from "./useTukiSearch";
 
-// Constantes decorativas del diseño (dc.html 957–958).
-const SCAN_STORES = ["mercado-central.mx", "tecno-outlet.io", "bazar-hogar.com", "depo-deportes.mx", "casa-bonita.co", "la-esquina.shop", "ofertas-reales.lat", "punto-moda.mx"];
+// Las 4 tiendas reales del catálogo (nada inventado — antes había dominios falsos aquí).
+const REAL_STORES = ["amazon", "aliexpress", "shein", "walmart"];
+const SCAN_PHRASES = ["rastreando tiendas…", "leyendo precios…", "comparando…", "verificando stock…"];
 const SEARCH_TIPS = [
   "mientras esperas: todo tiene devolución gratis de 30 días",
   "dato: la IA ordena resultados según lo que has mirado",
@@ -28,8 +29,8 @@ function Loader({ q, progress }: { q: string; progress: number }) {
     bg: i < stageIdx ? "#1C1D20" : "#fff",
     fg: i < stageIdx ? "#fff" : i === stageIdx ? "#1C1D20" : "#B0B1AE",
   }));
-  const searchFound = Math.floor((1 - Math.pow(1 - spr, 2)) * 286);
-  const searchScanLine = `⌕ ${SCAN_STORES[Math.floor(spr * 13) % SCAN_STORES.length]} · ${Math.min(34, Math.ceil(spr * 34))} de 34 tiendas`;
+  // Ticker: rota tienda real + frase de actividad — sin conteos inventados.
+  const searchScanLine = `⌕ ${REAL_STORES[Math.floor(spr * 13) % REAL_STORES.length]} · ${SCAN_PHRASES[Math.floor(spr * 7) % SCAN_PHRASES.length]}`;
   const searchPctW = `${Math.round(spr * 100)}%`;
   const searchTip = SEARCH_TIPS[stageIdx % SEARCH_TIPS.length];
 
@@ -48,10 +49,6 @@ function Loader({ q, progress }: { q: string; progress: number }) {
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#8E8F94", marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {searchScanLine}
             </div>
-          </div>
-          <div style={{ flex: "none", textAlign: "right" }}>
-            <div style={{ fontFamily: "var(--font-brico)", fontSize: 27, fontWeight: 800, letterSpacing: "-0.5px" }}>{searchFound}</div>
-            <div style={{ fontSize: 10.5, color: "#8E8F94", letterSpacing: 0.4 }}>productos revisados</div>
           </div>
         </div>
         <div style={{ height: 8, borderRadius: 999, background: "#F1F1EE", overflow: "hidden", marginTop: 18 }}>

@@ -24,9 +24,11 @@ export function fmt(cents: number): string {
   return "$" + (cents / 100).toFixed(2);
 }
 
-// ponytail: atributos cosméticos (rating/ventas/variantes/peso) derivados del id,
-// no persistidos — cuando exista proveedor real, emitirlos en attributes y
-// persistirlos en products.metadata; este módulo se vuelve un mapeo directo.
+// El catálogo es 100% real (A4/Apify): nada de rating/ventas/precio viejo/colores/
+// tallas inventados. Solo el peso sigue siendo sintético (determinístico por id) —
+// ningún proveedor lo trae y el checkout necesita ALGO para decidir tramos de envío
+// (ver checkout-core.ts); no se muestra como "atributo verificado" del producto, es
+// un insumo interno del cálculo de tarifa.
 function hash(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -39,41 +41,40 @@ const PALETTE = [
 export const FILTER_COLORS = PALETTE;
 const WEIGHT_BASE: Record<string, number> = { ropa: 0.6, electronica: 1.2, hogar: 3.0, juguetes_bebe: 1.0, belleza: 0.4, otros: 1.5 };
 
-export interface DemoAttrs { rating: number; sold: string; oldPriceCents: number | null; colors: { name: string; hex?: string }[]; sizes: string[]; weightLb: number }
-export function demoAttrs(productId: string, category: string | null | undefined, priceCents: number): DemoAttrs {
+export function weightLbFor(productId: string, category: string | null | undefined): number {
   const h = hash(productId);
   const cat = catOf(category).id;
-  const rating = Math.round((4.3 + ((h % 7) / 10)) * 10) / 10; // 4.3..4.9
-  const soldN = 120 + (h % 4200);
-  const sold = soldN >= 1000 ? (soldN / 1000).toFixed(1) + "k" : String(soldN);
-  const oldPriceCents = h % 10 < 3 ? Math.round(priceCents * (1.25 + (h % 4) * 0.1)) : null;
-  const nColors = cat === "ropa" || cat === "hogar" ? 2 + (h % 3) : h % 2 === 0 ? 2 : 0;
-  const colors = Array.from({ length: nColors }, (_, i) => PALETTE[(h + i * 7) % PALETTE.length]);
-  const sizes = cat === "ropa" ? ["S", "M", "L", "XL"] : [];
-  const weightLb = Math.round((WEIGHT_BASE[cat] ?? 1) * (0.5 + (h % 100) / 66) * 10) / 10;
-  return { rating, sold, oldPriceCents, colors, sizes, weightLb };
+  return Math.round((WEIGHT_BASE[cat] ?? 1) * (0.5 + (h % 100) / 66) * 10) / 10;
 }
 
-/**
- * Fusiona demoAttrs con `card.attrs` reales (A4/Apify), precedencia per-field.
- * Si `attrs` es undefined (producto mock/viejo, sin proveedor real) → demo
- * completo, igual que hoy. Si `attrs` está presente (producto real):
- *   - rating/sold: caen a demo si faltan — cosmética inofensiva, el diseño los
- *     necesita para no dejar huecos en la tarjeta.
- *   - oldPriceCents/colors/sizes: NUNCA caen a demo. Inventar un precio viejo o
- *     colores sobre un producto real sería mentira encima de un dato real.
- *   - weightLb: siempre demo, ninguna fuente trae peso.
- */
-export function mergeAttrs(da: DemoAttrs, attrs?: StorefrontCard["attrs"]): DemoAttrs {
-  if (!attrs) return da;
+export interface ProductAttrs {
+  rating?: number;
+  sold?: string;
+  oldPriceCents: number | null;
+  colors: { name: string; hex?: string }[];
+  sizes: string[];
+  weightLb: number;
+}
+/** Atributos de UI de una card: 100% lo que trajo el proveedor real (card.attrs),
+ * sin relleno inventado. Ausente en `attrs` ⇒ ausente en la UI (sin fallback). */
+export function attrsOf(card: StorefrontCard): ProductAttrs {
+  const a = card.attrs;
   return {
-    rating: attrs.rating ?? da.rating,
-    sold: attrs.sold ?? da.sold,
-    oldPriceCents: attrs.old_price_cents ?? null,
-    colors: attrs.colors ?? [],
-    sizes: attrs.sizes ?? [],
-    weightLb: da.weightLb,
+    rating: a?.rating,
+    sold: a?.sold,
+    oldPriceCents: a?.old_price_cents ?? null,
+    colors: a?.colors ?? [],
+    sizes: a?.sizes ?? [],
+    weightLb: weightLbFor(card.id, card.category),
   };
+}
+
+/** "★ rating · sold vendidos" con lo real que haya; null si no hay nada que mostrar. */
+export function ratingLine(rating?: number, sold?: string): string | null {
+  if (rating != null && sold != null) return `★ ${rating} · ${sold} vendidos`;
+  if (rating != null) return `★ ${rating}`;
+  if (sold != null) return `${sold} vendidos`;
+  return null;
 }
 
 const WHYS = ["elegido para ti", "también encaja contigo", "tendencia hoy en tu zona", "muy pedido esta semana"];

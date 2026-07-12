@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { observeSeen } from "@/lib/client/seen-reporter";
-import { catOf, demoAttrs, fmt, mergeAttrs, stripe } from "./lib";
+import { attrsOf, catOf, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 
 export type CardSource = "home" | "category" | "search" | "direct";
@@ -33,7 +33,7 @@ export function ProductCard({
     return observeSeen(el, seenSlate, seenPos);
   }, [seenSlate, seenPos]);
 
-  const da = mergeAttrs(demoAttrs(card.id, card.category, card.price_cents), card.attrs);
+  const da = attrsOf(card);
   const oldC = da.oldPriceCents;
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
   const dots = da.colors.slice(0, 4);

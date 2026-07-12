@@ -6,8 +6,6 @@ import type { CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
 import type { StorefrontCard, StorefrontSection, StorefrontPage } from "./contract";
 
 // orders crudo (string ya-formateado del proveedor, o número) -> `sold` legible.
-// Mismo redondeo que demoAttrs (tuki/lib.ts) pero no se comparte: una fuente
-// (hash cosmético) vs. la otra (dato real de A4); coincidencia de forma, no de origen.
 function formatSold(orders: string | number | undefined): string | undefined {
   if (orders === undefined) return undefined;
   // el UI ya añade su propio "ventas"/"vendidos" — quitar el sufijo "sold" del

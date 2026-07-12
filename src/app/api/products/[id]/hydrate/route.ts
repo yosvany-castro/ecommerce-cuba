@@ -27,8 +27,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   return withPg(async (pg) => {
     // Claim atómico: UNA query hace de lock Y de lectura de source/url/attrs
     // previos. Filtra por source real (amazon/aliexpress/walmart/shein) — un
-    // producto demo/mock nunca entra acá, evita corromper mergeAttrs (tuki/lib.ts)
-    // con un attrs.hydrated_at truthy que no tenía antes. jsonb_set anidado en
+    // producto demo/mock nunca entra acá, evita marcarlo hidratado (ProductView
+    // lee attrs.hydrated_at) sin haberlo estado de verdad. jsonb_set anidado en
     // '{attrs}' con COALESCE garantiza el nivel intermedio (filas legacy sin
     // attrs no quedan en no-op silencioso). 0 filas = ya hidratado / demo /
     // inactivo / inexistente → no-op.

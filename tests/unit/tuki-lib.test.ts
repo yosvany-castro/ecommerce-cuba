@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { CATS, catOf, demoAttrs, fmt, mergeAttrs, sectionize, stripe } from "@/components/tuki/lib";
+import { attrsOf, CATS, catOf, fmt, ratingLine, sectionize, stripe, weightLbFor } from "@/components/tuki/lib";
+import type { StorefrontCard } from "@/storefront/contract";
 
-const card = (id: string, category: string) => ({
+const card = (id: string, category: string, attrs?: StorefrontCard["attrs"]): StorefrontCard => ({
   id, title: "p" + id, price_cents: 1000, currency: "USD", image_url: null,
   category,
-}) as never;
+  ...(attrs !== undefined ? { attrs } : {}),
+});
 
 describe("tuki lib", () => {
   it("fmt convierte centavos", () => {
@@ -17,62 +19,50 @@ describe("tuki lib", () => {
     expect(catOf(null).id).toBe("otros");
     expect(stripe(CATS.hogar)).toContain("repeating-linear-gradient");
   });
-  it("demoAttrs es determinístico y acotado", () => {
-    const a1 = demoAttrs("3f2b8c31-3a71-4b06-91ec-9217efa5e48b", "ropa", 2490);
-    const a2 = demoAttrs("3f2b8c31-3a71-4b06-91ec-9217efa5e48b", "ropa", 2490);
-    expect(a1).toEqual(a2);
-    expect(a1.rating).toBeGreaterThanOrEqual(4.3);
-    expect(a1.rating).toBeLessThanOrEqual(4.9);
-    expect(a1.sizes.length).toBeGreaterThan(0); // ropa lleva tallas
-    if (a1.oldPriceCents !== null) expect(a1.oldPriceCents).toBeGreaterThan(2490);
-    expect(demoAttrs("otro-id", "electronica", 2490).sizes).toEqual([]); // electronica sin tallas
-    expect(a1.weightLb).toBeGreaterThan(0);
+  it("weightLbFor es determinístico y positivo (único dato sintético que queda, uso interno de envío)", () => {
+    const w1 = weightLbFor("3f2b8c31-3a71-4b06-91ec-9217efa5e48b", "ropa");
+    const w2 = weightLbFor("3f2b8c31-3a71-4b06-91ec-9217efa5e48b", "ropa");
+    expect(w1).toBe(w2);
+    expect(w1).toBeGreaterThan(0);
   });
-  it("mergeAttrs: sin attrs (producto mock) devuelve demo intacto", () => {
-    const da = demoAttrs("id-1", "ropa", 2490);
-    expect(mergeAttrs(da, undefined)).toEqual(da);
+  it("attrsOf: sin attrs (producto sin datos curables) -> todo vacío/undefined, nada inventado", () => {
+    const c = card("id-1", "ropa");
+    const da = attrsOf(c);
+    expect(da.rating).toBeUndefined();
+    expect(da.sold).toBeUndefined();
+    expect(da.oldPriceCents).toBeNull();
+    expect(da.colors).toEqual([]);
+    expect(da.sizes).toEqual([]);
+    expect(da.weightLb).toBeGreaterThan(0);
   });
-  it("mergeAttrs: attrs presente con colors reales los usa (no demo)", () => {
-    const da = demoAttrs("id-1", "ropa", 2490);
-    const merged = mergeAttrs(da, { colors: [{ name: "Rojo", hex: "#F00" }] });
-    expect(merged.colors).toEqual([{ name: "Rojo", hex: "#F00" }]);
+  it("attrsOf: attrs={} (real sin datos curables) -> igual de vacío, sin fallback a nada demo", () => {
+    const da = attrsOf(card("id-1", "ropa", {}));
+    expect(da.rating).toBeUndefined();
+    expect(da.sold).toBeUndefined();
+    expect(da.oldPriceCents).toBeNull();
+    expect(da.colors).toEqual([]);
+    expect(da.sizes).toEqual([]);
   });
-  it("mergeAttrs: attrs presente sin old_price_cents -> null, NO fallback a demo (honestidad)", () => {
-    const da = demoAttrs("id-1", "ropa", 2490); // puede o no traer oldPriceCents demo
-    const merged = mergeAttrs(da, { rating: 4.8 });
-    expect(merged.oldPriceCents).toBeNull();
+  it("attrsOf: usa colors/sizes/old_price_cents/rating/sold reales cuando vienen", () => {
+    const da = attrsOf(
+      card("id-1", "ropa", { colors: [{ name: "Rojo", hex: "#F00" }], sizes: ["M"], old_price_cents: 3000, rating: 4.9, sold: "3.4k" }),
+    );
+    expect(da.colors).toEqual([{ name: "Rojo", hex: "#F00" }]);
+    expect(da.sizes).toEqual(["M"]);
+    expect(da.oldPriceCents).toBe(3000);
+    expect(da.rating).toBe(4.9);
+    expect(da.sold).toBe("3.4k");
   });
-  it("mergeAttrs: attrs presente sin colors/sizes -> vacíos, NO fallback a demo", () => {
-    const da = demoAttrs("id-1", "ropa", 2490); // ropa siempre trae sizes demo
-    const merged = mergeAttrs(da, { rating: 4.8 });
-    expect(merged.colors).toEqual([]);
-    expect(merged.sizes).toEqual([]);
+  it("attrsOf: weightLb siempre sintético, no depende de attrs", () => {
+    const a = attrsOf(card("id-1", "ropa"));
+    const b = attrsOf(card("id-1", "ropa", { rating: 4.9 }));
+    expect(a.weightLb).toBe(b.weightLb);
   });
-  it("mergeAttrs: rating/sold caen a demo cuando attrs no los trae (cosmética)", () => {
-    const da = demoAttrs("id-1", "ropa", 2490);
-    const merged = mergeAttrs(da, { colors: [{ name: "Rojo" }] });
-    expect(merged.rating).toBe(da.rating);
-    expect(merged.sold).toBe(da.sold);
-  });
-  it("mergeAttrs: rating/sold reales pisan al demo cuando están", () => {
-    const da = demoAttrs("id-1", "ropa", 2490);
-    const merged = mergeAttrs(da, { rating: 4.9, sold: "3.4k" });
-    expect(merged.rating).toBe(4.9);
-    expect(merged.sold).toBe("3.4k");
-  });
-  it("mergeAttrs: weightLb siempre demo (ninguna fuente trae peso)", () => {
-    const da = demoAttrs("id-1", "ropa", 2490);
-    const merged = mergeAttrs(da, { rating: 4.9 });
-    expect(merged.weightLb).toBe(da.weightLb);
-  });
-  it("mergeAttrs: attrs={} (real sin datos curables) -> old null/colors []/sizes [] pero rating/sold demo (F4 review)", () => {
-    const da = demoAttrs("id-1", "ropa", 2490);
-    const merged = mergeAttrs(da, {});
-    expect(merged.oldPriceCents).toBeNull();
-    expect(merged.colors).toEqual([]);
-    expect(merged.sizes).toEqual([]);
-    expect(merged.rating).toBe(da.rating);
-    expect(merged.sold).toBe(da.sold);
+  it("ratingLine: combina rating+sold reales, cae a lo que haya, null si no hay nada (sin inventar)", () => {
+    expect(ratingLine(4.8, "1.6k")).toBe("★ 4.8 · 1.6k vendidos");
+    expect(ratingLine(4.8, undefined)).toBe("★ 4.8");
+    expect(ratingLine(undefined, "1.6k")).toBe("1.6k vendidos");
+    expect(ratingLine(undefined, undefined)).toBeNull();
   });
   it("sectionize agrupa en [aisle6, focus1, grid4] cíclico sin perder cards", () => {
     const cards = Array.from({ length: 13 }, (_, i) => card(String(i), "hogar"));

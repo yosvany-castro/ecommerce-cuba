@@ -152,9 +152,8 @@ export function curateAttrs(input: Record<string, unknown>): CuratedAttrs | unde
 // Mock viejo (fixture.ts) marca sus productos con `attributes.generated: true`: sin
 // proveedor real detrás, así que sin attrs key (comportamiento actual, ausencia = "no
 // aplica"). Cualquier OTRO producto es real (Apify u origen futuro): persistir attrs
-// SIEMPRE, incluso `{}` si no hubo nada curable — así mergeAttrs (tuki/lib.ts) ve
-// `attrs` presente y no cae al demo completo (old-price/colores/tallas inventados)
-// sobre un producto real. `{}` sigue dando rating/sold demo vía mergeAttrs, honesto.
+// SIEMPRE, incluso `{}` si no hubo nada curable — la UI (tuki/lib.ts attrsOf) es
+// real-o-nada por campo: si un campo no vino de acá, no se muestra, sin inventar nada.
 export function attrsForStorage(rawAttributes: Record<string, unknown>): CuratedAttrs | undefined {
   const curated = curateAttrs(rawAttributes);
   if (rawAttributes.generated === true) return curated;

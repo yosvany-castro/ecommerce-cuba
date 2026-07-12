@@ -1,5 +1,5 @@
 // src/components/tuki/cart-core.ts — lógica pura del carrito Tuki. Sin React, sin browser APIs.
-import { demoAttrs } from "./lib";
+import { weightLbFor } from "./lib";
 
 export interface TukiCartItem {
   key: string;
@@ -65,7 +65,7 @@ export function subtotalCents(items: TukiCartItem[]): number {
 
 export function cartWeightLb(items: TukiCartItem[]): number {
   return items.reduce(
-    (sum, i) => sum + demoAttrs(i.product_id, i.category, i.price_cents).weightLb * i.qty,
+    (sum, i) => sum + weightLbFor(i.product_id, i.category) * i.qty,
     0,
   );
 }

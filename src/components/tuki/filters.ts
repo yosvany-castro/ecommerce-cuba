@@ -1,7 +1,7 @@
 // src/components/tuki/filters.ts — lógica pura de filtros/orden del listado Tuki.
 // Misma semántica que applyAdv del diseño (dc.html 1097–1111), en cents.
 import type { StorefrontCard } from "@/storefront/contract";
-import type { DemoAttrs } from "./lib";
+import type { ProductAttrs } from "./lib";
 
 export interface AdvState {
   sort: "rel" | "asc" | "desc" | "top";
@@ -13,7 +13,7 @@ export interface AdvState {
 }
 export interface FilterableCard {
   card: StorefrontCard;
-  attrs: DemoAttrs;
+  attrs: ProductAttrs;
 }
 
 export const EMPTY_ADV: AdvState = { sort: "rel", price: null, colors: [], oferta: false, envio: false, r4: false };
@@ -49,7 +49,8 @@ export function advCount(a: AdvState): number {
 export function applyFilters(list: FilterableCard[], adv: AdvState): FilterableCard[] {
   let l = list;
   if (adv.oferta) l = l.filter((x) => x.attrs.oldPriceCents != null);
-  if (adv.r4) l = l.filter((x) => x.attrs.rating >= 4.6);
+  // Sin rating real no puede afirmar "4.6+" — se excluye, no se le inventa un 0.
+  if (adv.r4) l = l.filter((x) => x.attrs.rating != null && x.attrs.rating >= 4.6);
   if (adv.envio) l = l.filter((x) => x.card.price_cents >= 2000);
   if (adv.price === "p1") l = l.filter((x) => x.card.price_cents < 1500);
   if (adv.price === "p2") l = l.filter((x) => x.card.price_cents >= 1500 && x.card.price_cents < 3000);
@@ -58,6 +59,6 @@ export function applyFilters(list: FilterableCard[], adv: AdvState): FilterableC
   if (adv.colors.length) l = l.filter((x) => x.attrs.colors.some((c) => colorMatches(c.name, adv.colors)));
   if (adv.sort === "asc") l = l.slice().sort((a, b) => a.card.price_cents - b.card.price_cents);
   if (adv.sort === "desc") l = l.slice().sort((a, b) => b.card.price_cents - a.card.price_cents);
-  if (adv.sort === "top") l = l.slice().sort((a, b) => b.attrs.rating - a.attrs.rating);
+  if (adv.sort === "top") l = l.slice().sort((a, b) => (b.attrs.rating ?? 0) - (a.attrs.rating ?? 0));
   return l;
 }

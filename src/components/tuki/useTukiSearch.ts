@@ -1,12 +1,21 @@
 "use client";
-// src/components/tuki/useTukiSearch.ts — búsqueda: r1 pinta de inmediato (item 1.1 roadmap
-// pre-lanzamiento — antes esperaba ~4200/800ms fijos para mostrar datos que ya estaban).
-// Si called_mock (F4 T3, ingesta externa en vuelo) hay un poll de fondo con backoff (~3min
-// de ventana total) que re-llama la MISMA q (su caché exacta fue invalidada por la ingesta)
-// y hace append silencioso si trae más productos — sin reactivar el loader ni re-trackear.
-// La ventana es larga porque la ingesta real (actor Apify + enriquecimiento) tarda 60-180s
-// medidos en vivo, no 10-30s. ponytail: poll con setTimeout, no SSE/WebSocket — es un job
-// de fondo único, no un stream de eventos.
+// src/components/tuki/useTukiSearch.ts — búsqueda: el loader NO es relleno, es identidad
+// de marca (nunca se quita) y su duración es ADAPTATIVA según qué tan cara fue la
+// búsqueda real. Al llegar r1 se decide animMs:
+//   - r1.hit_cache        → ~1100ms ("ya conocía esta búsqueda", barrido rápido)
+//   - r1.called_mock      → ~4200ms (hay ingesta externa real en curso en background —
+//                           el teatro completo cubre ese trabajo real, no es relleno)
+//   - resto (solo local)  → ~2200ms
+// progress anima 0→1 durante animRestante = max(0, animMs - (tiempo que ya tardó la
+// red)); si la red ya tardó más que animMs, se pintan los resultados de inmediato (la
+// espera real ya cubrió el teatro). Restaurado tras 3e4c34d, que lo había quitado —
+// no se vuelve a quitar.
+// Si called_mock, en paralelo a la animación arranca el poll de fondo (SIN TOCAR) que
+// re-consulta la MISMA q (su caché exacta fue invalidada por la ingesta) y hace append
+// silencioso si trae más productos — sin reactivar el loader ni re-trackear.
+// La ventana del poll es larga porque la ingesta real (actor Apify + enriquecimiento)
+// tarda 60-180s medidos en vivo, no 10-30s. ponytail: poll con setTimeout, no
+// SSE/WebSocket — es un job de fondo único, no un stream de eventos.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StorefrontCard } from "@/storefront/contract";
 import { track } from "@/lib/client/track";
@@ -40,6 +49,14 @@ export interface TukiSearch {
   meta: SearchMeta | null;
   polling: boolean; // poll de fondo activo buscando más productos (called_mock)
   run(q: string): void;
+}
+
+const STEP_MS = 90;
+// Duración mínima total del teatro según qué pasó en r1 (ver cabecera del archivo).
+function animMsFor(r1: Pick<ApiResp, "hit_cache" | "called_mock">): number {
+  if (r1.hit_cache) return 1100;
+  if (r1.called_mock) return 4200;
+  return 2200;
 }
 
 // Backoff: denso al inicio (ingestas rápidas) y espaciado después, ~3min en total.
@@ -78,30 +95,45 @@ export function useTukiSearch(): TukiSearch {
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [polling, setPolling] = useState(false);
   const runId = useRef(0);
+  const animTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearAnim = useCallback(() => {
+    if (animTimer.current) {
+      clearInterval(animTimer.current);
+      animTimer.current = null;
+    }
+  }, []);
   const clearPoll = useCallback(() => {
     if (pollTimer.current) {
       clearTimeout(pollTimer.current);
       pollTimer.current = null;
     }
   }, []);
-  useEffect(() => clearPoll, [clearPoll]); // cancela el poll de fondo al desmontar
+  useEffect(() => {
+    return () => {
+      clearAnim();
+      clearPoll();
+    };
+  }, [clearAnim, clearPoll]); // limpia timers al desmontar
 
   const run = useCallback(
     (rawQ: string) => {
       const q = rawQ.trim();
       if (!q) return;
-      const myId = ++runId.current; // invalida cualquier run previo en vuelo (incluye su poll)
+      const myId = ++runId.current; // invalida cualquier run previo en vuelo (incluye sus timers)
+      clearAnim();
       clearPoll();
       setPolling(false);
       setPhase("loading");
       setProgress(0);
       saveRecent(q); // guardar al INICIAR la búsqueda
+      const t0 = Date.now();
 
       const fetchOnce = (): Promise<ApiResp> => fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => r.json());
       const finish = (finalCards: StorefrontCard[], finalMeta: SearchMeta, trackIt = true) => {
         if (myId !== runId.current) return;
+        clearAnim();
         setCards(finalCards);
         setMeta(finalMeta);
         setProgress(1);
@@ -138,7 +170,25 @@ export function useTukiSearch(): TukiSearch {
       fetchOnce()
         .then((r1) => {
           if (myId !== runId.current) return;
-          finish(toCards(r1.products), metaOf(r1));
+          const finalCards = toCards(r1.products);
+          const finalMeta = metaOf(r1);
+
+          // Duración mínima adaptativa del teatro, descontando lo que la red ya tardó.
+          const animMs = animMsFor(r1);
+          const animRestante = Math.max(0, animMs - (Date.now() - t0));
+          if (animRestante === 0) {
+            finish(finalCards, finalMeta);
+          } else {
+            const steps = Math.max(1, Math.round(animRestante / STEP_MS));
+            let i = 0;
+            clearAnim();
+            animTimer.current = setInterval(() => {
+              if (myId !== runId.current) return clearAnim();
+              if (++i < steps) return setProgress(i / steps);
+              finish(finalCards, finalMeta);
+            }, STEP_MS);
+          }
+
           if (r1.called_mock) {
             setPolling(true);
             pollForMore(0, r1.products.length);
@@ -147,7 +197,7 @@ export function useTukiSearch(): TukiSearch {
         // una búsqueda que no llegó al server no es evento medible: sin track.
         .catch(() => finish([], { hit_cache: false, called_mock: false, method: "error" }, false));
     },
-    [clearPoll],
+    [clearAnim, clearPoll],
   );
 
   return { phase, progress, cards, meta, polling, run };
