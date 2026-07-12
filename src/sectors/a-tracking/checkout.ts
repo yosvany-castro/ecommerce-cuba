@@ -2,6 +2,7 @@ import type { Client } from "pg";
 import { insertEvent } from "./events/insert";
 import { attributePurchaseAndExclude } from "./attribution";
 import { findVariantPriceCents, type CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
+import { findPriceMismatches, PriceChangedError } from "./checkout-schema";
 
 export interface CheckoutInput {
   user_id: string;
@@ -15,8 +16,12 @@ export interface CheckoutInput {
   // carrito local trae 2+ variantes del MISMO product_id, cart_items ya las
   // colapsó en una sola fila al sincronizar — se usa la primera selección
   // encontrada para ese product_id; limitación preexistente del carrito
-  // autenticado, no de este checkout.
-  items?: { product_id: string; color?: string | null; size?: string | null }[];
+  // autenticado, no de este checkout. unit_price_cents opcional: hoy ningún
+  // cliente real lo manda para esta ruta; cuando llegue, se valida contra el
+  // precio server-side igual que en el checkout anónimo (ausente = fail-open,
+  // ya no se puede verificar contra lo que la UI mostró, mismo criterio que
+  // color/size ausentes hoy).
+  items?: { product_id: string; unit_price_cents?: number; color?: string | null; size?: string | null }[];
 }
 
 export interface CheckoutResult {
@@ -40,10 +45,10 @@ export async function createCheckoutOrder(
       throw new Error("empty_cart");
     }
 
-    const variantByProduct = new Map<string, { color: string | null; size: string | null }>();
+    const variantByProduct = new Map<string, { color: string | null; size: string | null; unit_price_cents?: number }>();
     for (const it of input.items ?? []) {
       if (!variantByProduct.has(it.product_id)) {
-        variantByProduct.set(it.product_id, { color: it.color ?? null, size: it.size ?? null });
+        variantByProduct.set(it.product_id, { color: it.color ?? null, size: it.size ?? null, unit_price_cents: it.unit_price_cents });
       }
     }
 
@@ -67,6 +72,19 @@ export async function createCheckoutOrder(
         return { row, sel, unitPriceCents };
       },
     );
+
+    // Mismo chequeo que el checkout anónimo, pero solo sobre las líneas donde
+    // el cliente mandó unit_price_cents (ver nota en CheckoutInput.items).
+    const mismatches = findPriceMismatches(
+      lines.map(({ row, sel, unitPriceCents }) => ({
+        product_id: row.product_id,
+        color: sel?.color ?? null,
+        size: sel?.size ?? null,
+        shown_cents: sel?.unit_price_cents,
+        current_cents: unitPriceCents,
+      })),
+    );
+    if (mismatches.length > 0) throw new PriceChangedError(mismatches);
 
     const totalCharged = lines.reduce((s, { row, unitPriceCents }) => s + unitPriceCents * row.quantity, 0);
     const totalCost = Math.round(totalCharged * 0.6);

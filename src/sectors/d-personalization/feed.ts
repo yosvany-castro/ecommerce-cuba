@@ -26,6 +26,7 @@ import {
   type CachedRerankItem,
 } from "./reranker/cache";
 import {
+  appendToSlate,
   insertSlate,
   loadLiveSlate,
   loadSlateById,
@@ -263,6 +264,53 @@ function slateItemReason(item: SlateItem, pins: readonly string[]): string {
   return "";
 }
 
+/**
+ * T3: slate corto de la era del catálogo chico (materializado con pocos
+ * productos activos — visto en vivo: una sesión vieja sirviendo un ÚNICO
+ * producto) se completa por el FINAL — jamás se reordena lo ya mostrado
+ * (regla de usabilidad del dueño: "la vitrina nunca se reordena delante del
+ * usuario"). Suma pura: agrega productos nuevos después del último
+ * `position` existente, mismo criterio de relleno que el top-up del camino
+ * MISS más abajo (popularidad primero, después más nuevos/baratos). null si
+ * no hay nada nuevo para sumar (catálogo tan chico como el slate: nada que
+ * completar, se sirve tal cual — es la realidad, no una foto vieja).
+ */
+async function topUpShortSlate(
+  slate: SlateRow,
+  excluded: string[],
+  pg: Client,
+): Promise<SlateRow | null> {
+  const known = new Set(slate.items.map((it) => it.product_id));
+  const fillExcluded = [...new Set([...excluded, ...known])];
+  const need = SLATE_DEPTH - slate.items.length;
+  if (need <= 0) return null;
+  const popFill = await fetchPopularGlobal(fillExcluded, need, pg);
+  const filledIds = popFill.map((x) => x.id);
+  const stillNeeded = need - filledIds.length;
+  if (stillNeeded > 0) {
+    // Barato primero (T2b), igual que el top-up de MISS.
+    const topUp = await pg.query(
+      `SELECT id::text FROM products
+       WHERE is_active = true AND NOT (id = ANY($1::uuid[]))
+       ORDER BY price_cents ASC, created_at DESC, id ASC
+       LIMIT $2`,
+      [[...fillExcluded, ...filledIds], stillNeeded],
+    );
+    filledIds.push(...(topUp.rows as { id: string }[]).map((r) => r.id));
+  }
+  if (filledIds.length === 0) return null;
+  let pos = slate.items.reduce((m, it) => Math.max(m, it.position), 0);
+  const appended: SlateItem[] = filledIds.map((id) => ({
+    product_id: id,
+    position: ++pos,
+    source: "exploit",
+    propensity: 1,
+  }));
+  const items = [...slate.items, ...appended];
+  await appendToSlate(slate.slate_id, items, pg);
+  return { ...slate, items };
+}
+
 /** Legacy contract: first page only. Internals (slate/cursor) in generateFeedInternal. */
 export async function generateFeed(opts: GenerateFeedOpts, pg: Client): Promise<FeedItem[]> {
   return (await generateFeedInternal(opts, pg)).items;
@@ -301,22 +349,30 @@ export async function generateFeedInternal(
   if (opts.session_id) {
     const live = await timed("slate_hit", () => loadLiveSlate(opts.session_id!, "home", pg));
     if (live) {
+      // Slate corto de la era del catálogo chico se completa por el final —
+      // jamás se reordena lo ya mostrado (regla de usabilidad del dueño).
+      // Ver topUpShortSlate arriba: suma pura, mismo slate_id, cero reorder.
+      const topped =
+        live.items.length < PAGE_SIZE_FIRST
+          ? await timed("slate_topup", () => topUpShortSlate(live, excluded, pg))
+          : null;
+      const slate = topped ?? live;
       const excludedSet = new Set(excluded);
-      const page = live.items
+      const page = slate.items
         .filter((it) => !excludedSet.has(it.product_id))
         .slice(0, limit);
       if (page.length > 0) {
         await logSlatePageImpressions(
-          live,
+          slate,
           page,
           { user_profile_id: profile_id, page_request_id: randomUUID() },
           pg,
         );
         const items = await resolveWithReasons(
-          page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: slateItemReason(it, live.pins) })),
+          page.map((it) => ({ product_id: it.product_id, rank: it.position, reason: slateItemReason(it, slate.pins) })),
           pg,
         );
-        return { items, slate: live, servedTo: page[page.length - 1].position };
+        return { items, slate, servedTo: page[page.length - 1].position };
       }
     }
   }

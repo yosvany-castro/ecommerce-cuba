@@ -7,13 +7,17 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fmt } from "./lib";
 import { useTukiCart } from "./cart";
+import { cartKey } from "./cart-core";
 import { useToast } from "./Toast";
 import { etaLine, shipOptions, validateBilling, validateShipping } from "./checkout-core";
 
-// Nota de re-validación por product_id (ver POST /api/checkout/revalidate).
-// El precio vivo YA quedó escrito en products al llegar la respuesta — esto
-// es solo para que la UI no muestre un total desactualizado.
-type RevalidateNote = { status: "ok" | "price_changed" | "unavailable" | "unverifiable"; live_price_cents?: number };
+// Aviso de precio por línea (T2): "changed" = el precio real ya no es el del
+// snapshot local — el carrito YA se corrigió (ver updatePrices), esto solo
+// pinta el "de $A a $B" para que el cambio sea VISIBLE, nunca silencioso.
+// Se llena desde dos fuentes: la reconciliación al montar/"Revisar" (contra
+// /api/checkout/revalidate) y el 409 price_changed del POST de confirmación
+// (contra lo que el server recalculó en el momento exacto de cobrar).
+type PriceNote = { status: "changed"; from: number; to: number } | { status: "unavailable" } | { status: "unverifiable" };
 
 const STEP_LABELS = ["Envío", "Entrega", "Pago", "Revisar"];
 const PAY_DEFS = [
@@ -40,14 +44,14 @@ const inputBase: React.CSSProperties = {
 export function CheckoutFlow() {
   const router = useRouter();
   const toast = useToast();
-  const { items, weightLb, clear, hydrated, remove } = useTukiCart();
+  const { items, weightLb, clear, hydrated, remove, updatePrices } = useTukiCart();
 
   const [step, setStep] = useState(1);
   const [ckTried, setCkTried] = useState(false);
   const [pending, setPending] = useState(false);
   const doneRef = useRef(false);
-  const [revalidateMap, setRevalidateMap] = useState<Record<string, RevalidateNote>>({});
-  const revalidatedIdsRef = useRef<string | null>(null);
+  const [priceNotes, setPriceNotes] = useState<Record<string, PriceNote>>({});
+  const revalidatedSigRef = useRef<string | null>(null);
 
   // Carrito vacío en /checkout → volver al feed. Espera a `hydrated` (el primer
   // paint siempre es vacío) y salta si acabamos de confirmar (doneRef): ahí el
@@ -56,40 +60,67 @@ export function CheckoutFlow() {
     if (hydrated && items.length === 0 && !doneRef.current) router.push("/");
   }, [hydrated, items.length, router]);
 
-  // Al ENTRAR al paso 4 (Revisar): re-valida precio/stock del carrito contra el
-  // marketplace origen — el dueño revende, un precio viejo es venderle a
-  // pérdida (ver src/sectors/b-catalog/revalidate.ts). El precio vivo ya queda
-  // escrito en products al responder; acá solo reflejamos el aviso + el total.
-  // sig evita re-disparar para el mismo set de ids (p.ej. un simple re-render).
+  // T2a: al MONTAR el checkout (paso 1, no solo al llegar a "Revisar") — y
+  // cada vez que cambie la composición del carrito — re-valida precio/stock
+  // contra el marketplace origen + la variante color/talla elegida (el dueño
+  // revende, un precio viejo es venderle a pérdida). Si algo cambió, corrige
+  // el snapshot local YA (updatePrices) y deja el aviso visible junto a la
+  // línea — el usuario ve el precio correcto desde el primer paso, nunca uno
+  // que luego "salta" al confirmar. sig = las líneas del carrito (no el
+  // precio: evita que nuestra propia corrección re-dispare el fetch).
   // Fail-open: cualquier error/abort deja el checkout seguir sin aviso.
   useEffect(() => {
-    if (step !== 4 || items.length === 0) return;
-    const ids = Array.from(new Set(items.map((i) => i.product_id)));
-    const sig = ids.join(",");
-    if (revalidatedIdsRef.current === sig) return;
-    revalidatedIdsRef.current = sig;
+    if (!hydrated || items.length === 0) return;
+    const sig = items.map((i) => i.key).join(",");
+    if (revalidatedSigRef.current === sig) return;
+    revalidatedSigRef.current = sig;
     const ctrl = new AbortController();
     (async () => {
       try {
         const res = await fetch("/api/checkout/revalidate", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ product_ids: ids }),
+          body: JSON.stringify({ items: items.map((i) => ({ product_id: i.product_id, color: i.color, size: i.size })) }),
           signal: ctrl.signal,
         });
         if (!res.ok) return;
         const body = (await res.json()) as {
-          items: { product_id: string; status: RevalidateNote["status"]; live_price_cents?: number }[];
+          items: {
+            product_id: string;
+            color: string | null;
+            size: string | null;
+            status: "ok" | "price_changed" | "unavailable" | "unverifiable";
+            stored_price_cents: number;
+            live_price_cents?: number;
+            variant_price_cents?: number;
+          }[];
         };
-        const map: Record<string, RevalidateNote> = {};
-        for (const it of body.items) map[it.product_id] = { status: it.status, live_price_cents: it.live_price_cents };
-        setRevalidateMap(map);
+        const notes: Record<string, PriceNote> = {};
+        const priceUpdates: Record<string, number> = {};
+        for (const it of body.items) {
+          const key = cartKey(it.product_id, it.color, it.size);
+          const cartItem = items.find((ci) => ci.key === key);
+          if (!cartItem) continue;
+          if (it.status === "unavailable") {
+            notes[key] = { status: "unavailable" };
+            continue;
+          }
+          const currentCents = it.variant_price_cents ?? it.live_price_cents ?? it.stored_price_cents;
+          if (currentCents !== cartItem.price_cents) {
+            notes[key] = { status: "changed", from: cartItem.price_cents, to: currentCents };
+            priceUpdates[key] = currentCents;
+          } else if (it.status === "unverifiable") {
+            notes[key] = { status: "unverifiable" };
+          }
+        }
+        if (Object.keys(priceUpdates).length > 0) updatePrices(priceUpdates);
+        setPriceNotes(notes);
       } catch {
         // red caída / abort: sin aviso, el checkout sigue andando (fail-open)
       }
     })();
     return () => ctrl.abort();
-  }, [step, items]);
+  }, [hydrated, items, updatePrices]);
 
   const [f, setF] = useState({
     nombre: "Dani Torres",
@@ -112,12 +143,10 @@ export function CheckoutFlow() {
   const setFbK = (k: keyof typeof fb) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setFb((s) => ({ ...s, [k]: e.target.value }));
 
-  // Precio efectivo: usa el live_price_cents de la re-validación cuando lo hay
-  // (el dato en products ya se actualizó server-side; esto solo refleja el
-  // total en pantalla — ver el useEffect de arriba).
-  const priceOf = (ri: { product_id: string; price_cents: number }) =>
-    revalidateMap[ri.product_id]?.live_price_cents ?? ri.price_cents;
-  const effectiveSubtotal = items.reduce((s, ri) => s + priceOf(ri) * ri.qty, 0);
+  // ri.price_cents YA es el precio reconciliado (el efecto de arriba corrige
+  // el snapshot local en cuanto detecta una diferencia) — el subtotal no
+  // necesita una capa de override aparte, solo sumar lo que hay.
+  const effectiveSubtotal = items.reduce((s, ri) => s + ri.price_cents * ri.qty, 0);
 
   const opts = shipOptions(weightLb, effectiveSubtotal);
   const selBlocked = opts.find((o) => o.id === shipSel)?.blocked ?? false;
@@ -167,7 +196,10 @@ export function CheckoutFlow() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({ product_id: i.product_id, quantity: i.qty, color: i.color, size: i.size })),
+          // unit_price_cents = lo que la UI le está mostrando AHORA MISMO al
+          // usuario (REGLA DE ORO: jamás cobrar un precio que no vio). El
+          // server recalcula el suyo y compara — 409 si no coincide.
+          items: items.map((i) => ({ product_id: i.product_id, quantity: i.qty, color: i.color, size: i.size, unit_price_cents: i.price_cents })),
           shipping: {
             nombre: f.nombre,
             ci: f.ci,
@@ -181,6 +213,28 @@ export function CheckoutFlow() {
           },
         }),
       });
+      // El precio cambió justo al confirmar (carrera con la reconciliación de
+      // arriba, o el marketplace se movió en medio del checkout): 409 sin
+      // orden creada. Se corrige la línea + el total VISIBLEMENTE y se pide
+      // re-confirmar — el botón vuelve a habilitarse solo con el total nuevo.
+      if (res.status === 409) {
+        const body = (await res.json()) as {
+          code: string;
+          items: { product_id: string; color: string | null; size: string | null; shown_cents: number; current_cents: number }[];
+        };
+        const notes: Record<string, PriceNote> = { ...priceNotes };
+        const priceUpdates: Record<string, number> = {};
+        for (const it of body.items) {
+          const key = cartKey(it.product_id, it.color, it.size);
+          notes[key] = { status: "changed", from: it.shown_cents, to: it.current_cents };
+          priceUpdates[key] = it.current_cents;
+        }
+        updatePrices(priceUpdates);
+        setPriceNotes(notes);
+        toast("el precio cambió — revisa y confirma de nuevo");
+        setPending(false);
+        return;
+      }
       if (!res.ok) {
         toast("no pudimos confirmar el pedido — intenta de nuevo");
         setPending(false);
@@ -252,6 +306,37 @@ export function CheckoutFlow() {
           </div>
         ))}
       </div>
+
+      {/* T2: aviso de precio/disponibilidad — visible desde el paso 1, no solo
+          en "Revisar" (el usuario ve el precio correcto desde el arranque). */}
+      {items.some((ri) => priceNotes[ri.key]) && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 14, maxWidth: 560 }}>
+          {items.map((ri) => {
+            const note = priceNotes[ri.key];
+            if (!note) return null;
+            if (note.status === "changed") {
+              return (
+                <div key={ri.key} style={{ fontSize: 12, color: "#B4533F" }}>
+                  el precio de «{ri.title}» cambió: {fmt(note.from)} → {fmt(note.to)}
+                </div>
+              );
+            }
+            if (note.status === "unavailable") {
+              return (
+                <div key={ri.key} style={{ fontSize: 12, color: "#B4533F" }}>
+                  «{ri.title}» ya no está disponible —{" "}
+                  <span onClick={() => remove(ri.key)} style={{ textDecoration: "underline", cursor: "pointer" }}>quítalo</span>
+                </div>
+              );
+            }
+            return (
+              <div key={ri.key} style={{ fontSize: 11.5, color: "#9A9B9F" }}>
+                «{ri.title}»: precio sujeto a confirmación
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 40, marginTop: 26, alignItems: "start" }}>
         <div>
@@ -436,37 +521,8 @@ export function CheckoutFlow() {
             <>
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26, marginBottom: 18 }}>revisa y listo</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11, maxWidth: 520 }}>
-                {items.some((ri) => revalidateMap[ri.product_id]) && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    {items.map((ri) => {
-                      const rv = revalidateMap[ri.product_id];
-                      if (!rv) return null;
-                      if (rv.status === "price_changed" && rv.live_price_cents != null) {
-                        return (
-                          <div key={ri.key} style={{ fontSize: 12, color: "#B4533F" }}>
-                            el precio de «{ri.title}» cambió: {fmt(ri.price_cents)} → {fmt(rv.live_price_cents)}
-                          </div>
-                        );
-                      }
-                      if (rv.status === "unavailable") {
-                        return (
-                          <div key={ri.key} style={{ fontSize: 12, color: "#B4533F" }}>
-                            «{ri.title}» ya no está disponible —{" "}
-                            <span onClick={() => remove(ri.key)} style={{ textDecoration: "underline", cursor: "pointer" }}>quítalo</span>
-                          </div>
-                        );
-                      }
-                      if (rv.status === "unverifiable") {
-                        return (
-                          <div key={ri.key} style={{ fontSize: 11.5, color: "#9A9B9F" }}>
-                            «{ri.title}»: precio sujeto a confirmación
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-                )}
+                {/* aviso de precio/disponibilidad: ver el bloque generalizado
+                    arriba de la barra de progreso (visible desde el paso 1) */}
                 <ReviewCard title="ENVÍO" onEdit={() => setStep(1)}>
                   <div style={{ fontSize: 14.5, marginTop: 6, lineHeight: 1.5 }}>{f.nombre} · {f.dir}, {f.ciudad}</div>
                   <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 2 }}>ID {f.ci} · tel. {f.tel}</div>
@@ -513,7 +569,7 @@ export function CheckoutFlow() {
                     <div>{ri.qty}× {ri.title}</div>
                     {meta && <div style={{ fontSize: 11, color: "#B0B1AE", marginTop: 1 }}>{meta}</div>}
                   </span>
-                  <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(priceOf(ri) * ri.qty)}</span>
+                  <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(ri.price_cents * ri.qty)}</span>
                 </div>
               );
             })}

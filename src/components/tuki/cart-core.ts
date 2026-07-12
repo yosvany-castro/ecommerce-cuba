@@ -64,6 +64,13 @@ export function removeItem(items: TukiCartItem[], key: string): TukiCartItem[] {
   return items.filter((i) => i.key !== key);
 }
 
+/** Reconciliación de precio (T2a/T2b): el checkout detectó que el precio real
+ * de una línea ya no es el que trae el snapshot local -> lo corrige acá,
+ * VISIBLEMENTE (ver el aviso en CheckoutFlow.tsx), nunca en silencio. */
+export function updatePrices(items: TukiCartItem[], byKey: Record<string, number>): TukiCartItem[] {
+  return items.map((i) => (byKey[i.key] != null ? { ...i, price_cents: byKey[i.key] } : i));
+}
+
 export function subtotalCents(items: TukiCartItem[]): number {
   return items.reduce((sum, i) => sum + i.price_cents * i.qty, 0);
 }

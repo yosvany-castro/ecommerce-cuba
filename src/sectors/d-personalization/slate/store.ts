@@ -204,6 +204,26 @@ export async function compactSlateForDismiss(
 }
 
 /**
+ * T3: extend a live slate's item list IN PLACE — same slate_id, EXISTING
+ * positions untouched, new items appended past the current max position.
+ * Used when a slate materialized on a tiny catalog is shorter than
+ * PAGE_SIZE_FIRST and the catalog later grew: the fix is additive-only (the
+ * owner's usability rule — the shelf never reorders what the user already
+ * saw), never a discard-and-rematerialize. No version bump: nothing already
+ * shown moves or changes, so outstanding cursors stay valid as-is.
+ */
+export async function appendToSlate(
+  slate_id: string,
+  items: SlateItem[],
+  pg: Client,
+): Promise<void> {
+  await pg.query(`UPDATE feed_slates SET items = $2::jsonb WHERE slate_id = $1`, [
+    slate_id,
+    JSON.stringify(items),
+  ]);
+}
+
+/**
  * Live invalidation (E1): bump the slate version of the session's live slate.
  * Outstanding cursors carry the OLD version ⇒ their next fetch regenerates
  * transparently (deduped against everything served) — "lo que se muestra

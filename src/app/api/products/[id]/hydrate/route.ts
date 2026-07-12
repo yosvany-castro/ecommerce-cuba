@@ -3,6 +3,7 @@ import { withPg } from "@/lib/db/helpers";
 import { liveLookupVariants } from "@/sectors/b-catalog/hydrate";
 import { curateColors, curateStrings, type CuratedAttrs, type CuratedVariant } from "@/sectors/b-catalog/enrichment/attrs";
 import type { ProviderRef } from "@/sectors/b-catalog/revalidate";
+import { reserveAliexpressQuota } from "@/sectors/b-catalog/aliexpress-quota";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -17,8 +18,7 @@ function hydrateEnabled(): boolean {
 // REGLAS DURAS del negocio solo declaran cuota dura para AliExpress DataHub y
 // Pinto Shein (nunca tocado acá). ponytail: si algún día se confirma que esos
 // hosts también tienen plan free-tier limitado, replicar el mismo patrón de lock+
-// reserva para ese source.
-const ALIEXPRESS_QUOTA = Number(process.env.HYDRATE_QUOTA_ALIEXPRESS) || 40;
+// reserva para ese source (ver aliexpress-quota.ts, ya compartido con resolve-url).
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,42 +48,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     const row = claim.rows[0] as { source: string; source_product_id: string; url: string | null; attrs_before: CuratedAttrs | null } | undefined;
     if (!row) return NextResponse.json({ skipped: true });
 
-    // Guard de cuota AliExpress — lock + reserva del slot ANTES del fetch, en
-    // una transacción corta (no abarca la llamada de red: el lock se libera al
-    // COMMIT, mucho antes de que termine el fetch). Cierra la carrera real:
-    // N productos aliexpress distintos vistos en paralelo ya no pueden leer
-    // todos el mismo count antes de que ninguno reserve.
+    // Guard de cuota AliExpress — lock + reserva del slot ANTES del fetch (ver
+    // aliexpress-quota.ts). hydrated_at ya quedó comiteado por el claim de
+    // arriba (single-statement, autocommit) — si excede cuota, el producto
+    // queda "intentado, sin variantes", honesto, no reintenta en cada visita.
     if (row.source === "aliexpress") {
-      await pg.query("BEGIN");
-      try {
-        await pg.query(`SELECT pg_advisory_xact_lock(hashtext('hydrate_aliexpress_quota'))`);
-        // 'rapidapi_aliexpress_search' (item 1.4 roadmap): el fallback de búsqueda
-        // aliexpress-datahub.ts audita ahí su propio consumo del mismo pozo de
-        // cuota — este guard también debe verlo, no solo el de hidratación PDP.
-        const q = await pg.query(
-          `SELECT count(*)::int AS n FROM mock_calls
-           WHERE params->>'source' IN ('hydrate_aliexpress','checkout_revalidate','rapidapi_aliexpress_search')
-             AND called_at >= date_trunc('month', now())`,
-        );
-        if (q.rows[0].n >= ALIEXPRESS_QUOTA) {
-          await pg.query("ROLLBACK");
-          // hydrated_at ya quedó comiteado por el claim de arriba (single-statement,
-          // autocommit) — el producto queda "intentado, sin variantes", honesto,
-          // no vuelve a reintentar en cada visita.
-          return NextResponse.json({ skipped: true, reason: "quota" });
-        }
-        // Reserva ya cuenta como la auditoría de esta llamada — no se inserta de
-        // nuevo después del fetch para aliexpress (sí para los otros 3 sources).
-        await pg.query(
-          `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, was_error)
-           VALUES ($1::jsonb, 0, 0, false)`,
-          [JSON.stringify({ source: "hydrate_aliexpress", product_id: id })],
-        );
-        await pg.query("COMMIT");
-      } catch (e) {
-        await pg.query("ROLLBACK");
-        throw e;
-      }
+      const reserved = await reserveAliexpressQuota(pg, "hydrate_aliexpress", { product_id: id });
+      if (!reserved) return NextResponse.json({ skipped: true, reason: "quota" });
+      // Reserva ya cuenta como la auditoría de esta llamada — no se inserta de
+      // nuevo después del fetch para aliexpress (sí para los otros 3 sources).
     }
 
     let variants: CuratedVariant[] | undefined;

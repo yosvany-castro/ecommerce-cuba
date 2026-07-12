@@ -51,8 +51,8 @@ describe("POST /api/checkout/anonymous", () => {
 
       const res = await POST(
         makeReq(
-          // precio del cliente ignorado: el body NO tiene campo price; el server re-lee 2500.
-          { items: [{ product_id: product.id, quantity: 2 }], shipping },
+          // unit_price_cents = lo que la UI mostró; coincide con products.price_cents -> ok.
+          { items: [{ product_id: product.id, quantity: 2, unit_price_cents: 2500 }], shipping },
           { anonymous_id: anonId, session_id: sessionId },
         ),
       );
@@ -105,7 +105,7 @@ describe("POST /api/checkout/anonymous", () => {
 
       const res = await POST(
         makeReq(
-          { items: [{ product_id: product.id, quantity: 2 }], shipping }, // subtotal 2000 < 5000
+          { items: [{ product_id: product.id, quantity: 2, unit_price_cents: 1000 }], shipping }, // subtotal 2000 < 5000
           { anonymous_id: anonId, session_id: sessionId },
         ),
       );

@@ -26,12 +26,27 @@ export function ProductCard({
   const router = useRouter();
   const { add } = useTukiCart();
   const ref = useRef<HTMLDivElement>(null);
+  const prefetchedHydrate = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el || !seenSlate || seenPos == null) return;
     return observeSeen(el, seenSlate, seenPos);
   }, [seenSlate, seenPos]);
+
+  // Prefetch por intención (T5): al primer hover, si el producto real aún no
+  // se hidrató, dispara la hidratación YA — así, cuando el usuario de verdad
+  // entra a la PDP, ya viene corriendo o terminó (mitiga los ~20s de la
+  // primera hidratación). aliexpress queda afuera: su cuota de 100/mes es
+  // sagrada y un hover no confirma intención de compra como sí lo hace la
+  // visita a la PDP (que sí la dispara, ver ProductView). El claim atómico
+  // del server (UPDATE...WHERE...IS NULL) ya evita duplicados si de todos
+  // modos la PDP la vuelve a pedir.
+  const onHoverPrefetch = () => {
+    if (prefetchedHydrate.current || card.attrs?.hydrated_at || card.source === "aliexpress") return;
+    prefetchedHydrate.current = true;
+    fetch(`/api/products/${card.id}/hydrate`, { method: "POST" }).catch(() => {});
+  };
 
   const da = attrsOf(card);
   const oldC = da.oldPriceCents;
@@ -59,6 +74,7 @@ export function ProductCard({
       ref={ref}
       data-testid="tuki-card"
       onClick={open}
+      onMouseEnter={onHoverPrefetch}
       className="tk-hov-lift"
       style={{
         ...(isGrid ? {} : { flex: "none", width: 198 }),
@@ -73,7 +89,9 @@ export function ProductCard({
       <div
         style={{
           position: "relative",
-          height: isGrid ? 140 : 130,
+          // look Shein: tile vertical 3:4 a sangre — las fotos de producto son
+          // verticales; una franja apaisada las decapita o las deja flotando.
+          aspectRatio: "3 / 4",
           borderRadius: 14,
           background: stripe(cat),
           display: "flex",
@@ -84,7 +102,7 @@ export function ProductCard({
       >
         {card.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={card.image_url} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9a9b98" }}>foto producto</span>
         )}

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 import { createCheckoutOrder } from "@/sectors/a-tracking/checkout";
-import { variantSelectionSchema } from "@/sectors/a-tracking/checkout-schema";
+import { variantSelectionSchema, PriceChangedError } from "@/sectors/a-tracking/checkout-schema";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -39,6 +39,9 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (e) {
+    if (e instanceof PriceChangedError) {
+      return NextResponse.json({ code: "price_changed", items: e.items }, { status: 409 });
+    }
     if (e instanceof Error && e.message === "empty_cart") {
       return NextResponse.json({ error: "empty_cart" }, { status: 400 });
     }

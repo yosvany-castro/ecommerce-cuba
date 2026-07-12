@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard } from "@/storefront/contract";
-import { attrsOf, catOf, fmt, matchVariant, ratingLine, stripe } from "./lib";
+import { attrsOf, catOf, fmt, hasPriceRange, imageForColor, matchVariant, minPriceCents, ratingLine, resolveColorHex, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
 
@@ -37,9 +37,21 @@ export function ProductView({
   // en vez de un useEffect que dispara setState — evita el render extra).
   const [liveAttrs, setLiveAttrs] = useState(card.attrs);
   const [liveAttrsId, setLiveAttrsId] = useState(card.id);
+  // REGLA DE ORO: el precio jamás cambia solo delante del comprador — arranca
+  // SIN selección (null), tanto al cargar como al navegar a otro producto
+  // (antes se auto-elegía la primera opción y el precio grande saltaba solo).
+  const [selColor, setSelColor] = useState<string | null>(null);
+  const [selSize, setSelSize] = useState<string | null>(null);
+  // Skeleton "buscando tallas y colores…" mientras la hidratación bajo demanda
+  // (efecto de abajo) corre en la primera visita — desaparece al llegar attrs
+  // o al fallar (fail-open silencioso, ver el .finally de ese efecto).
+  const [hydrating, setHydrating] = useState(!card.attrs?.hydrated_at);
   if (card.id !== liveAttrsId) {
     setLiveAttrsId(card.id);
     setLiveAttrs(card.attrs);
+    setSelColor(null);
+    setSelSize(null);
+    setHydrating(!card.attrs?.hydrated_at);
   }
 
   const da = attrsOf({ ...card, attrs: liveAttrs });
@@ -49,8 +61,6 @@ export function ProductView({
   const offPct = oldC != null ? "−" + Math.round((1 - card.price_cents / oldC) * 100) + "%" : "";
   const rl = ratingLine(da.rating, da.sold);
 
-  const [selColor, setSelColor] = useState<string | null>(da.colors[0]?.name ?? null);
-  const [selSize, setSelSize] = useState<string | null>(da.sizes[0] ?? null);
   const [qty, setQty] = useState(1);
   const [acc, setAcc] = useState<string>("desc");
 
@@ -58,9 +68,20 @@ export function ProductView({
   // Variante que matchea color+talla elegidos: precio/foto/disponibilidad de
   // ESA combinación exacta si el proveedor la trajo; sin match -> base de arriba.
   const variant = matchVariant(variants, selColor, selSize);
-  const effectivePriceCents = variant?.price_cents ?? card.price_cents;
-  const mainImage = variant?.image ?? card.image_url;
-  const isSoldOut = variant?.available === false;
+  // Dimensiones que el producto TIENE y el comprador aún no eligió. Mientras
+  // falte alguna Y el precio pueda saltar entre variantes (hasPriceRange):
+  // precio grande "desde $X" + botón deshabilitado — nunca un precio exacto
+  // que el usuario no causó con su propia selección (REGLA DE ORO). Sin rango
+  // de precio (o sin variantes) el producto se comporta como siempre.
+  const needsColor = da.colors.length > 0 && selColor === null;
+  const needsSize = da.sizes.length > 0 && selSize === null;
+  const priceIsGated = hasPriceRange(card.price_cents, variants) && (needsColor || needsSize);
+  const effectivePriceCents = priceIsGated ? minPriceCents(card.price_cents, variants) : (variant?.price_cents ?? card.price_cents);
+  // imageForColor: alcanza con el color (matchVariant exige TODAS las
+  // dimensiones, así que con talla aún sin elegir nunca matcheaba y la foto
+  // del color jamás cambiaba pese al clic).
+  const mainImage = variant?.image ?? imageForColor(variants, selColor) ?? card.image_url;
+  const isSoldOut = !priceIsGated && variant?.available === false;
 
   // Tallas imposibles para el color elegido (p.ej. "M" no existe en "Rojo"):
   // solo se calcula cuando TODAS las variantes traen color+talla juntas (ya
@@ -94,6 +115,7 @@ export function ProductView({
   useEffect(() => {
     if (card.attrs?.hydrated_at || hydratedFor.current === card.id) return;
     hydratedFor.current = card.id;
+    const thisId = card.id;
     const ctrl = new AbortController();
     fetch(`/api/products/${card.id}/hydrate`, { method: "POST", signal: ctrl.signal })
       .then((res) => (res.ok ? (res.json() as Promise<{ attrs?: Partial<CardAttrs> }>) : null))
@@ -108,17 +130,21 @@ export function ProductView({
           ...(fresh.variants && { variants: fresh.variants }),
           ...(fresh.hydrated_at && { hydrated_at: fresh.hydrated_at }),
         }));
-        // Primera visita: colores/tallas llegaron vacíos y selColor/selSize
-        // arrancaron en null — con datos frescos, arrancar el selector.
-        setSelColor((c) => c ?? fresh.colors?.[0]?.name ?? null);
-        setSelSize((s) => s ?? fresh.sizes?.[0] ?? null);
+        // NUNCA auto-seleccionar acá: el precio grande saltaría solo en cuanto
+        // llegan los attrs frescos (justo el bug reportado). El comprador
+        // elige, o ve "desde $X" hasta que lo haga.
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        // Guard de carrera: si ya se navegó a otro producto, ese efecto nuevo
+        // ya tomó hydratedFor.current — no apagar SU skeleton desde acá.
+        if (hydratedFor.current === thisId) setHydrating(false);
+      });
     return () => ctrl.abort();
   }, [card.id, card.attrs?.hydrated_at]);
 
   const onAdd = () => {
-    if (isSoldOut) return;
+    if (isSoldOut || priceIsGated) return;
     add(
       { id: card.id, title: card.title, price_cents: effectivePriceCents, category: card.category ?? null, image_url: card.image_url, source: card.source },
       qty,
@@ -193,10 +219,10 @@ export function ProductView({
       <div style={{ display: "grid", gridTemplateColumns: "480px 1fr", gap: 48, marginTop: 20, alignItems: "start" }}>
         {/* galería */}
         <div>
-          <div style={{ position: "relative", height: 440, borderRadius: 26, background: stripe(cat), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <div style={{ position: "relative", aspectRatio: "3 / 4", maxHeight: 620, borderRadius: 26, background: stripe(cat), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {mainImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={mainImage} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={mainImage} alt={card.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
             ) : (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9a9b98" }}>foto producto grande</span>
             )}
@@ -240,29 +266,71 @@ export function ProductView({
             {card.source && ` · de ${card.source}`}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
-            <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>{fmt(effectivePriceCents)}</span>
-            {oldC != null && (
+            <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>
+              {priceIsGated ? `desde ${fmt(effectivePriceCents)}` : fmt(effectivePriceCents)}
+            </span>
+            {!priceIsGated && oldC != null && (
               <>
                 <span style={{ fontSize: 16, color: "#B0B1AE", textDecoration: "line-through" }}>{fmt(oldC)}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: cat.deep, background: cat.tint, borderRadius: 999, padding: "4px 10px" }}>ahorras {fmt(oldC - card.price_cents)}</span>
               </>
             )}
           </div>
+          {hydrating && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+              <div style={{ width: 108, height: 11, borderRadius: 6, background: "linear-gradient(90deg,#E9E9E4 25%,#DFDFD9 40%,#E9E9E4 55%)", backgroundSize: "460px 100%", animation: "shimmer 1.1s linear infinite" }} />
+              <span style={{ fontSize: 12, color: "#8E8F94" }}>· buscando tallas y colores…</span>
+            </div>
+          )}
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 16, color: cat.deep, marginTop: 12 }}>✦ encaja con lo que has estado mirando</div>
 
           {da.colors.length > 0 && (
             <>
               <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 20 }}>
-                Color · <span style={{ color: "#8E8F94", fontWeight: 500 }}>{selColor}</span>
+                Color{selColor && (
+                  <>
+                    {" "}· <span style={{ color: "#8E8F94", fontWeight: 500 }}>{selColor}</span>
+                  </>
+                )}
               </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-                {da.colors.map((cv, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setSelColor(cv.name)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", background: cv.hex ?? "#D8D8D3", cursor: "pointer", border: `2px solid ${selColor === cv.name ? "#1C1D20" : "rgba(0,0,0,.08)"}`, boxShadow: "inset 0 0 0 3px #FAFAF8" }}
-                  />
-                ))}
+              <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                {da.colors.map((cv, i) => {
+                  const on = selColor === cv.name;
+                  // Orden de preferencia (T4): 1) foto real de esa variante de
+                  // color, 2) hex (del proveedor o de nuestro mapa nombre→hex),
+                  // 3) sin ninguno -> chip de texto (nunca un círculo gris mintiendo).
+                  const photo = imageForColor(variants, cv.name);
+                  const hex = cv.hex ?? resolveColorHex(cv.name);
+                  if (!photo && !hex) {
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setSelColor(cv.name)}
+                        style={{ height: 36, padding: "0 14px", boxSizing: "border-box", borderRadius: 12, display: "flex", alignItems: "center", fontSize: 13.5, fontWeight: 600, cursor: "pointer", background: on ? "#1C1D20" : "#fff", color: on ? "#fff" : "#55565B", border: `1.5px solid ${on ? "#1C1D20" : "#ECECE7"}` }}
+                      >
+                        {cv.name}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => setSelColor(cv.name)}
+                      title={cv.name}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        border: `2px solid ${on ? "#1C1D20" : "rgba(0,0,0,.08)"}`,
+                        boxShadow: "inset 0 0 0 3px #FAFAF8",
+                        ...(photo
+                          ? { backgroundImage: `url(${photo})`, backgroundSize: "cover", backgroundPosition: "center" }
+                          : { background: hex }),
+                      }}
+                    />
+                  );
+                })}
               </div>
             </>
           )}
@@ -301,9 +369,13 @@ export function ProductView({
             <div
               onClick={onAdd}
               className="tk-hov-cta"
-              style={{ flex: 1, maxWidth: 340, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 54, borderRadius: 999, background: isSoldOut ? "#D8D8D3" : "#1C1D20", color: isSoldOut ? "#8E8F94" : "#fff", fontSize: 15.5, fontWeight: 700, cursor: isSoldOut ? "default" : "pointer" }}
+              style={{ flex: 1, maxWidth: 340, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 54, borderRadius: 999, background: isSoldOut || priceIsGated ? "#D8D8D3" : "#1C1D20", color: isSoldOut || priceIsGated ? "#8E8F94" : "#fff", fontSize: 15.5, fontWeight: 700, cursor: isSoldOut || priceIsGated ? "default" : "pointer" }}
             >
-              {isSoldOut ? "agotado en esta combinación" : `Agregar · ${fmt(effectivePriceCents * qty)}`}
+              {isSoldOut
+                ? "agotado en esta combinación"
+                : priceIsGated
+                  ? `elige ${needsColor ? "color" : "talla"}`
+                  : `Agregar · ${fmt(effectivePriceCents * qty)}`}
             </div>
           </div>
 

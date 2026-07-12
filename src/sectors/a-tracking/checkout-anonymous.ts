@@ -3,14 +3,17 @@ import { getOrCreateUserByAuth0Sub } from "@/lib/auth";
 import { insertEvent } from "./events/insert";
 import { attributePurchaseAndExclude } from "./attribution";
 import { findVariantPriceCents, type CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
+import { findPriceMismatches, PriceChangedError } from "./checkout-schema";
 
 export interface AnonymousOrderInput {
   anonymous_id: string;
   session_id: string;
   // color/size: selección del comprador, opcional (products sin variantes o
   // combos sin variant matching no las traen). El precio NUNCA sale de acá —
-  // se valida contra products.metadata.attrs.variants abajo.
-  items: { product_id: string; quantity: number; color?: string | null; size?: string | null }[];
+  // se valida contra products.metadata.attrs.variants abajo. unit_price_cents:
+  // lo que la UI le mostró al usuario — se compara contra lo calculado server-
+  // side; si difiere, PriceChangedError ANTES de tocar la DB (REGLA DE ORO).
+  items: { product_id: string; quantity: number; unit_price_cents: number; color?: string | null; size?: string | null }[];
   // Datos de envío ya validados en la ruta (zod strict) — se guardan tal cual en orders.shipping.
   shipping: Record<string, unknown> & { nombre?: string; metodo?: "rapido" | "estandar" | "lento" };
 }
@@ -83,6 +86,20 @@ export async function createAnonymousOrder(
       lineItems.push({ item, prod, unitPriceCents: variantPrice ?? prod.price_cents });
     }
     if (lineItems.length === 0) throw new Error("empty_cart");
+
+    // El precio que la UI mostró (unit_price_cents del body) DEBE coincidir
+    // con lo que el server acaba de calcular — si no, 409 sin crear la orden
+    // (el catch de abajo hace ROLLBACK; la ruta HTTP traduce a 409).
+    const mismatches = findPriceMismatches(
+      lineItems.map(({ item, unitPriceCents }) => ({
+        product_id: item.product_id,
+        color: item.color ?? null,
+        size: item.size ?? null,
+        shown_cents: item.unit_price_cents,
+        current_cents: unitPriceCents,
+      })),
+    );
+    if (mismatches.length > 0) throw new PriceChangedError(mismatches);
 
     const totalCharged = lineItems.reduce((s, { item, unitPriceCents }) => s + unitPriceCents * item.quantity, 0);
     const totalCost = Math.round(totalCharged * 0.6);

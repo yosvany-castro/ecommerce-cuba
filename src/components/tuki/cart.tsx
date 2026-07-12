@@ -11,6 +11,7 @@ import {
   removeItem as removeItemCore,
   setQty as setQtyCore,
   subtotalCents,
+  updatePrices as updatePricesCore,
   type CardSnapshot,
   type TukiCartItem,
 } from "./cart-core";
@@ -55,6 +56,7 @@ interface TukiCartContextValue {
   dec(key: string): void;
   remove(key: string): void;
   clear(): void;
+  updatePrices(byKey: Record<string, number>): void;
 }
 
 const TukiCartContext = createContext<TukiCartContextValue | null>(null);
@@ -107,6 +109,15 @@ export function TukiCartProvider({ children }: { children: React.ReactNode }) {
     if (item) track("remove_from_cart", { product_id: item.product_id, quantity: item.qty }, { urgent: true });
   }, []);
 
+  // T2a: reconciliación de precio al montar el checkout (y en "Revisar") — sin
+  // toast, es un ajuste silencioso del NÚMERO; el aviso visible ya lo pinta
+  // CheckoutFlow.tsx junto a la línea.
+  const updatePrices = useCallback((byKey: Record<string, number>) => {
+    const next = updatePricesCore(readLocal(), byKey);
+    writeLocal(next);
+    setItems(next);
+  }, []);
+
   const clear = useCallback(() => {
     writeLocal([]);
     setItems([]);
@@ -124,6 +135,7 @@ export function TukiCartProvider({ children }: { children: React.ReactNode }) {
     inc,
     dec,
     remove,
+    updatePrices,
     clear,
   };
 

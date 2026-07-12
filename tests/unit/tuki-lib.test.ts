@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { attrsOf, CATS, catOf, fmt, matchVariant, ratingLine, sectionize, stripe, weightLbFor } from "@/components/tuki/lib";
+import {
+  attrsOf,
+  CATS,
+  catOf,
+  fmt,
+  hasPriceRange,
+  imageForColor,
+  matchVariant,
+  minPriceCents,
+  ratingLine,
+  resolveColorHex,
+  sectionize,
+  stripe,
+  weightLbFor,
+} from "@/components/tuki/lib";
 import type { StorefrontCard } from "@/storefront/contract";
 
 const card = (id: string, category: string, attrs?: StorefrontCard["attrs"]): StorefrontCard => ({
@@ -74,6 +88,50 @@ describe("tuki lib", () => {
     expect(matchVariant(variants, "Verde", "M")).toBeUndefined();
     expect(matchVariant(variants, null, null)).toBeUndefined();
     expect(matchVariant(undefined, "Rojo", "M")).toBeUndefined();
+  });
+
+  it("imageForColor: basta el color (a diferencia de matchVariant, no exige talla) — arregla el bug de la foto que no cambiaba", () => {
+    const variants = [
+      { color: "Rojo", size: "M", image: "/rojo-m.jpg" },
+      { color: "Rojo", size: "L" }, // sin foto propia
+      { color: "Azul", size: "M", image: "/azul-m.jpg" },
+    ];
+    // color elegido, talla TODAVÍA sin elegir (null) — matchVariant no matchearía nada acá.
+    expect(imageForColor(variants, "Rojo")).toBe("/rojo-m.jpg");
+    expect(imageForColor(variants, "Azul")).toBe("/azul-m.jpg");
+    expect(imageForColor(variants, "Verde")).toBeUndefined();
+    expect(imageForColor(variants, null)).toBeUndefined();
+    expect(imageForColor(undefined, "Rojo")).toBeUndefined();
+  });
+
+  it("minPriceCents: el menor entre el base y las variantes con price_cents propio", () => {
+    const variants = [{ color: "Rojo", price_cents: 1500 }, { color: "Azul", price_cents: 900 }, { color: "Verde" }];
+    expect(minPriceCents(1200, variants)).toBe(900); // Azul es el más barato, bajo el base
+    expect(minPriceCents(800, variants)).toBe(800); // el base es más barato que cualquier variante
+    expect(minPriceCents(1200, undefined)).toBe(1200);
+    expect(minPriceCents(1200, [])).toBe(1200);
+  });
+
+  it("hasPriceRange: true solo si alguna variante difiere del base (o entre sí) en price_cents", () => {
+    expect(hasPriceRange(1000, [{ color: "Rojo", price_cents: 1500 }])).toBe(true);
+    expect(hasPriceRange(1000, [{ color: "Rojo", price_cents: 1000 }, { color: "Azul", price_cents: 1000 }])).toBe(false);
+    // variantes sin price_cents (p.ej. Amazon: solo color/talla) -> nunca hay rango
+    expect(hasPriceRange(1000, [{ color: "Rojo", size: "M" }])).toBe(false);
+    expect(hasPriceRange(1000, undefined)).toBe(false);
+    expect(hasPriceRange(1000, [])).toBe(false);
+  });
+
+  it("resolveColorHex: hex por substring case-insensitive, es/en mezclados, fallback undefined", () => {
+    expect(resolveColorHex("Coal Black")).toBe("#1C1D20"); // "Coal Black" -> black
+    expect(resolveColorHex("Medium Stone")).toBe("#5E7492"); // "Medium Stone" -> stone(wash)
+    expect(resolveColorHex("azul índigo")).toBe("#3D5A80"); // contiene "azul" -> azul genérico, no una entrada propia
+    expect(resolveColorHex("Azul Marino")).toBe("#1F3A5F"); // frase compuesta ANTES que "azul" genérico
+    expect(resolveColorHex("Rinse")).toBe("#1a2744"); // lavado de jean -> azul propio
+    expect(resolveColorHex("blanco")).toBe("#FAFAF8");
+    expect(resolveColorHex("WHITE")).toBe("#FAFAF8"); // case-insensitive
+    expect(resolveColorHex("café con leche")).toBe("#6B4B3A"); // "café" con tilde
+    expect(resolveColorHex("morado oscuro")).toBe("#6B4C8A");
+    expect(resolveColorHex("un color inventado que no existe")).toBeUndefined();
   });
 
   it("sectionize agrupa en [aisle6, focus1, grid4] cíclico sin perder cards", () => {

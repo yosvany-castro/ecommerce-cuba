@@ -86,6 +86,92 @@ export function matchVariant(
   );
 }
 
+/** Primera foto de una variante de ESE color (cualquier talla) — a diferencia
+ * de matchVariant (que exige que TODAS las dimensiones pedidas matcheen), acá
+ * basta el color: permite cambiar la imagen principal y pintar el swatch con
+ * foto real aunque el producto también tenga tallas y el usuario aún no haya
+ * elegido ninguna (bug visto: con color+talla sin talla elegida, matchVariant
+ * nunca matcheaba y la imagen del color jamás cambiaba). */
+export function imageForColor(variants: CardVariant[] | undefined, color: string | null): string | undefined {
+  if (!variants || !color) return undefined;
+  return variants.find((v) => v.color === color && v.image)?.image;
+}
+
+/** Menor precio entre el base y las variantes con price_cents propio — el "desde
+ * $X" que se muestra mientras el comprador no eligió color/talla todavía. */
+export function minPriceCents(basePriceCents: number, variants: CardVariant[] | undefined): number {
+  const variantPrices = (variants ?? []).map((v) => v.price_cents).filter((p): p is number => p != null);
+  return Math.min(basePriceCents, ...variantPrices);
+}
+
+/** true si alguna variante tiene un price_cents distinto del base (o entre sí)
+ * — solo entonces seleccionar color/talla puede CAMBIAR el precio grande, y
+ * solo entonces se justifica bloquear "Agregar" hasta que el usuario elija
+ * (REGLA DE ORO: el precio nunca salta solo — si no puede saltar, no hace
+ * falta bloquear). Variantes sin price_cents (p.ej. Amazon: solo color/talla,
+ * sin precio por combinación) no aportan rango -> false, comportamiento actual. */
+export function hasPriceRange(basePriceCents: number, variants: CardVariant[] | undefined): boolean {
+  const prices = new Set((variants ?? []).map((v) => v.price_cents).filter((p): p is number => p != null));
+  prices.add(basePriceCents);
+  return prices.size > 1;
+}
+
+interface ColorHexEntry {
+  match: string[];
+  hex: string;
+}
+
+// Nombre→hex real (T4, "los filtros deben tener el color que dicen") — sustituye
+// el círculo gris (#D8D8D3) que se mostraba cuando el proveedor no trajo hex.
+// Orden importa: frases compuestas ANTES que su palabra genérica (p.ej. "azul
+// marino" antes que "azul") para que el substring match no se quede con la
+// entrada equivocada. Lavados de jean (denim/stonewash/rinse) son azules —
+// tonos propios, no el azul genérico.
+export const COLOR_HEX: ColorHexEntry[] = [
+  { match: ["azul marino", "navy"], hex: "#1F3A5F" },
+  { match: ["celeste", "light blue", "sky blue"], hex: "#AFCBE3" },
+  { match: ["rinse"], hex: "#1a2744" },
+  { match: ["stonewash", "stone"], hex: "#5E7492" },
+  { match: ["denim"], hex: "#3B5B7A" },
+  { match: ["azul", "blue"], hex: "#3D5A80" },
+  { match: ["negro", "black", "coal"], hex: "#1C1D20" },
+  { match: ["blanco", "white"], hex: "#FAFAF8" },
+  { match: ["rojo", "red"], hex: "#B23A2E" },
+  { match: ["vino", "burgundy", "wine", "maroon"], hex: "#5E2129" },
+  { match: ["coral"], hex: "#E8836B" },
+  { match: ["salmón", "salmon"], hex: "#E39C8E" },
+  { match: ["rosa", "pink"], hex: "#E4A6BB" },
+  { match: ["fucsia", "fuchsia", "magenta"], hex: "#C13584" },
+  { match: ["verde oliva", "olive"], hex: "#6B6B3A" },
+  { match: ["verde militar", "military green"], hex: "#5B6650" },
+  { match: ["verde", "green"], hex: "#4F7A5C" },
+  { match: ["menta", "mint"], hex: "#A6D9C1" },
+  { match: ["turquesa", "teal"], hex: "#2E8B8B" },
+  { match: ["morado", "purple", "violeta", "violet"], hex: "#6B4C8A" },
+  { match: ["lavanda", "lavender"], hex: "#B7A6D9" },
+  { match: ["amarillo", "yellow", "mostaza", "mustard"], hex: "#E3B23C" },
+  { match: ["naranja", "orange"], hex: "#D9762E" },
+  { match: ["dorado", "gold"], hex: "#C6A15B" },
+  { match: ["plateado", "silver"], hex: "#B8B9BC" },
+  { match: ["gris", "gray", "grey"], hex: "#8E8F94" },
+  { match: ["beige"], hex: "#D9CBB0" },
+  { match: ["caqui", "khaki"], hex: "#BFB088" },
+  { match: ["crema", "cream", "ivory"], hex: "#EDE6D6" },
+  { match: ["camel"], hex: "#C19A6B" },
+  { match: ["nude"], hex: "#D9B99B" },
+  { match: ["terracota", "terracotta"], hex: "#C56B4F" },
+  { match: ["marrón", "marron", "brown", "café", "cafe", "chocolate"], hex: "#6B4B3A" },
+];
+
+/** Hex por substring case-insensitive sobre el nombre real del color (es/en
+ * mezclados) — "Coal Black"→black, "Medium Stone"→stonewash, "azul índigo"→azul
+ * (matchea "azul", sin entrada propia para índigo). undefined = sin match,
+ * el caller cae al chip de texto (nunca inventa un color que no dijo). */
+export function resolveColorHex(name: string): string | undefined {
+  const n = name.toLowerCase();
+  return COLOR_HEX.find((entry) => entry.match.some((k) => n.includes(k)))?.hex;
+}
+
 /** "★ rating · sold vendidos" con lo real que haya; null si no hay nada que mostrar. */
 export function ratingLine(rating?: number, sold?: string): string | null {
   if (rating != null && sold != null) return `★ ${rating} · ${sold} vendidos`;
