@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimateWeightGrams, extractInlineWeightGrams, gramsToLb, parseWeightToGrams } from "@/lib/weight";
+import { estimateWeightGrams, extractInlineWeightGrams, gramsToLb, packagedGrams, parseWeightToGrams } from "@/lib/weight";
 
 describe("parseWeightToGrams", () => {
   it("unidades reales de los fixtures de Amazon", () => {
@@ -28,7 +28,20 @@ describe("extractInlineWeightGrams", () => {
   });
 });
 
+describe("packagedGrams (peso neto del marketplace → peso de paquete facturable)", () => {
+  it("suma pad por categoría + 8% de relleno", () => {
+    expect(packagedGrams(1000, "ropa")).toBe(1120); // 1000*1.08 + 40
+    expect(packagedGrams(500, "electronica")).toBe(690); // 540 + 150
+    expect(packagedGrams(500)).toBe(640); // sin categoría → pad 100
+  });
+});
+
 describe("estimateWeightGrams (heurística determinista compartida cliente/server)", () => {
+  it("el peso inline del texto es NETO → sale con empaque sumado", () => {
+    const r = estimateWeightGrams({ title: "Pesa rusa 8 kg", category: "hogar" });
+    expect(r.method).toBe("inline");
+    expect(r.grams).toBe(packagedGrams(8000, "hogar"));
+  });
   it("inline > keyword > categoría", () => {
     expect(estimateWeightGrams({ title: "Pesa rusa 8 kg", category: "hogar" }).method).toBe("inline");
     const fan = estimateWeightGrams({ title: "Ventilador de pie oscilante", category: "hogar" });
@@ -37,6 +50,11 @@ describe("estimateWeightGrams (heurística determinista compartida cliente/serve
     const generic = estimateWeightGrams({ title: "Producto misterioso", category: "belleza" });
     expect(generic.method).toBe("category");
     expect(generic.grams).toBe(250);
+  });
+  it("tokens cortos con frontera de palabra: 'Collar' no es 'olla' (bug visto en eval)", () => {
+    const dress = estimateWeightGrams({ title: "Sexy Square Collar Floral Lace Maxi Dress", category: "ropa" });
+    expect(dress.grams).toBeLessThan(1000); // es un vestido, no una olla de 3.5 kg
+    expect(estimateWeightGrams({ title: "Olla arrocera 1.8L antiadherente", category: "hogar" }).grams).toBe(3500);
   });
   it("mini/portátil reduce el peso de la keyword", () => {
     const mini = estimateWeightGrams({ title: "Mini ventilador portátil USB", category: "electronica" });

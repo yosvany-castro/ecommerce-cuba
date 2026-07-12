@@ -166,10 +166,27 @@ export function parseAliexpressPackageWeightGrams(json: unknown): number | undef
   return Math.round(kg * 1000);
 }
 
+// Días de envío tienda→depósito del proveedor: shippingList[].shippingTime
+// viene como "3-9" (días). ponytail: se toma la PRIMERA opción de la lista (la
+// default del marketplace) — si Yosvany suele elegir otra, ajustar aquí.
+export function parseAliexpressShippingDays(json: unknown): { min: number; max: number } | undefined {
+  const delivery = asRecord(asRecord(asRecord(json)?.result)?.delivery);
+  const list = Array.isArray(delivery?.shippingList) ? delivery.shippingList : [];
+  const t = str(asRecord(list[0])?.shippingTime);
+  const m = t?.match(/^(\d+)\s*-\s*(\d+)$/) ?? (t?.match(/^(\d+)$/) ? [t, t, t] : null);
+  if (!m) return undefined;
+  const min = parseInt(m[1], 10);
+  const max = parseInt(m[2], 10);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min || max > 90) return undefined;
+  return { min, max };
+}
+
 export interface LiveDetail {
   variants?: CuratedVariant[];
   /** Peso de paquete del proveedor (solo aliexpress lo trae hoy). */
   weightGrams?: number;
+  /** Días tienda→depósito reportados por el proveedor (solo aliexpress). */
+  shipDays?: { min: number; max: number };
 }
 
 export async function liveLookupVariants(p: ProviderRef): Promise<LiveDetail | undefined> {
@@ -188,5 +205,6 @@ export async function liveLookupVariants(p: ProviderRef): Promise<LiveDetail | u
   return {
     variants: curateVariants(raw),
     weightGrams: fetched.source === "aliexpress" ? parseAliexpressPackageWeightGrams(fetched.json) : undefined,
+    shipDays: fetched.source === "aliexpress" ? parseAliexpressShippingDays(fetched.json) : undefined,
   };
 }

@@ -14,19 +14,20 @@
 
 export type ShippingVia = "aereo" | "maritimo";
 
-/** Días marketplace → depósito, por tienda. default cubre tiendas futuras. */
+/** Días marketplace → depósito, por tienda (default para producto sin dato del
+ * proveedor — AliExpress da su shippingTime por producto y ese manda). */
 const STORE_TO_HUB_DAYS: Record<string, [number, number]> = {
   amazon: [3, 7],
   walmart: [3, 8],
-  shein: [9, 18],
-  aliexpress: [15, 35],
-  default: [10, 25],
+  shein: [8, 15],
+  aliexpress: [10, 25],
+  default: [8, 20],
 };
 
 /** Días depósito → entrega en Cuba, por vía. */
 const HUB_TO_CUBA_DAYS: Record<ShippingVia, [number, number]> = {
   aereo: [7, 15],
-  maritimo: [30, 55],
+  maritimo: [25, 45],
 };
 
 export interface DeliveryEstimate {
@@ -35,8 +36,19 @@ export interface DeliveryEstimate {
   via: ShippingVia;
 }
 
-export function estimateDelivery(source: string | null | undefined, via: ShippingVia): DeliveryEstimate {
-  const store = STORE_TO_HUB_DAYS[source ?? ""] ?? STORE_TO_HUB_DAYS.default;
+export interface ProviderShipDays {
+  min: number;
+  max: number;
+}
+
+export function estimateDelivery(
+  source: string | null | undefined,
+  via: ShippingVia,
+  providerShipDays?: ProviderShipDays | null,
+): DeliveryEstimate {
+  const store = providerShipDays
+    ? [providerShipDays.min, providerShipDays.max]
+    : (STORE_TO_HUB_DAYS[source ?? ""] ?? STORE_TO_HUB_DAYS.default);
   const cuba = HUB_TO_CUBA_DAYS[via];
   return { minDays: store[0] + cuba[0], maxDays: store[1] + cuba[1], via };
 }
@@ -55,6 +67,26 @@ export function estimateDeliveryForCart(sources: (string | null | undefined)[], 
 /** "18–33 días" — un solo rango legible, sin exponer la cadena interna. */
 export function formatDeliveryRange(e: DeliveryEstimate): string {
   return `${e.minDays}–${e.maxDays} días`;
+}
+
+const DAY_MS = 864e5;
+function fmtDia(ms: number): string {
+  return new Date(ms)
+    .toLocaleDateString("es-MX", { day: "numeric", month: "short" })
+    .replace(/[.,]/g, "");
+}
+
+/** Presentación elegida (fechas concretas): "24 jul" / "21 ago" — las fechas
+ * se sienten más cercanas que contar 30 días. Mismo formato que etaLine del
+ * checkout (es-MX). */
+export function deliveryDates(e: DeliveryEstimate, now = Date.now()): { from: string; to: string } {
+  return { from: fmtDia(now + e.minDays * DAY_MS), to: fmtDia(now + e.maxDays * DAY_MS) };
+}
+
+/** "entre el 24 jul y el 21 ago" — frase lista para la UI. */
+export function deliveryPhrase(e: DeliveryEstimate, now = Date.now()): string {
+  const d = deliveryDates(e, now);
+  return `entre el ${d.from} y el ${d.to}`;
 }
 
 /** ¿El carrito mezcla tiendas? (aviso honesto: puede llegar en varias entregas) */

@@ -48,23 +48,26 @@ export function extractInlineWeightGrams(text: string): number | null {
 const KEYWORD_GRAMS: [RegExp, number][] = [
   [/ventilador (?:de )?(?:pie|torre)|tower fan|pedestal fan/i, 4500],
   [/ventilador|\bfan\b|abanico/i, 2000],
+  // bolsos ANTES que laptop: "Backpack with Laptop Sleeve" es una mochila
+  [/bolso|mochila|backpack|cartera|bag\b/i, 650],
   [/laptop|notebook|macbook/i, 2800],
   [/\btv\b|televisor|television|monitor/i, 5000],
   [/celular|smartphone|iphone|galaxy s|xiaomi|tel[eé]fono/i, 550],
   [/tablet|ipad/i, 900],
-  [/licuadora|blender|freidora|air ?fryer|arrocera|rice cooker|cafetera|olla|microondas|microwave/i, 3500],
-  [/zapat|sneaker|shoe|tenis\b|bota|sandalia/i, 1000],
+  // \b en tokens cortos: "olla" matcheaba dentro de "Collar" (visto en eval —
+  // un vestido estimado a 3.5 kg), "bota" dentro de "botanical", etc.
+  [/licuadora|blender|freidora|air ?fryer|arrocera|rice cooker|cafetera|\bolla\b|microondas|microwave/i, 3500],
+  [/zapat|sneaker|shoe|tenis\b|\bbota|sandalia/i, 1000],
   [/jean|pantal[oó]n|pants|trousers/i, 550],
   [/vestido|dress|falda|skirt/i, 350],
-  [/abrigo|chaqueta|jacket|hoodie|sudadera|coat/i, 700],
+  [/abrigo|chaqueta|jacket|hoodie|sudadera|\bcoat\b/i, 700],
   [/camiseta|t-?shirt|blusa|pullover|\btop\b|camisa/i, 250],
   [/aud[ií]fono|auricular|headphone|earbud|airpod/i, 300],
   [/reloj|watch/i, 300],
   [/power ?bank|bater[ií]a externa|cargador|charger/i, 400],
-  [/bolso|mochila|backpack|cartera|bag\b/i, 650],
   [/mu[ñn]ec|juguete|\btoy\b|lego|peluche/i, 500],
   [/perfume|colonia|crema|maquillaje|labial|serum|shampoo|champ[uú]/i, 300],
-  [/s[aá]bana|cortina|toalla|manta|edred[oó]n|colcha/i, 1300],
+  [/s[aá]bana|cortina|toalla|\bmanta\b|edred[oó]n|colcha/i, 1300],
   [/herramienta|taladro|drill|destornillador/i, 1500],
 ];
 
@@ -86,11 +89,13 @@ export interface WeightEstimate {
   method: "inline" | "keyword" | "category";
 }
 
-/** Heurística pura y determinista: texto explícito → keyword → base por categoría. */
+/** Heurística pura y determinista: texto explícito → keyword → base por categoría.
+ * El peso inline del texto es NETO → se le suma el empaque; keyword/categoría
+ * ya son pesos de paquete típicos. */
 export function estimateWeightGrams(input: { title: string; category?: string | null; description?: string | null }): WeightEstimate {
   const text = `${input.title} ${input.description ?? ""}`;
   const inline = extractInlineWeightGrams(text);
-  if (inline !== null) return { grams: inline, method: "inline" };
+  if (inline !== null) return { grams: packagedGrams(inline, input.category), method: "inline" };
 
   const kw = KEYWORD_GRAMS.find(([re]) => re.test(input.title));
   if (kw) {
@@ -104,4 +109,23 @@ export function estimateWeightGrams(input: { title: string; category?: string | 
 /** Gramos → libras con 1 decimal (mínimo 0.1 lb) — unidad de facturación del envío. */
 export function gramsToLb(grams: number): number {
   return Math.max(0.1, Math.round((grams / GRAMS_PER_LB) * 10) / 10);
+}
+
+// Los marketplaces publican peso NETO del artículo; el reenvío se factura por
+// peso de PAQUETE. Pad de empaque por categoría (bolsa/caja típica) + 8% de
+// relleno/protección. ponytail: knobs de calibración — ajustar cuando Yosvany
+// compare contra pesajes reales en báscula.
+const PACKAGING_PAD_GRAMS: Record<string, number> = {
+  ropa: 40,
+  electronica: 150,
+  hogar: 200,
+  juguetes_bebe: 100,
+  belleza: 60,
+  otros: 100,
+};
+
+/** Peso neto del proveedor → peso de paquete estimado (lo que se factura). */
+export function packagedGrams(netGrams: number, category?: string | null): number {
+  const pad = PACKAGING_PAD_GRAMS[category ?? ""] ?? 100;
+  return Math.round(netGrams * 1.08 + pad);
 }

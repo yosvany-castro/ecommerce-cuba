@@ -426,7 +426,7 @@ export function CheckoutFlow() {
                             <span style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</span>
                             <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12.5, color: "#8E8F94" }}>{s.sub}</span>
                           </div>
-                          <div style={{ fontSize: 12.5, color: "#55565B", marginTop: 3 }}>{etaLine(s.d1, s.d2)} · {s.d1}–{s.d2} días</div>
+                          <div style={{ fontSize: 12.5, color: "#55565B", marginTop: 3 }}>{etaLine(s.d1, s.d2)}</div>
                         </div>
                         <div style={{ flex: "none", textAlign: "right" }}>
                           <div style={{ fontSize: 15.5, fontWeight: 700, color: s.effectivePriceCents === 0 ? "#557A55" : "#1C1D20" }}>{priceF}</div>
@@ -536,7 +536,7 @@ export function CheckoutFlow() {
                 </ReviewCard>
                 <ReviewCard title="ENTREGA" onEdit={() => setStep(2)}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-                    <span style={{ fontSize: 14.5 }}>{cur.icon} {cur.name} · {cur.d1}–{cur.d2} días</span>
+                    <span style={{ fontSize: 14.5 }}>{cur.icon} {cur.name}</span>
                     <span style={{ fontSize: 14.5, fontWeight: 700, color: shipCostCents === 0 ? "#557A55" : "#55565B" }}>{shipCostCents === 0 ? "Gratis" : fmt(shipCostCents)}</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: "#557A55", marginTop: 2 }}>{etaLine(cur.d1, cur.d2)}</div>

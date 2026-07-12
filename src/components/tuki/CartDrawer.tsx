@@ -22,10 +22,47 @@ function itemVars(item: TukiCartItem) {
   };
 }
 
+// Mini-card compartida entre el riel del carro y la pantalla previa al pago.
+function UpsellMini({ p, onOpen, onAdd, wide }: { p: StorefrontCard; onOpen: () => void; onAdd: () => void; wide?: boolean }) {
+  return (
+    <div onClick={onOpen} style={{ flex: "none", width: wide ? "auto" : 120, background: "#fff", borderRadius: 14, border: "1px solid #EFEFEA", padding: "7px 7px 9px", cursor: "pointer" }}>
+      <div style={{ height: wide ? 110 : 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        {p.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.image_url} alt={p.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
+        )}
+      </div>
+      <div style={{ fontSize: 11.5, fontWeight: 600, margin: "6px 3px 0", lineHeight: 1.25, height: 28, overflow: "hidden" }}>{p.title}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "3px 3px 0" }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700 }}>{fmt(p.price_cents)}</span>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onAdd();
+          }}
+          className="tk-hov-plus"
+          style={{ width: 24, height: 24, borderRadius: "50%", background: "#1C1D20", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}
+        >
+          +
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CartDrawer() {
   const router = useRouter();
   const { items, count, subtotal, weightLb, open, setOpen, inc, dec, remove, add } = useTukiCart();
   const [upsell, setUpsell] = useState<StorefrontCard[]>([]);
+  // Pantalla previa al pago (cross-sell discreto): se muestra UNA vez al tocar
+  // "Ir a pagar" si hay recomendados; saltable con un toque. Se resetea al
+  // abrir/cerrar el drawer.
+  const [preCheckout, setPreCheckout] = useState(false);
+  useEffect(() => {
+    setPreCheckout(false);
+  }, [open]);
 
   // Escape + scroll-lock del body mientras el drawer está abierto; se restauran al cerrar.
   useEffect(() => {
@@ -153,6 +190,34 @@ export function CartDrawer() {
                 Explorar el feed →
               </div>
             </div>
+          ) : preCheckout ? (
+            /* Pantalla previa al pago: cross-sell discreto, UNA vez, saltable. */
+            <div style={{ animation: "secIn .3s ease both" }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 20, color: "#1C1D20" }}>
+                antes de pagar… ¿te falta algo?
+              </div>
+              <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 4 }}>combina con lo que llevas — un toque y sigues al pago</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+                {upsellShown.slice(0, 4).map((p) => (
+                  <UpsellMini
+                    key={p.id}
+                    p={p}
+                    wide
+                    onOpen={() => {
+                      setOpen(false);
+                      router.push(`/products/${p.id}?src=direct`);
+                    }}
+                    onAdd={() => add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source, weight_grams: p.weight_grams ?? null })}
+                  />
+                ))}
+              </div>
+              <div
+                onClick={() => setPreCheckout(false)}
+                style={{ display: "inline-block", marginTop: 14, fontSize: 12.5, color: "#8E8F94", cursor: "pointer", textDecoration: "underline" }}
+              >
+                ← volver al carro
+              </div>
+            </div>
           ) : (
             <>
               <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #EFEFEA", padding: "13px 15px" }}>
@@ -207,38 +272,17 @@ export function CartDrawer() {
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, color: "#55565B" }}>{upsellLine}</div>
                   <div style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", marginTop: 10, paddingBottom: 4 }}>
-                    {upsellShown.map((p) => {
-                      const navToProduct = () => {
-                        setOpen(false);
-                        router.push(`/products/${p.id}?src=direct`);
-                      };
-                      return (
-                        <div key={p.id} onClick={navToProduct} style={{ flex: "none", width: 120, background: "#fff", borderRadius: 14, border: "1px solid #EFEFEA", padding: "7px 7px 9px", cursor: "pointer" }}>
-                          <div style={{ height: 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                            {p.image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.image_url} alt={p.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            ) : (
-                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: 11.5, fontWeight: 600, margin: "6px 3px 0", lineHeight: 1.25, height: 28, overflow: "hidden" }}>{p.title}</div>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "3px 3px 0" }}>
-                            <span style={{ fontSize: 12.5, fontWeight: 700 }}>{fmt(p.price_cents)}</span>
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source, weight_grams: p.weight_grams ?? null });
-                              }}
-                              className="tk-hov-plus"
-                              style={{ width: 24, height: 24, borderRadius: "50%", background: "#1C1D20", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}
-                            >
-                              +
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {upsellShown.map((p) => (
+                      <UpsellMini
+                        key={p.id}
+                        p={p}
+                        onOpen={() => {
+                          setOpen(false);
+                          router.push(`/products/${p.id}?src=direct`);
+                        }}
+                        onAdd={() => add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source, weight_grams: p.weight_grams ?? null })}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -271,6 +315,12 @@ export function CartDrawer() {
             </div>
             <div
               onClick={() => {
+                // Primera vez con recomendados: pantalla previa (cross-sell)
+                // en vez de saltar directo — desde ella el mismo botón continúa.
+                if (!preCheckout && upsellShown.length > 0) {
+                  setPreCheckout(true);
+                  return;
+                }
                 setOpen(false);
                 router.push("/checkout");
               }}
@@ -278,7 +328,7 @@ export function CartDrawer() {
               data-testid="tuki-cart-checkout"
               style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 52, borderRadius: 999, background: "#1C1D20", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
             >
-              Ir a pagar →
+              {preCheckout ? "Continuar al pago →" : "Ir a pagar →"}
             </div>
           </div>
         )}

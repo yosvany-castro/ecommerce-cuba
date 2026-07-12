@@ -1,7 +1,15 @@
 import { describe, test, expect } from "vitest";
-import { parseAmazonVariants, parseAliexpressVariants, parseWalmartVariants, parseSheinVariants } from "@/sectors/b-catalog/hydrate";
+import {
+  parseAmazonVariants,
+  parseAliexpressVariants,
+  parseWalmartVariants,
+  parseSheinVariants,
+  parseAliexpressPackageWeightGrams,
+  parseAliexpressShippingDays,
+} from "@/sectors/b-catalog/hydrate";
 import amazonFx from "../fixtures/rapidapi/amazon-rtd-detail-variants.json";
 import aliexpressFx from "../fixtures/rapidapi/aliexpress-datahub-detail-variants.json";
+import aliexpressDetailFx from "../fixtures/rapidapi/aliexpress-datahub-detail.json";
 import walmartFx from "../fixtures/rapidapi/walmart-axesso-detail-variants.json";
 import sheinFx from "../fixtures/rapidapi/shein-otapi-detail-variants.json";
 
@@ -29,6 +37,19 @@ describe("parseWalmartVariants", () => {
     const out = parseWalmartVariants(walmartFx);
     expect(out).toHaveLength(2);
     expect(out).toContainEqual({ color: "Coal Black", size: "38X32", price_cents: 2098, available: true, image: expect.stringContaining("walmartimages.com") });
+  });
+});
+
+describe("parseAliexpressPackageWeightGrams / parseAliexpressShippingDays (fixture real)", () => {
+  test("packageDetail.weight 0.5 kg → 500 g (ya es peso de PAQUETE, sin pad extra)", () => {
+    expect(parseAliexpressPackageWeightGrams(aliexpressDetailFx)).toBe(500);
+  });
+  test("shippingList[0].shippingTime '3-9' → {min:3, max:9}", () => {
+    expect(parseAliexpressShippingDays(aliexpressDetailFx)).toEqual({ min: 3, max: 9 });
+  });
+  test("respuesta sin delivery → undefined, sin inventar", () => {
+    expect(parseAliexpressPackageWeightGrams({ result: {} })).toBeUndefined();
+    expect(parseAliexpressShippingDays({ result: {} })).toBeUndefined();
   });
 });
 

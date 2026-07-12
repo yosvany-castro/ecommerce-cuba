@@ -4,6 +4,7 @@ import { embed } from "@/lib/embeddings/voyage";
 import { normalizeWithLLM, type EnrichmentStatus, type NormalizedMetadata } from "./normalizer";
 import { buildCanonicalText } from "./canonical";
 import { attrsForStorage } from "./attrs";
+import { packagedGrams } from "@/lib/weight";
 
 export interface ProcessResult {
   productId: string;
@@ -26,8 +27,10 @@ export async function processProduct(
     title: string;
     image_url: string | null;
     enrichment_status: EnrichmentStatus | null;
+    category: string | null;
   }>(
-    `SELECT id, title, image_url, metadata->>'enrichment_status' AS enrichment_status
+    `SELECT id, title, image_url, metadata->>'enrichment_status' AS enrichment_status,
+            metadata->>'category' AS category
      FROM products WHERE source = $1 AND source_product_id = $2`,
     [raw.source, raw.source_product_id],
   );
@@ -35,7 +38,9 @@ export async function processProduct(
   if (prev && prev.title === raw.title && prev.image_url === raw.image_url) {
     // El peso del proveedor refresca también por el fast-path (un producto
     // existente puede ganar peso cuando el actor empieza a traerlo), pero un
-    // peso MEDIDO por el admin jamás se pisa.
+    // peso MEDIDO por el admin jamás se pisa. Los mappers traen peso NETO
+    // (Amazon "Item Weight") → se persiste el peso de PAQUETE (base de tarifa).
+    const shipGrams = raw.weight_grams != null ? packagedGrams(raw.weight_grams, prev.category) : null;
     await pg.query(
       `UPDATE products SET price_cents = $1, url = COALESCE($2, url),
          weight_grams = CASE WHEN weight_source = 'measured' THEN weight_grams ELSE COALESCE($4, weight_grams) END,
@@ -43,7 +48,7 @@ export async function processProduct(
                               WHEN $4::int IS NOT NULL THEN 'provider' ELSE weight_source END,
          last_refreshed_at = now()
        WHERE id = $3`,
-      [raw.price_cents, raw.url ?? null, prev.id, raw.weight_grams ?? null],
+      [raw.price_cents, raw.url ?? null, prev.id, shipGrams],
     );
     return {
       productId: prev.id,
@@ -103,7 +108,8 @@ export async function processProduct(
       raw.url ?? null,
       JSON.stringify(metadata),
       `[${embedding.join(",")}]`,
-      raw.weight_grams ?? null,
+      // peso NETO del mapper → peso de PAQUETE (los marketplaces publican neto)
+      raw.weight_grams != null ? packagedGrams(raw.weight_grams, normalized.category ?? raw.raw_category) : null,
     ],
   );
 

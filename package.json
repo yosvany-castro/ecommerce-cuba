@@ -10,6 +10,7 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "apify:smoke": "tsx scripts/apify-smoke.ts",
+    "weight:eval": "tsx scripts/weight-eval.ts",
     "cron:catalog-fill": "tsx scripts/cron-catalog-fill.ts",
     "cron:catalog-refresh": "tsx scripts/cron-catalog-refresh.ts",
     "cron:cohort-centroids": "tsx scripts/cron-cohort-centroids.ts",

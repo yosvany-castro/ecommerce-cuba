@@ -31,6 +31,19 @@ export default async function ProductDetailPage({
   const rails = sections.filter((s) => RAIL_TYPES.has(s.section_type) && s.items.length > 0);
   const { src } = await searchParams;
   const source = (src && SOURCES.has(src) ? src : "direct") as CardSource;
+  // Días tienda→depósito del proveedor (0036): acortan el rango de entrega.
+  const providerShipDays =
+    product.provider_ship_min_days != null && product.provider_ship_max_days != null
+      ? { min: product.provider_ship_min_days, max: product.provider_ship_max_days }
+      : null;
 
-  return <ProductView card={card} description={product.description} rails={rails} source={source} />;
+  return (
+    <ProductView
+      card={card}
+      description={product.description}
+      rails={rails}
+      source={source}
+      providerShipDays={providerShipDays}
+    />
+  );
 }

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
-import { estimateDelivery, formatDeliveryRange } from "@/lib/delivery";
+import { estimateDelivery, deliveryDates, deliveryPhrase, type ProviderShipDays } from "@/lib/delivery";
 import { gramsToLb } from "@/lib/weight";
 import { attrsOf, catOf, fmt, hasPriceRange, imageForColor, matchVariant, minPriceCents, ratingLine, resolveColorHex, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
@@ -38,11 +38,13 @@ export function ProductView({
   description,
   rails,
   source,
+  providerShipDays = null,
 }: {
   card: StorefrontCard;
   description: string;
   rails: StorefrontSection[];
   source: CardSource;
+  providerShipDays?: ProviderShipDays | null;
 }) {
   const router = useRouter();
   const { add } = useTukiCart();
@@ -202,14 +204,17 @@ export function ProductView({
   };
 
   // Entrega honesta por tienda y vía (antes: "24–48 h" hard-coded, falso para
-  // reenvío a Cuba). Rango total único, siempre etiquetado como estimado.
-  const air = estimateDelivery(card.source, "aereo");
-  const sea = estimateDelivery(card.source, "maritimo");
+  // reenvío a Cuba). Presentación en FECHAS concretas (decisión del dueño) y,
+  // si el proveedor reportó sus días de envío, el rango se acorta con el dato
+  // real del producto.
+  const air = estimateDelivery(card.source, "aereo", providerShipDays);
+  const sea = estimateDelivery(card.source, "maritimo", providerShipDays);
+  const airDates = deliveryDates(air);
 
   const specs = [
     { k: "Categoría", v: cat.label },
     ...(rl ? [{ k: "Valoración", v: rl }] : []),
-    { k: "Entrega estimada", v: `${formatDeliveryRange(air)} (aéreo)` },
+    { k: "Entrega estimada", v: `${airDates.from} – ${airDates.to} (aéreo)` },
     ...(weight ? [{ k: weight.estimated ? "Peso estimado" : "Peso", v: `${gramsToLb(weight.grams)} lb (${weight.grams} g)` }] : []),
     { k: "SKU", v: "TK-" + card.id.slice(0, 8).toUpperCase() },
   ];
@@ -251,9 +256,9 @@ export function ProductView({
       label: "Envío y devoluciones",
       body: (
         <div style={{ fontSize: 14, color: "#55565B", lineHeight: 1.65, maxWidth: 560 }}>
-          Vía aérea: llega en {formatDeliveryRange(air)}. Vía marítima: {formatDeliveryRange(sea)} (más económica,
-          ideal para pedidos pesados). Rangos estimados según la tienda de origen ({card.source}); el envío se
-          factura por peso. Devolución sin costo dentro de 30 días: la recogemos en tu puerta.
+          Vía aérea: llega {deliveryPhrase(air)}. Vía marítima: {deliveryPhrase(sea)} (más económica, ideal para
+          pedidos pesados). Fechas estimadas según la tienda de origen ({card.source}); el envío se factura por
+          peso. Devolución sin costo dentro de 30 días: la recogemos en tu puerta.
         </div>
       ),
     },
@@ -318,7 +323,7 @@ export function ProductView({
           <div style={{ display: "inline-block", background: cat.tint, color: cat.deep, borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 700 }}>{cat.label}</div>
           <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px", marginTop: 10, lineHeight: 1.1 }}>{card.title}</div>
           <div style={{ fontSize: 13.5, color: "#8E8F94", marginTop: 8 }}>
-            {rl ? `${rl} · llega en ${formatDeliveryRange(air)}` : `llega en ${formatDeliveryRange(air)}`}
+            {rl ? `${rl} · llega ${deliveryPhrase(air)}` : `llega ${deliveryPhrase(air)}`}
             {card.source && ` · de ${card.source}`}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
