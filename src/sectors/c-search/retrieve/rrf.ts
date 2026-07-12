@@ -4,6 +4,11 @@ export interface RankedProduct {
   id: string;
   rank: number;        // 1-based
   score: number;       // BM25 or cosine raw score
+  // T2a (barato primero): opcionales — solo bm25Search/cosineSearch los traen
+  // (ya vienen en su SELECT), para que el ajuste de precio post-fuse no tenga
+  // que volver a pegarle a la DB. Ausentes en otros productores de RankedProduct.
+  price_cents?: number;
+  title?: string;
 }
 
 export interface FusedProduct {

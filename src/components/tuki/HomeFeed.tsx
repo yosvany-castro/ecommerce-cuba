@@ -121,6 +121,7 @@ function FocusCard({
                 price_cents: card.price_cents,
                 category: card.category ?? null,
                 image_url: card.image_url,
+                source: card.source,
               });
             }}
             className="tk-hov-cta"

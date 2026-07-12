@@ -7,7 +7,8 @@ import { normalizeQueryWithLLM } from "./normalizer/normalize";
 import type { NormalizedQuery } from "./normalizer/prompt";
 import { bm25Search, type SearchFilters } from "./retrieve/bm25";
 import { cosineSearch } from "./retrieve/cosine";
-import { rrfFuse, RRF_K0, type FusedProduct, type RankedProduct } from "./retrieve/rrf";
+import { RRF_K0, type FusedProduct, type RankedProduct } from "./retrieve/rrf";
+import { fuseWithPriceBoost } from "./retrieve/price-boost";
 import {
   shouldCallMock,
   countStrongHits,
@@ -72,7 +73,7 @@ export interface HybridSearchResult {
 async function resolveProducts(ids: string[], pg: Client): Promise<ProductListRow[]> {
   if (ids.length === 0) return [];
   const r = await pg.query(
-    `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at
+    `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at, source
      FROM products
      WHERE id = ANY($1::uuid[]) AND is_active = true`,
     [ids],
@@ -266,9 +267,9 @@ export async function hybridSearch(
   });
   const [bm25, cos] = await Promise.all([bm25P, cosP]);
 
-  // 6. Fuse
+  // 6. Fuse (T2a: incluye el reorden "barato primero" — ver retrieve/price-boost.ts)
   tracer.start("rrf");
-  let fused: FusedProduct[] = rrfFuse([bm25, cos], RRF_K0);
+  let fused: FusedProduct[] = fuseWithPriceBoost([bm25, cos], RRF_K0);
   tracer.end("rrf");
 
   // 7. Freshness check (POR QUERY, F4 T4) + mock fallback decision.
@@ -389,7 +390,7 @@ export async function hybridSearch(
           bm25Search(searchTerms, filters, RETRIEVE_K, pg),
           cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg),
         ]);
-        fused = rrfFuse([bm25Re, cosRe], RRF_K0);
+        fused = fuseWithPriceBoost([bm25Re, cosRe], RRF_K0);
       } catch {
         try {
           await pg.query(

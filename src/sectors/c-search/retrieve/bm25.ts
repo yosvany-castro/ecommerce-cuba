@@ -22,7 +22,7 @@ export async function bm25Search(
   const ageMax = filters.age_max ?? null;
   const priceRange = filters.price_range ?? null;
   const r = await pg.query(
-    `SELECT id, ts_rank_cd(tsvector_es, websearch_to_tsquery('spanish', $1)) AS score
+    `SELECT id, price_cents, title, ts_rank_cd(tsvector_es, websearch_to_tsquery('spanish', $1)) AS score
      FROM products
      WHERE is_active = true
        AND tsvector_es @@ websearch_to_tsquery('spanish', $1)
@@ -51,5 +51,11 @@ export async function bm25Search(
      LIMIT $7`,
     [searchTerms, cats, gender, ageMin, ageMax, priceRange, K],
   );
-  return r.rows.map((row, i) => ({ id: row.id, rank: i + 1, score: Number(row.score) }));
+  return r.rows.map((row, i) => ({
+    id: row.id,
+    rank: i + 1,
+    score: Number(row.score),
+    price_cents: row.price_cents,
+    title: row.title,
+  }));
 }

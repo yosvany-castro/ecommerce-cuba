@@ -4,7 +4,7 @@ import type { StorefrontCard } from "@/storefront/contract";
 
 const card = (id: string, category: string, attrs?: StorefrontCard["attrs"]): StorefrontCard => ({
   id, title: "p" + id, price_cents: 1000, currency: "USD", image_url: null,
-  category,
+  category, source: "aliexpress",
   ...(attrs !== undefined ? { attrs } : {}),
 });
 

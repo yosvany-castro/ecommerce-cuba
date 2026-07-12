@@ -130,7 +130,7 @@ export async function resolveSections(
   const allIds = pendingHydration.flatMap((x) => x.ids);
   if (allIds.length > 0) {
     const r = await pg.query(
-      `SELECT id::text, title, price_cents, currency, image_url, metadata
+      `SELECT id::text, title, price_cents, currency, image_url, metadata, source
        FROM products WHERE id = ANY($1::uuid[]) AND is_active = true`,
       [allIds],
     );

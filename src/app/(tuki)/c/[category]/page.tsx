@@ -54,6 +54,7 @@ export default async function CategoryPage({
     currency: it.currency,
     image_url: it.image_url,
     category,
+    source: it.source,
   }));
 
   // Slug conocido → label/tint reales del CatDef. Slug libre desconocido (el

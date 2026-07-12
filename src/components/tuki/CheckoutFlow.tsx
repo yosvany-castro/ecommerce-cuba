@@ -508,7 +508,10 @@ export function CheckoutFlow() {
               const varLine = [ri.color, ri.size].filter(Boolean).join(" · ");
               return (
                 <div key={ri.key} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13.5, color: "#55565B" }}>
-                  <span style={{ minWidth: 0 }}>{ri.qty}× {ri.title}{varLine ? ` (${varLine})` : ""}</span>
+                  <span style={{ minWidth: 0 }}>
+                    {ri.qty}× {ri.title}{varLine ? ` (${varLine})` : ""}
+                    {ri.source && <span style={{ fontSize: 11, color: "#B0B1AE" }}> · {ri.source}</span>}
+                  </span>
                   <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(priceOf(ri) * ri.qty)}</span>
                 </div>
               );

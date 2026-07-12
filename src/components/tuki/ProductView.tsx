@@ -63,7 +63,7 @@ export function ProductView({
 
   const onAdd = () =>
     add(
-      { id: card.id, title: card.title, price_cents: card.price_cents, category: card.category ?? null, image_url: card.image_url },
+      { id: card.id, title: card.title, price_cents: card.price_cents, category: card.category ?? null, image_url: card.image_url, source: card.source },
       qty,
       selColor,
       selSize,
@@ -179,6 +179,7 @@ export function ProductView({
           <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px", marginTop: 10, lineHeight: 1.1 }}>{card.title}</div>
           <div style={{ fontSize: 13.5, color: "#8E8F94", marginTop: 8 }}>
             {rl ? `${rl} · envío 24–48 h` : "envío 24–48 h"}
+            {card.source && ` · de ${card.source}`}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
             <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>{fmt(card.price_cents)}</span>

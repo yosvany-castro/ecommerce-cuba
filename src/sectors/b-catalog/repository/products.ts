@@ -11,6 +11,7 @@ export interface ProductListRow {
   url: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
+  source: string; // amazon|aliexpress|shein|walmart (T3: badge discreto de tienda)
 }
 
 async function exec<T>(pg: Client | undefined, fn: (pg: Client) => Promise<T>): Promise<T> {
@@ -21,7 +22,7 @@ async function exec<T>(pg: Client | undefined, fn: (pg: Client) => Promise<T>): 
 export async function listByDate(opts: { limit?: number; offset?: number; pg?: Client } = {}): Promise<ProductListRow[]> {
   return exec(opts.pg, async (pg) => {
     const r = await pg.query(
-      `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at
+      `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at, source
        FROM products
        WHERE is_active = true
        ORDER BY created_at DESC
@@ -35,7 +36,7 @@ export async function listByDate(opts: { limit?: number; offset?: number; pg?: C
 export async function getById(id: string, pg?: Client): Promise<ProductListRow | null> {
   return exec(pg, async (pg) => {
     const r = await pg.query(
-      `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at
+      `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at, source
        FROM products
        WHERE id = $1 AND is_active = true`,
       [id],
@@ -47,7 +48,7 @@ export async function getById(id: string, pg?: Client): Promise<ProductListRow |
 export async function searchLike(opts: { query: string; limit?: number; pg?: Client }): Promise<ProductListRow[]> {
   return exec(opts.pg, async (pg) => {
     const r = await pg.query(
-      `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at
+      `SELECT id, title, description, price_cents, currency, image_url, url, metadata, created_at, source
        FROM products
        WHERE is_active = true
          AND (title ILIKE $1 OR description ILIKE $1)

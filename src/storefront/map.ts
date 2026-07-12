@@ -40,6 +40,7 @@ export function toCard(
     price_cents: number;
     currency: string;
     image_url: string | null;
+    source: string;
     metadata?: unknown;
   },
   reason?: string,
@@ -54,6 +55,7 @@ export function toCard(
     currency: product.currency,
     image_url: product.image_url,
     category: meta?.category ?? null,
+    source: product.source,
     ...(reason ? { reason } : {}),
     ...(position ? { position } : {}),
     ...(attrs ? { attrs } : {}),

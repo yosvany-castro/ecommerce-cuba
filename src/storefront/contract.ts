@@ -6,6 +6,7 @@ export interface StorefrontCard {
   currency: string;
   image_url: string | null;
   category?: string | null; // metadata.category normalizada (ropa|electronica|hogar|juguetes_bebe|belleza|otros)
+  source: string; // products.source, NOT NULL: amazon|aliexpress|shein|walmart (T3: badge discreto de tienda)
   reason?: string;
   position?: number;
   // metadata.attrs curado (A4), presente solo si el proveedor real trajo algo.

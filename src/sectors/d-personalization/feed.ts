@@ -233,7 +233,7 @@ async function resolveWithReasons(
   if (items.length === 0) return [];
   const ids = items.map((x) => x.product_id);
   const r = await pg.query(
-    `SELECT id, title, description, price_cents, currency, image_url, metadata, created_at
+    `SELECT id, title, description, price_cents, currency, image_url, metadata, created_at, source
      FROM products
      WHERE id = ANY($1::uuid[]) AND is_active = true`,
     [ids],
@@ -520,10 +520,12 @@ export async function generateFeedInternal(
   // instead of an empty home. Replaces the pre-F2 behaviour where the feed
   // CREATED a profile and ranked by cosine against a zero vector (arbitrary).
   if (all.length === 0) {
+    // Barato primero (T2b): mismo criterio del top-up de abajo — el público
+    // cubano prefiere lo barato incluso en el fallback determinístico.
     const r = await pg.query(
       `SELECT id::text FROM products
        WHERE is_active = true AND NOT (id = ANY($1::uuid[]))
-       ORDER BY created_at DESC, id ASC
+       ORDER BY price_cents ASC, created_at DESC, id ASC
        LIMIT $2`,
       [excluded, limit],
     );
@@ -590,10 +592,11 @@ export async function generateFeedInternal(
       // ALGO de señal pero no alcanza para llenar la vitrina.
       if (allCandidates.length < SLATE_DEPTH) {
         const known = new Set(allCandidates);
+        // Barato primero (T2b): lo barato llena la vitrina antes que lo nuevo.
         const topUp = await pg.query(
           `SELECT id::text FROM products
            WHERE is_active = true AND NOT (id = ANY($1::uuid[]))
-           ORDER BY created_at DESC, id ASC
+           ORDER BY price_cents ASC, created_at DESC, id ASC
            LIMIT $2`,
           [[...excluded, ...allCandidates], SLATE_DEPTH + SLATE_SPARES - allCandidates.length],
         );

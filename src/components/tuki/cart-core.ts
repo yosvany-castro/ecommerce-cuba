@@ -11,6 +11,9 @@ export interface TukiCartItem {
   price_cents: number;
   category: string | null;
   image_url: string | null;
+  // T3: tienda de origen, discreta en UI ("· aliexpress"). Opcional — carritos
+  // guardados en localStorage ANTES de este cambio no la traen.
+  source?: string;
 }
 
 export interface CardSnapshot {
@@ -19,6 +22,7 @@ export interface CardSnapshot {
   price_cents: number;
   category?: string | null;
   image_url: string | null;
+  source?: string;
 }
 
 export function cartKey(productId: string, color: string | null, size: string | null): string {
@@ -47,6 +51,7 @@ export function addItem(
     price_cents: snap.price_cents,
     category: snap.category ?? null,
     image_url: snap.image_url,
+    source: snap.source,
   };
   return [...items, item];
 }

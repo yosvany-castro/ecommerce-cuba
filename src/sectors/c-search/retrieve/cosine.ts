@@ -14,7 +14,7 @@ export async function cosineSearch(
   const ageMax = filters.age_max ?? null;
   const priceRange = filters.price_range ?? null;
   const r = await pg.query(
-    `SELECT id, 1 - (embedding <=> $1::vector) AS score
+    `SELECT id, price_cents, title, 1 - (embedding <=> $1::vector) AS score
      FROM products
      WHERE is_active = true AND embedding IS NOT NULL
        AND ($2::text[] IS NULL OR (metadata->>'category') = ANY($2::text[]))
@@ -42,5 +42,11 @@ export async function cosineSearch(
      LIMIT $7`,
     ["[" + queryEmbedding.join(",") + "]", cats, gender, ageMin, ageMax, priceRange, K],
   );
-  return r.rows.map((row, i) => ({ id: row.id, rank: i + 1, score: Number(row.score) }));
+  return r.rows.map((row, i) => ({
+    id: row.id,
+    rank: i + 1,
+    score: Number(row.score),
+    price_cents: row.price_cents,
+    title: row.title,
+  }));
 }

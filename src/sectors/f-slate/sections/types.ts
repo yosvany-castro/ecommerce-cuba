@@ -11,6 +11,7 @@ export interface SectionCardDTO {
   currency: string;
   image_url: string | null;
   category?: string | null; // metadata.category (StorefrontCard, F/T2)
+  source: string; // amazon|aliexpress|shein|walmart (StorefrontCard, T3)
   reason?: string;
   /** Posición absoluta en el slate (solo hero — reporte de viewport). */
   position?: number;

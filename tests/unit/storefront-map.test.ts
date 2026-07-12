@@ -8,8 +8,8 @@ const section: ResolvedSection = {
   placement_id: "pl1", section_type: "hero_grid", slot: 10, title: "Para ti",
   display: "grid",
   items: [
-    { id: "p1", title: "Auriculares", price_cents: 125000, currency: "CUP", image_url: "/p1.jpg", reason: "viste audio", position: 1001 },
-    { id: "p2", title: "Sin foto", price_cents: 9900, currency: "CUP", image_url: null },
+    { id: "p1", title: "Auriculares", price_cents: 125000, currency: "CUP", image_url: "/p1.jpg", source: "amazon", reason: "viste audio", position: 1001 },
+    { id: "p2", title: "Sin foto", price_cents: 9900, currency: "CUP", image_url: null, source: "aliexpress" },
   ],
   next_cursor: "cur-1", slate_id: "sl9", outcome: "served", resolve_ms: 4,
 };

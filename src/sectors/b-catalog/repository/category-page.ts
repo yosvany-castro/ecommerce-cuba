@@ -15,6 +15,7 @@ export interface CategoryPageItem {
   price_cents: number;
   currency: string;
   image_url: string | null;
+  source: string; // amazon|aliexpress|shein|walmart (T3: badge discreto de tienda)
 }
 
 export const CATEGORY_PAGE_SIZE = 24;
@@ -26,21 +27,24 @@ export async function fetchCategoryPage(
 ): Promise<{ items: CategoryPageItem[]; hasNext: boolean }> {
   const offset = (page - 1) * CATEGORY_PAGE_SIZE;
   const usePop = await isPopularityTableReady(pg);
+  // Barato primero (T2c): precio como criterio principal — la popularidad
+  // (cuando hay tabla) sigue siendo el desempate real, pero antes de cortesía
+  // por fecha. Público cubano prefiere lo barato incluso en la landing de categoría.
   const r = usePop
     ? await pg.query(
-        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url
+        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url, p.source
          FROM products p
          LEFT JOIN product_popularity_7d pop ON pop.product_id = p.id
          WHERE p.is_active = true AND p.metadata->>'category' = $1
-         ORDER BY COALESCE(pop.events_7d, 0) DESC, p.created_at DESC, p.id ASC
+         ORDER BY p.price_cents ASC, COALESCE(pop.events_7d, 0) DESC, p.created_at DESC, p.id ASC
          LIMIT $2 OFFSET $3`,
         [category, CATEGORY_PAGE_SIZE + 1, offset],
       )
     : await pg.query(
-        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url
+        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url, p.source
          FROM products p
          WHERE p.is_active = true AND p.metadata->>'category' = $1
-         ORDER BY p.created_at DESC, p.id ASC
+         ORDER BY p.price_cents ASC, p.created_at DESC, p.id ASC
          LIMIT $2 OFFSET $3`,
         [category, CATEGORY_PAGE_SIZE + 1, offset],
       );

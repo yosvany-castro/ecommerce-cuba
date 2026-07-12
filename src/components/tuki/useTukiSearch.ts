@@ -28,6 +28,7 @@ interface ApiRow {
   image_url: string | null;
   metadata: unknown;
   created_at: string;
+  source: string;
 }
 interface ApiResp {
   products: ApiRow[];
@@ -72,6 +73,7 @@ function toCards(rows: ApiRow[]): StorefrontCard[] {
     currency: r.currency,
     image_url: r.image_url,
     category: (r.metadata as { category?: string | null } | null)?.category ?? null,
+    source: r.source,
   }));
 }
 function metaOf(r: ApiResp): SearchMeta {

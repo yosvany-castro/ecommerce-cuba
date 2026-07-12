@@ -16,7 +16,8 @@ function itemVars(item: TukiCartItem) {
   const varLine = [item.color, item.size].filter(Boolean).join(" · ");
   return {
     nameVar: item.title + (varLine ? ` (${varLine})` : ""),
-    meta: (varLine ? varLine + " · " : "") + fmt(item.price_cents) + " c/u",
+    // T3: tienda al final, discreta — "$4.99 c/u · aliexpress".
+    meta: (varLine ? varLine + " · " : "") + fmt(item.price_cents) + " c/u" + (item.source ? " · " + item.source : ""),
   };
 }
 
@@ -216,7 +217,7 @@ export function CartDrawer() {
                             <div
                               onClick={(e) => {
                                 e.stopPropagation();
-                                add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url });
+                                add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source });
                               }}
                               className="tk-hov-plus"
                               style={{ width: 24, height: 24, borderRadius: "50%", background: "#1C1D20", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}

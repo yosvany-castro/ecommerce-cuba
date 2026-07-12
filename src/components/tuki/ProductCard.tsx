@@ -50,6 +50,7 @@ export function ProductCard({
       price_cents: card.price_cents,
       category: card.category ?? null,
       image_url: card.image_url,
+      source: card.source,
     });
   };
 
@@ -128,16 +129,21 @@ export function ProductCard({
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "8px 5px 0" }}>
-        {isGrid ? (
-          <span style={{ fontSize: 15.5, fontWeight: 700 }}>{fmt(card.price_cents)}</span>
-        ) : (
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+        <div>
+          {isGrid ? (
             <span style={{ fontSize: 15.5, fontWeight: 700 }}>{fmt(card.price_cents)}</span>
-            {oldC != null && (
-              <span style={{ fontSize: 11.5, color: "#B0B1AE", textDecoration: "line-through" }}>{fmt(oldC)}</span>
-            )}
-          </div>
-        )}
+          ) : (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 15.5, fontWeight: 700 }}>{fmt(card.price_cents)}</span>
+              {oldC != null && (
+                <span style={{ fontSize: 11.5, color: "#B0B1AE", textDecoration: "line-through" }}>{fmt(oldC)}</span>
+              )}
+            </div>
+          )}
+          {card.source && (
+            <div style={{ fontSize: 10, color: "#B0B1AE", marginTop: 2, textTransform: "lowercase" }}>{card.source}</div>
+          )}
+        </div>
         <div
           data-testid="tuki-card-add"
           onClick={addToCart}
