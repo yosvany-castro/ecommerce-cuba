@@ -25,9 +25,12 @@ export default async function ProductDetailPage({
   const category = (product.metadata as { category?: string } | null)?.category ?? null;
   const card = toCard(product); // category ← metadata.category (single source)
   const sections = await getProductSections(id, category);
-  const combos = sections.find((s) => s.section_type === "cross_sell")?.items ?? [];
+  // Rieles de recomendación bajo los detalles, en orden de slot: similar (8),
+  // cross_sell (10), upsell (30) — ver 0026/0035. Secciones vacías no llegan.
+  const RAIL_TYPES = new Set(["similar", "cross_sell", "upsell"]);
+  const rails = sections.filter((s) => RAIL_TYPES.has(s.section_type) && s.items.length > 0);
   const { src } = await searchParams;
   const source = (src && SOURCES.has(src) ? src : "direct") as CardSource;
 
-  return <ProductView card={card} description={product.description} combos={combos} source={source} />;
+  return <ProductView card={card} description={product.description} rails={rails} source={source} />;
 }

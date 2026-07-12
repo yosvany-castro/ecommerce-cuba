@@ -13,7 +13,7 @@ import {
   updateProfileModeWithProduct,
 } from "./profile-mode";
 import type { CohortId } from "./cohorts/definitions";
-import { pinProductInSlate, bumpSlateVersion } from "./slate/store";
+import { pinProductInSlate, bumpSlateVersion, expireLiveSlate } from "./slate/store";
 import { captureCoOccurrence } from "./co-occurrence/capture";
 import { modesForEvents } from "./multimode/thresholds";
 import { recomputeModesForBucket } from "./multimode/recompute";
@@ -165,6 +165,15 @@ async function runPipeline(
       await pinProductInSlate(input.session_id, product_id, pg);
     } catch (e) {
       console.warn("[track-hook] slate pin failed (ignored):", e);
+    }
+    // Fix "vi 3 ventiladores y la home ni se entera": la vista expira el slate
+    // vivo (después del pin, que escribe EN ese slate) — la próxima home
+    // re-materializa con views-categories fresco. Antes NADA invalidaba el
+    // snapshot durante sus 300s de TTL: la home era inmutable ante las vistas.
+    try {
+      await expireLiveSlate(input.session_id, pg);
+    } catch (e) {
+      console.warn("[track-hook] slate expire on view failed (ignored):", e);
     }
   }
 

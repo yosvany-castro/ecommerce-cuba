@@ -12,7 +12,7 @@ import {
   resolveColorHex,
   sectionize,
   stripe,
-  weightLbFor,
+  weightLbFrom,
 } from "@/components/tuki/lib";
 import type { StorefrontCard } from "@/storefront/contract";
 
@@ -33,11 +33,14 @@ describe("tuki lib", () => {
     expect(catOf(null).id).toBe("otros");
     expect(stripe(CATS.hogar)).toContain("repeating-linear-gradient");
   });
-  it("weightLbFor es determinístico y positivo (único dato sintético que queda, uso interno de envío)", () => {
-    const w1 = weightLbFor("3f2b8c31-3a71-4b06-91ec-9217efa5e48b", "ropa");
-    const w2 = weightLbFor("3f2b8c31-3a71-4b06-91ec-9217efa5e48b", "ropa");
+  it("weightLbFrom: el peso real de DB manda; sin dato cae a la heurística determinista", () => {
+    // 907g medidos → 2.0 lb exactas, ignora título/categoría
+    expect(weightLbFrom(907, "Vestido de verano", "ropa")).toBe(2);
+    // sin dato: heurística por keyword (ventilador ≈ 2kg) — determinista
+    const w1 = weightLbFrom(null, "Ventilador de mesa 16 pulgadas", "hogar");
+    const w2 = weightLbFrom(undefined, "Ventilador de mesa 16 pulgadas", "hogar");
     expect(w1).toBe(w2);
-    expect(w1).toBeGreaterThan(0);
+    expect(w1).toBeGreaterThan(2); // un ventilador jamás pesa menos de 2 lb
   });
   it("attrsOf: sin attrs (producto sin datos curables) -> todo vacío/undefined, nada inventado", () => {
     const c = card("id-1", "ropa");
@@ -67,10 +70,12 @@ describe("tuki lib", () => {
     expect(da.rating).toBe(4.9);
     expect(da.sold).toBe("3.4k");
   });
-  it("attrsOf: weightLb siempre sintético, no depende de attrs", () => {
+  it("attrsOf: weightLb no depende de attrs y usa card.weight_grams cuando existe", () => {
     const a = attrsOf(card("id-1", "ropa"));
     const b = attrsOf(card("id-1", "ropa", { rating: 4.9 }));
     expect(a.weightLb).toBe(b.weightLb);
+    const real = attrsOf({ ...card("id-1", "ropa"), weight_grams: 453 });
+    expect(real.weightLb).toBe(1);
   });
   it("ratingLine: combina rating+sold reales, cae a lo que haya, null si no hay nada (sin inventar)", () => {
     expect(ratingLine(4.8, "1.6k")).toBe("★ 4.8 · 1.6k vendidos");

@@ -1,6 +1,7 @@
 import type { FetchOptions } from "../../mock/aggregator";
 import type { MockProduct } from "../../mock/types";
 import { asRecord, compactAttrs, queryFromOpts, str, toNumber, usdToCents } from "./shared";
+import { parseWeightToGrams } from "@/lib/weight";
 
 // junglee/amazon-crawler
 export const ACTOR_SLUG = "junglee/amazon-crawler";
@@ -39,6 +40,19 @@ function variantColorsSizes(va: unknown): { colors?: string[]; sizes?: string[] 
   };
 }
 
+// attributes: array {key,value} del actor. "Item Weight": "1.76 ounces"/"20 Grams"
+// → gramos; unidades raras ("Hundredths Pounds") → null, sin inventar.
+function itemWeightGrams(attributes: unknown): number | null {
+  if (!Array.isArray(attributes)) return null;
+  for (const entry of attributes) {
+    const o = asRecord(entry);
+    if (!o || String(o.key ?? "").toLowerCase() !== "item weight") continue;
+    const v = str(o.value);
+    return v ? parseWeightToGrams(v) : null;
+  }
+  return null;
+}
+
 export function mapItem(raw: unknown): MockProduct | null {
   const o = asRecord(raw);
   if (!o) return null;
@@ -68,6 +82,7 @@ export function mapItem(raw: unknown): MockProduct | null {
     brand: brand ?? "",
     raw_category: str(o.breadCrumbs) ?? "",
     url: str(o.url) ?? `https://www.amazon.com/dp/${id}`,
+    weight_grams: itemWeightGrams(o.attributes),
     attributes: compactAttrs({
       old_price_cents: oldPrice,
       rating: toNumber(o.stars),

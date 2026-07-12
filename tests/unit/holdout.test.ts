@@ -1,8 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { randomUUID } from "node:crypto";
 import { isHoldout } from "@/sectors/d-personalization/holdout";
 
 describe("isHoldout (F2)", () => {
+  // El test fija su propio porcentaje: .env.local puede traer HOLDOUT_PERCENT=0
+  // (apagado en local/piloto) y estas aserciones son sobre el default del 10%.
+  beforeAll(() => {
+    process.env.HOLDOUT_PERCENT = "10";
+  });
   it("determinista: la misma identidad cae SIEMPRE en el mismo brazo", () => {
     const id = { user_id: null, anonymous_id: randomUUID() };
     const first = isHoldout(id);

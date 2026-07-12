@@ -86,6 +86,32 @@ describe("parseProductUrl — shein", () => {
   test("sin el patrón -p-<id>.html → null", () => {
     expect(parseProductUrl("https://shein.com/Cute-Summer-Dress.html")).toBeNull();
   });
+
+  test("formato real con sufijo de categoría …-p-<id>-cat-<n>.html (el bug)", () => {
+    expect(
+      parseProductUrl("https://es.shein.com/Portable-Mini-Fan-p-23456789-cat-1727.html"),
+    ).toEqual({ source: "shein", source_product_id: "23456789" });
+  });
+
+  test("con -cat- y query string de tracking", () => {
+    expect(
+      parseProductUrl("https://es.shein.com/Vestido-Floral-p-11223344-cat-1727.html?src_identifier=fc%3DES&mallCode=1"),
+    ).toEqual({ source: "shein", source_product_id: "11223344" });
+  });
+
+  test("ccTLD shein.com.mx también resuelve", () => {
+    expect(parseProductUrl("https://shein.com.mx/Blusa-p-555666.html")).toEqual({
+      source: "shein",
+      source_product_id: "555666",
+    });
+  });
+
+  test("link de compartir con goods_id en query", () => {
+    expect(parseProductUrl("https://es.shein.com/share/landing?goods_id=778899")).toEqual({
+      source: "shein",
+      source_product_id: "778899",
+    });
+  });
 });
 
 describe("parseProductUrl — walmart", () => {
@@ -133,5 +159,13 @@ describe("parseProductUrl — negativos generales", () => {
 
   test("dominio correcto pero producto de otra tienda mezclado → null", () => {
     expect(parseProductUrl("https://www.amazon.com/ip/388037456")).toBeNull();
+  });
+
+  test("ccTLD amazon.com.mx resuelve; marca con sufijo pegado NO", () => {
+    expect(parseProductUrl("https://www.amazon.com.mx/dp/B0018QS5HU")).toEqual({
+      source: "amazon",
+      source_product_id: "B0018QS5HU",
+    });
+    expect(parseProductUrl("https://sheinoutlet.com/Vestido-p-123.html")).toBeNull();
   });
 });

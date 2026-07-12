@@ -1,31 +1,57 @@
 // src/components/tuki/checkout-core.ts — lógica pura del checkout Tuki. Sin React, sin browser.
 // Envío por peso + validaciones. Calcado de dc.html shipCalc/shipErrs/billErrs (script 1112–1138)
 // con precios en centavos.
+import { estimateDeliveryForCart } from "@/lib/delivery";
 
 export interface ShipMethod {
   id: "rapido" | "estandar" | "lento";
   icon: string;
   name: string;
   sub: string;
-  d1: number;
-  d2: number;
   price_cents: number;
   maxLb?: number;
   minLb?: number;
   reco?: boolean;
 }
 
-// dc.html 952–956.
+// IDs y PRECIOS intactos (viven en el enum del server, el pricing map de
+// checkout-anonymous.ts y pedidos históricos — cobro = lo mostrado). Lo que
+// cambió: nombres y días honestos según la vía REAL del reenvío a Cuba —
+// rapido/estandar viajan en avión, lento en barco. Los días ya no son
+// constantes demo ("camión de siempre 3-5 días"): salen de src/lib/delivery.ts
+// según las tiendas del carrito.
 export const SHIP: ShipMethod[] = [
-  { id: "rapido", icon: "⚡", name: "Rápido", sub: "se va en avión", d1: 1, d2: 2, price_cents: 1299, maxLb: 10 },
-  { id: "estandar", icon: "🚚", name: "Estándar", sub: "el camión de siempre", d1: 3, d2: 5, price_cents: 499, reco: true },
-  { id: "lento", icon: "🐢", name: "Lento", sub: "sin prisa, más barato", d1: 8, d2: 12, price_cents: 199, minLb: 5 },
+  { id: "rapido", icon: "⚡", name: "Aéreo prioritario", sub: "en avión, primero en salir", price_cents: 1299, maxLb: 10 },
+  { id: "estandar", icon: "✈️", name: "Aéreo estándar", sub: "en avión, envío agrupado", price_cents: 499, reco: true },
+  { id: "lento", icon: "🚢", name: "Marítimo", sub: "en barco, ideal para lo pesado", price_cents: 199, minLb: 5 },
 ];
 
-export type ShipOption = ShipMethod & { blocked: boolean; reason: string; effectivePriceCents: number };
+// ponytail: knob de consolidación — el aéreo estándar espera al próximo envío
+// agrupado (~40% más que el prioritario); calibrar con los tiempos reales.
+const GROUP_FACTOR = 1.4;
 
-export function shipOptions(weightLb: number, subtotalCents: number, freeCents = 5000): ShipOption[] {
+export type ShipOption = ShipMethod & {
+  blocked: boolean;
+  reason: string;
+  effectivePriceCents: number;
+  d1: number;
+  d2: number;
+};
+
+export function shipOptions(
+  weightLb: number,
+  subtotalCents: number,
+  sources: (string | null | undefined)[] = [],
+  freeCents = 5000,
+): ShipOption[] {
   const wS = weightLb.toFixed(1).replace(".0", "");
+  const air = estimateDeliveryForCart(sources, "aereo");
+  const sea = estimateDeliveryForCart(sources, "maritimo");
+  const days: Record<ShipMethod["id"], [number, number]> = {
+    rapido: [air.minDays, air.maxDays],
+    estandar: [Math.round(air.minDays * GROUP_FACTOR), Math.round(air.maxDays * GROUP_FACTOR)],
+    lento: [sea.minDays, sea.maxDays],
+  };
   return SHIP.map((s) => {
     const overMax = s.maxLb != null && weightLb > s.maxLb;
     const underMin = s.minLb != null && weightLb < s.minLb;
@@ -35,7 +61,7 @@ export function shipOptions(weightLb: number, subtotalCents: number, freeCents =
     if (overMax) reason = `tu caja pesa ${wS} lb y el aéreo acepta máx ${s.maxLb} lb — quita algo pesado o elige otro`;
     if (underMin)
       reason = `pide mínimo ${s.minLb} lb y llevas ${wS} lb — súmale ${(s.minLb! - weightLb).toFixed(1)} lb o elige otro`;
-    return { ...s, blocked, reason, effectivePriceCents };
+    return { ...s, d1: days[s.id][0], d2: days[s.id][1], blocked, reason, effectivePriceCents };
   });
 }
 

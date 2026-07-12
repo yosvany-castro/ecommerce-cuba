@@ -7,6 +7,9 @@ export interface StorefrontCard {
   image_url: string | null;
   category?: string | null; // metadata.category normalizada (ropa|electronica|hogar|juguetes_bebe|belleza|otros)
   source: string; // products.source, NOT NULL: amazon|aliexpress|shein|walmart (T3: badge discreto de tienda)
+  // products.weight_grams (measured|provider|llm); null/ausente → heurística
+  // determinista compartida (src/lib/weight.ts). Base de facturación del envío.
+  weight_grams?: number | null;
   reason?: string;
   position?: number;
   // metadata.attrs curado (A4), presente solo si el proveedor real trajo algo.

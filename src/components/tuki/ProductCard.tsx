@@ -66,6 +66,7 @@ export function ProductCard({
       category: card.category ?? null,
       image_url: card.image_url,
       source: card.source,
+      weight_grams: card.weight_grams ?? null,
     });
   };
 

@@ -171,6 +171,19 @@ export function useTukiSearch(): TukiSearch {
         return;
       }
 
+      // Red de seguridad: es claramente una URL pero no la reconocimos (tienda
+      // no soportada, página de categoría, formato nuevo). NUNCA buscarla como
+      // texto — BM25/coseno sobre el string de una URL devuelve resultados
+      // basura que parecen aleatorios. Mejor el aviso honesto de "no pudimos
+      // leer ese enlace" (mismo empty state que un resolve fallido).
+      if (/^(https?:\/\/|www\.)\S+$/i.test(q)) {
+        setCards([]);
+        setMeta({ hit_cache: false, called_mock: false, method: "url_resolve_failed" });
+        setProgress(1);
+        setPhase("results");
+        return;
+      }
+
       setPhase("loading");
       setProgress(0);
       saveRecent(q); // guardar al INICIAR la búsqueda

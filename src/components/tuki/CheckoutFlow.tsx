@@ -10,6 +10,7 @@ import { useTukiCart } from "./cart";
 import { cartKey } from "./cart-core";
 import { useToast } from "./Toast";
 import { etaLine, shipOptions, validateBilling, validateShipping } from "./checkout-core";
+import { hasMultipleStores } from "@/lib/delivery";
 
 // Aviso de precio por línea (T2): "changed" = el precio real ya no es el del
 // snapshot local — el carrito YA se corrigió (ver updatePrices), esto solo
@@ -148,7 +149,7 @@ export function CheckoutFlow() {
   // necesita una capa de override aparte, solo sumar lo que hay.
   const effectiveSubtotal = items.reduce((s, ri) => s + ri.price_cents * ri.qty, 0);
 
-  const opts = shipOptions(weightLb, effectiveSubtotal);
+  const opts = shipOptions(weightLb, effectiveSubtotal, items.map((i) => i.source));
   const selBlocked = opts.find((o) => o.id === shipSel)?.blocked ?? false;
   const sel: ShipId = selBlocked ? "estandar" : shipSel;
   const cur = opts.find((o) => o.id === sel)!;
@@ -394,6 +395,12 @@ export function CheckoutFlow() {
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26 }}>¿con qué prisa lo quieres?</div>
               <div style={{ fontSize: 13, color: "#8E8F94", margin: "6px 0 16px" }}>
                 tu caja pesa <span style={{ fontWeight: 700, color: "#1C1D20" }}>{wS} lb</span> — el peso decide qué envíos aplican
+                {hasMultipleStores(items.map((i) => i.source)) && (
+                  <>
+                    <br />
+                    tu pedido junta varias tiendas: los tiempos son del artículo más lento y puede llegar en más de una entrega
+                  </>
+                )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 520 }}>
                 {opts.map((s) => {

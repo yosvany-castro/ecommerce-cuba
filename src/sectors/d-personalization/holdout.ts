@@ -16,18 +16,22 @@ import { createHash } from "node:crypto";
 
 const HOLDOUT_SALT = "pageslate-holdout-v1";
 
-const HOLDOUT_PERCENT = (() => {
+// Lectura por-llamada (no módulo-load): .env.local puede apagarlo en local
+// (HOLDOUT_PERCENT=0, ver nota ahí) y los tests fijan el suyo sin depender
+// del entorno de la máquina.
+function holdoutPercent(): number {
   const raw = Number.parseInt(process.env.HOLDOUT_PERCENT ?? "10", 10);
   return Number.isFinite(raw) ? Math.min(50, Math.max(0, raw)) : 10;
-})();
+}
 
 export function isHoldout(identity: {
   user_id: string | null;
   anonymous_id: string | null;
 }): boolean {
+  const pct = holdoutPercent();
   const key = identity.user_id ?? identity.anonymous_id;
-  if (!key || HOLDOUT_PERCENT === 0) return false;
+  if (!key || pct === 0) return false;
   const digest = createHash("sha256").update(`${HOLDOUT_SALT}:${key}`).digest();
   const bucket = digest.readUInt32BE(0) % 100;
-  return bucket < HOLDOUT_PERCENT;
+  return bucket < pct;
 }

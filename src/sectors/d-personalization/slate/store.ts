@@ -231,6 +231,24 @@ export async function appendToSlate(
  * nothing visible ever reorders). Triggers: cohort SHIFT (intent changed) and
  * SEARCH (explicit new intent). Returns the new version (null = no live slate).
  */
+/**
+ * Invalidación por VISTA (fix "el feed no reacciona a lo que miro"): expira el
+ * slate vivo de la sesión para que la PRÓXIMA carga de la home re-materialice
+ * con la señal fresca (views-categories pesa ×3 la sesión actual). Es hacer
+ * event-driven el mismo MISS que ya produce el TTL de 300s — ninguna página
+ * visible se reordena en vivo, y los pins del slate expirado sobreviven a la
+ * re-materialización (feed.ts los lee "even expired"). bumpSlateVersion no
+ * servía para esto: loadLiveSlate no compara version y el HIT re-servía el
+ * mismo snapshot hasta expirar.
+ */
+export async function expireLiveSlate(session_id: string, pg: Client): Promise<void> {
+  await pg.query(
+    `UPDATE feed_slates SET expires_at = now()
+     WHERE session_id = $1 AND surface = 'home' AND expires_at > now()`,
+    [session_id],
+  );
+}
+
 export async function bumpSlateVersion(
   session_id: string,
   pg: Client,

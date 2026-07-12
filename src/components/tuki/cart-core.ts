@@ -1,5 +1,6 @@
 // src/components/tuki/cart-core.ts — lógica pura del carrito Tuki. Sin React, sin browser APIs.
-import { weightLbFor } from "./lib";
+import { gramsToLb } from "@/lib/weight";
+import { weightGramsFrom } from "./lib";
 
 export interface TukiCartItem {
   key: string;
@@ -14,6 +15,9 @@ export interface TukiCartItem {
   // T3: tienda de origen, discreta en UI ("· aliexpress"). Opcional — carritos
   // guardados en localStorage ANTES de este cambio no la traen.
   source?: string;
+  // Peso conocido al momento de agregar (products.weight_grams). Ausente en
+  // carritos viejos o productos sin dato → heurística determinista compartida.
+  weight_grams?: number | null;
 }
 
 export interface CardSnapshot {
@@ -23,6 +27,7 @@ export interface CardSnapshot {
   category?: string | null;
   image_url: string | null;
   source?: string;
+  weight_grams?: number | null;
 }
 
 export function cartKey(productId: string, color: string | null, size: string | null): string {
@@ -52,6 +57,7 @@ export function addItem(
     category: snap.category ?? null,
     image_url: snap.image_url,
     source: snap.source,
+    weight_grams: snap.weight_grams ?? null,
   };
   return [...items, item];
 }
@@ -75,9 +81,11 @@ export function subtotalCents(items: TukiCartItem[]): number {
   return items.reduce((sum, i) => sum + i.price_cents * i.qty, 0);
 }
 
+// Suma en GRAMOS y convierte al final (evita acumular el redondeo por línea).
 export function cartWeightLb(items: TukiCartItem[]): number {
-  return items.reduce(
-    (sum, i) => sum + weightLbFor(i.product_id, i.category) * i.qty,
+  const grams = items.reduce(
+    (sum, i) => sum + weightGramsFrom(i.weight_grams, i.title, i.category) * i.qty,
     0,
   );
+  return grams === 0 ? 0 : gramsToLb(grams);
 }

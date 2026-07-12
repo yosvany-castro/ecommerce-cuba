@@ -80,12 +80,15 @@ describe("ui_placements lifecycle guards (0025/0026)", () => {
 
       const placements = await pg.query(
         `SELECT surface, section_type, status FROM public.ui_placements
-         WHERE created_by = 'seed' ORDER BY surface`,
+         WHERE created_by = 'seed' ORDER BY surface, section_type`,
       );
+      // 0026 (réplica de las páginas) + 0035 (rieles similar/upsell en la PDP).
       expect(placements.rows).toEqual([
         { surface: "cart", section_type: "cart_addons", status: "approved" },
         { surface: "home", section_type: "hero_grid", status: "approved" },
         { surface: "pdp", section_type: "cross_sell", status: "approved" },
+        { surface: "pdp", section_type: "similar", status: "approved" },
+        { surface: "pdp", section_type: "upsell", status: "approved" },
       ]);
     });
   });

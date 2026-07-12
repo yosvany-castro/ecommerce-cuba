@@ -60,12 +60,25 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     let variants: CuratedVariant[] | undefined;
+    let providerWeightGrams: number | undefined;
     let lookupFailed = false;
     try {
-      variants = await liveLookupVariants(row as ProviderRef);
+      const detail = await liveLookupVariants(row as ProviderRef);
+      variants = detail?.variants;
+      providerWeightGrams = detail?.weightGrams;
     } catch {
       variants = undefined; // fail-open, mismo criterio que revalidateProduct
       lookupFailed = true;
+    }
+
+    // Peso de paquete del proveedor (aliexpress): dato de facturación real,
+    // se persiste aunque no haya variantes. Un peso medido jamás se pisa.
+    if (providerWeightGrams !== undefined) {
+      await pg.query(
+        `UPDATE products SET weight_grams = $1, weight_source = 'provider'
+         WHERE id = $2 AND (weight_source IS NULL OR weight_source <> 'measured')`,
+        [providerWeightGrams, id],
+      );
     }
 
     // Error transitorio (timeout/red) ≠ "hidratado": se revierte el claim para

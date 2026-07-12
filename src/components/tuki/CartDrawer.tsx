@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
+import { hasMultipleStores } from "@/lib/delivery";
 import { catOf, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 import type { TukiCartItem } from "./cart-core";
@@ -23,7 +24,7 @@ function itemVars(item: TukiCartItem) {
 
 export function CartDrawer() {
   const router = useRouter();
-  const { items, count, subtotal, open, setOpen, inc, dec, remove, add } = useTukiCart();
+  const { items, count, subtotal, weightLb, open, setOpen, inc, dec, remove, add } = useTukiCart();
   const [upsell, setUpsell] = useState<StorefrontCard[]>([]);
 
   // Escape + scroll-lock del body mientras el drawer está abierto; se restauran al cerrar.
@@ -170,8 +171,13 @@ export function CartDrawer() {
                   };
                   return (
                     <div key={item.key} style={{ display: "flex", gap: 12, background: "#fff", borderRadius: 16, border: "1px solid #EFEFEA", padding: 10, alignItems: "center", animation: "secIn .35s ease both" }}>
-                      <div onClick={navToProduct} style={{ flex: "none", width: 60, height: 60, borderRadius: 12, background: stripe(catOf(item.category)), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#9a9b98" }}>foto</span>
+                      <div onClick={navToProduct} style={{ flex: "none", width: 60, height: 60, borderRadius: 12, background: stripe(catOf(item.category)), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
+                        {item.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.image_url} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#9a9b98" }}>foto</span>
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.25 }}>{nameVar}</div>
@@ -208,8 +214,13 @@ export function CartDrawer() {
                       };
                       return (
                         <div key={p.id} onClick={navToProduct} style={{ flex: "none", width: 120, background: "#fff", borderRadius: 14, border: "1px solid #EFEFEA", padding: "7px 7px 9px", cursor: "pointer" }}>
-                          <div style={{ height: 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
+                          <div style={{ height: 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                            {p.image_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.image_url} alt={p.title} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
+                            )}
                           </div>
                           <div style={{ fontSize: 11.5, fontWeight: 600, margin: "6px 3px 0", lineHeight: 1.25, height: 28, overflow: "hidden" }}>{p.title}</div>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "3px 3px 0" }}>
@@ -217,7 +228,7 @@ export function CartDrawer() {
                             <div
                               onClick={(e) => {
                                 e.stopPropagation();
-                                add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source });
+                                add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source, weight_grams: p.weight_grams ?? null });
                               }}
                               className="tk-hov-plus"
                               style={{ width: 24, height: 24, borderRadius: "50%", background: "#1C1D20", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}
@@ -242,9 +253,18 @@ export function CartDrawer() {
               <span>{fmt(subtotal)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#55565B", marginTop: 6 }}>
+              <span>Peso estimado</span>
+              <span style={{ fontWeight: 600 }}>⚖ {weightLb.toFixed(1).replace(".0", "")} lb</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#55565B", marginTop: 6 }}>
               <span>Envío</span>
               <span style={{ fontWeight: 600, color: shipColor }}>{shipF}</span>
             </div>
+            {hasMultipleStores(items.map((i) => i.source)) && (
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "#8E8F94", marginTop: 6 }}>
+                tu pedido junta varias tiendas — puede llegar en más de una entrega
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 10 }}>
               <span style={{ fontSize: 15, fontWeight: 700 }}>Total</span>
               <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.4px" }}>{totF}</span>

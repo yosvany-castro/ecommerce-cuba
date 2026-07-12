@@ -20,6 +20,9 @@ export interface MockProduct {
   raw_category: string;
   attributes: Record<string, unknown>;
   url?: string | null; // URL original del producto en el marketplace (mock/LLM no la generan)
+  // Peso de paquete en gramos si el proveedor lo trae (Amazon "Item Weight",
+  // AliExpress packageDetail). Ausente = sin dato del proveedor.
+  weight_grams?: number | null;
 }
 
 export const TARGET_DISTRIBUTION: Record<MockCategory, number> = {

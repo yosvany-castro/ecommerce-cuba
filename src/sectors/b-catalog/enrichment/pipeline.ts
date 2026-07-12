@@ -33,9 +33,17 @@ export async function processProduct(
   );
   const prev = existing.rows[0];
   if (prev && prev.title === raw.title && prev.image_url === raw.image_url) {
+    // El peso del proveedor refresca también por el fast-path (un producto
+    // existente puede ganar peso cuando el actor empieza a traerlo), pero un
+    // peso MEDIDO por el admin jamás se pisa.
     await pg.query(
-      `UPDATE products SET price_cents = $1, url = COALESCE($2, url), last_refreshed_at = now() WHERE id = $3`,
-      [raw.price_cents, raw.url ?? null, prev.id],
+      `UPDATE products SET price_cents = $1, url = COALESCE($2, url),
+         weight_grams = CASE WHEN weight_source = 'measured' THEN weight_grams ELSE COALESCE($4, weight_grams) END,
+         weight_source = CASE WHEN weight_source = 'measured' THEN weight_source
+                              WHEN $4::int IS NOT NULL THEN 'provider' ELSE weight_source END,
+         last_refreshed_at = now()
+       WHERE id = $3`,
+      [raw.price_cents, raw.url ?? null, prev.id, raw.weight_grams ?? null],
     );
     return {
       productId: prev.id,
@@ -52,8 +60,9 @@ export async function processProduct(
 
   const r = await pg.query(
     `INSERT INTO products
-      (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, url, metadata, embedding)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::vector)
+      (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, url, metadata, embedding, weight_grams, weight_source)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::vector, $12,
+             CASE WHEN $12::int IS NOT NULL THEN 'provider' END)
      ON CONFLICT (source, source_product_id) DO UPDATE SET
        title = EXCLUDED.title,
        description = EXCLUDED.description,
@@ -61,6 +70,11 @@ export async function processProduct(
        image_url = EXCLUDED.image_url,
        raw_category = EXCLUDED.raw_category,
        url = EXCLUDED.url,
+       weight_grams = CASE WHEN products.weight_source = 'measured' THEN products.weight_grams
+                           ELSE COALESCE(EXCLUDED.weight_grams, products.weight_grams) END,
+       weight_source = CASE WHEN products.weight_source = 'measured' THEN products.weight_source
+                            WHEN EXCLUDED.weight_grams IS NOT NULL THEN 'provider'
+                            ELSE products.weight_source END,
        metadata = CASE
          WHEN products.metadata->'attrs'->>'hydrated_at' IS NOT NULL THEN
            jsonb_set(
@@ -89,6 +103,7 @@ export async function processProduct(
       raw.url ?? null,
       JSON.stringify(metadata),
       `[${embedding.join(",")}]`,
+      raw.weight_grams ?? null,
     ],
   );
 

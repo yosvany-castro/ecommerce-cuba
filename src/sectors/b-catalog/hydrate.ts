@@ -156,7 +156,23 @@ export function parseSheinVariants(json: unknown): unknown[] {
 // visto en vivo 2026-07-11/12); no bloquea checkout: timeout generoso.
 const HYDRATE_TIMEOUT_MS = 30_000;
 
-export async function liveLookupVariants(p: ProviderRef): Promise<CuratedVariant[] | undefined> {
+// AliExpress DataHub detail trae el peso de PAQUETE estructurado
+// (result.delivery.packageDetail.weight, en kg) — dato de facturación del
+// reenvío que antes se tiraba al suelo. Cero requests extra: mismo JSON.
+export function parseAliexpressPackageWeightGrams(json: unknown): number | undefined {
+  const delivery = asRecord(asRecord(asRecord(json)?.result)?.delivery);
+  const kg = toNumber(asRecord(delivery?.packageDetail)?.weight);
+  if (kg === undefined || kg <= 0 || kg > 100) return undefined;
+  return Math.round(kg * 1000);
+}
+
+export interface LiveDetail {
+  variants?: CuratedVariant[];
+  /** Peso de paquete del proveedor (solo aliexpress lo trae hoy). */
+  weightGrams?: number;
+}
+
+export async function liveLookupVariants(p: ProviderRef): Promise<LiveDetail | undefined> {
   const fetched = await fetchDetailJson(p, HYDRATE_TIMEOUT_MS);
   if (!fetched) return undefined;
   const raw =
@@ -169,5 +185,8 @@ export async function liveLookupVariants(p: ProviderRef): Promise<CuratedVariant
           : fetched.source === "shein"
             ? parseSheinVariants(fetched.json)
             : [];
-  return curateVariants(raw);
+  return {
+    variants: curateVariants(raw),
+    weightGrams: fetched.source === "aliexpress" ? parseAliexpressPackageWeightGrams(fetched.json) : undefined,
+  };
 }

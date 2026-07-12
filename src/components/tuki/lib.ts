@@ -1,5 +1,6 @@
 // src/components/tuki/lib.ts — helpers puros del port Tuki. Sin imports de sectors.
 import type { StorefrontCard } from "@/storefront/contract";
+import { estimateWeightGrams, gramsToLb } from "@/lib/weight";
 
 export interface CatDef { id: string; label: string; tint: string; deep: string; a: string; b: string }
 // Paleta del diseño (dc.html 874–881) reasignada a la taxonomía REAL del catálogo.
@@ -24,27 +25,30 @@ export function fmt(cents: number): string {
   return "$" + (cents / 100).toFixed(2);
 }
 
-// El catálogo es 100% real (A4/Apify): nada de rating/ventas/precio viejo/colores/
-// tallas inventados. Solo el peso sigue siendo sintético (determinístico por id) —
-// ningún proveedor lo trae y el checkout necesita ALGO para decidir tramos de envío
-// (ver checkout-core.ts); no se muestra como "atributo verificado" del producto, es
-// un insumo interno del cálculo de tarifa.
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return h >>> 0;
-}
 const PALETTE = [
   { name: "Negro", hex: "#26262B" }, { name: "Crema", hex: "#EDE6D6" }, { name: "Azul", hex: "#3D4A66" },
   { name: "Verde", hex: "#6B7A5A" }, { name: "Terracota", hex: "#C56B4F" }, { name: "Gris", hex: "#9C9EA3" },
 ];
 export const FILTER_COLORS = PALETTE;
-const WEIGHT_BASE: Record<string, number> = { ropa: 0.6, electronica: 1.2, hogar: 3.0, juguetes_bebe: 1.0, belleza: 0.4, otros: 1.5 };
 
-export function weightLbFor(productId: string, category: string | null | undefined): number {
-  const h = hash(productId);
-  const cat = catOf(category).id;
-  return Math.round((WEIGHT_BASE[cat] ?? 1) * (0.5 + (h % 100) / 66) * 10) / 10;
+// Peso en libras de una card/línea: products.weight_grams (measured|provider|
+// llm) si vino, y si no la MISMA heurística determinista de src/lib/weight.ts
+// que usa el server — un solo número en PDP, carrito y checkout (cobro = lo
+// mostrado). Reemplaza el peso sintético por hash que había antes.
+export function weightGramsFrom(
+  weightGrams: number | null | undefined,
+  title: string,
+  category: string | null | undefined,
+): number {
+  return weightGrams ?? estimateWeightGrams({ title, category }).grams;
+}
+
+export function weightLbFrom(
+  weightGrams: number | null | undefined,
+  title: string,
+  category: string | null | undefined,
+): number {
+  return gramsToLb(weightGramsFrom(weightGrams, title, category));
 }
 
 export interface ProductAttrs {
@@ -65,7 +69,7 @@ export function attrsOf(card: StorefrontCard): ProductAttrs {
     oldPriceCents: a?.old_price_cents ?? null,
     colors: a?.colors ?? [],
     sizes: a?.sizes ?? [],
-    weightLb: weightLbFor(card.id, card.category),
+    weightLb: weightLbFrom(card.weight_grams, card.title, card.category),
   };
 }
 

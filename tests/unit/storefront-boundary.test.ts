@@ -12,6 +12,10 @@ const ALLOWED = [
   /^@\/storefront\/contract$/,
   /^@\/components\/tuki\//,
   /^@\/lib\/client\//,
+  // libs PURAS compartidas cliente/server (peso y entrega): mismas fórmulas en
+  // PDP/carrito que en el server — cobro = lo mostrado. Sin fetch/pg/sectors.
+  /^@\/lib\/weight$/,
+  /^@\/lib\/delivery$/,
   /^\.\.?\//, // relativo, dentro del propio directorio tuki
   /^react$/,
   /^react\//,

@@ -1,11 +1,15 @@
 "use client";
 // src/components/tuki/ProductView.tsx — PDP Tuki (dc.html 437–541): galería, variantes
 // demo, qty, acordeones (descripción real + specs/envío/opiniones fijas), add al carro,
-// cross-sell real (combos). Data serializable llega de la page server; sin fetch propio.
+// rieles de recomendación reales (similar/cross_sell/upsell del slate). Data
+// serializable llega de la page server; el peso estimado se pide en background
+// tras el primer paint (skeleton mientras — nunca bloquea el render).
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
-import type { StorefrontCard } from "@/storefront/contract";
+import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
+import { estimateDelivery, formatDeliveryRange } from "@/lib/delivery";
+import { gramsToLb } from "@/lib/weight";
 import { attrsOf, catOf, fmt, hasPriceRange, imageForColor, matchVariant, minPriceCents, ratingLine, resolveColorHex, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
@@ -16,15 +20,28 @@ type CardAttrs = NonNullable<StorefrontCard["attrs"]>;
 // (dc.html 1289) puestos en TODOS los productos; se quitaron por deshonestos.
 const DESC_ROWS = ["Devolución gratis hasta 30 días", "Garantía tuki de 12 meses"];
 
+// Subtítulo editorial por tipo de riel (los títulos vienen de ui_sections).
+const RAIL_SUBTITLES: Record<string, string> = {
+  similar: "elegidos por parecido real a este producto",
+  cross_sell: "quienes lo llevaron, sumaron esto",
+  upsell: "misma categoría, un escalón arriba",
+};
+
+interface WeightInfo {
+  grams: number;
+  source: "measured" | "provider" | "llm" | "heuristic";
+  estimated: boolean;
+}
+
 export function ProductView({
   card,
   description,
-  combos,
+  rails,
   source,
 }: {
   card: StorefrontCard;
   description: string;
-  combos: StorefrontCard[];
+  rails: StorefrontSection[];
   source: CardSource;
 }) {
   const router = useRouter();
@@ -46,12 +63,17 @@ export function ProductView({
   // (efecto de abajo) corre en la primera visita — desaparece al llegar attrs
   // o al fallar (fail-open silencioso, ver el .finally de ese efecto).
   const [hydrating, setHydrating] = useState(!card.attrs?.hydrated_at);
+  // Peso estimado: se pide en background tras el paint (skeleton mientras).
+  // null = cargando. El valor MOSTRADO acá es el MISMO que viaja al carrito
+  // en el snapshot del add (cobro = lo mostrado).
+  const [weight, setWeight] = useState<WeightInfo | null>(null);
   if (card.id !== liveAttrsId) {
     setLiveAttrsId(card.id);
     setLiveAttrs(card.attrs);
     setSelColor(null);
     setSelSize(null);
     setHydrating(!card.attrs?.hydrated_at);
+    setWeight(null);
   }
 
   const da = attrsOf({ ...card, attrs: liveAttrs });
@@ -104,8 +126,24 @@ export function ProductView({
   useEffect(() => {
     if (trackedId.current === card.id) return;
     trackedId.current = card.id;
-    track("product_view", { product_id: card.id, source });
+    // urgent: la vista debe llegar ANTES de que el usuario vuelva a la home
+    // (el batch de 3s perdía la carrera en navegación SPA y el feed nunca se
+    // enteraba de lo que miraste).
+    track("product_view", { product_id: card.id, source }, { urgent: true });
   }, [card.id, source]);
+
+  // Peso en background: nunca bloquea el render de la PDP (skeleton mientras).
+  useEffect(() => {
+    const thisId = card.id;
+    const ctrl = new AbortController();
+    fetch(`/api/products/${thisId}/weight`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? (r.json() as Promise<WeightInfo>) : null))
+      .then((w) => {
+        if (w && typeof w.grams === "number") setWeight(w);
+      })
+      .catch(() => {}); // sin peso: la fila queda en skeleton, sin inventar
+    return () => ctrl.abort();
+  }, [card.id]);
 
   // Hidratación de detalle bajo demanda: dispara UNA vez por producto real
   // (source amazon/aliexpress/walmart/shein) que aún no tiene attrs.hydrated_at.
@@ -146,17 +184,33 @@ export function ProductView({
   const onAdd = () => {
     if (isSoldOut || priceIsGated) return;
     add(
-      { id: card.id, title: card.title, price_cents: effectivePriceCents, category: card.category ?? null, image_url: card.image_url, source: card.source },
+      {
+        id: card.id,
+        title: card.title,
+        price_cents: effectivePriceCents,
+        category: card.category ?? null,
+        image_url: card.image_url,
+        source: card.source,
+        // el MISMO peso que el comprador vio en la fila de peso (o el de DB si
+        // la fila aún cargaba) — el carrito/checkout facturan sobre este número
+        weight_grams: weight?.grams ?? card.weight_grams ?? null,
+      },
       qty,
       selColor,
       selSize,
     );
   };
 
+  // Entrega honesta por tienda y vía (antes: "24–48 h" hard-coded, falso para
+  // reenvío a Cuba). Rango total único, siempre etiquetado como estimado.
+  const air = estimateDelivery(card.source, "aereo");
+  const sea = estimateDelivery(card.source, "maritimo");
+
   const specs = [
     { k: "Categoría", v: cat.label },
     ...(rl ? [{ k: "Valoración", v: rl }] : []),
-    { k: "Entrega", v: "24–48 h" },
+    { k: "Entrega estimada", v: `${formatDeliveryRange(air)} (aéreo)` },
+    ...(weight ? [{ k: weight.estimated ? "Peso estimado" : "Peso", v: `${gramsToLb(weight.grams)} lb (${weight.grams} g)` }] : []),
     { k: "SKU", v: "TK-" + card.id.slice(0, 8).toUpperCase() },
   ];
 
@@ -197,7 +251,9 @@ export function ProductView({
       label: "Envío y devoluciones",
       body: (
         <div style={{ fontSize: 14, color: "#55565B", lineHeight: 1.65, maxWidth: 560 }}>
-          Envío estándar en 24–48 h. Gratis desde $50.00. Devolución sin costo dentro de 30 días: la recogemos en tu puerta.
+          Vía aérea: llega en {formatDeliveryRange(air)}. Vía marítima: {formatDeliveryRange(sea)} (más económica,
+          ideal para pedidos pesados). Rangos estimados según la tienda de origen ({card.source}); el envío se
+          factura por peso. Devolución sin costo dentro de 30 días: la recogemos en tu puerta.
         </div>
       ),
     },
@@ -262,7 +318,7 @@ export function ProductView({
           <div style={{ display: "inline-block", background: cat.tint, color: cat.deep, borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 700 }}>{cat.label}</div>
           <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px", marginTop: 10, lineHeight: 1.1 }}>{card.title}</div>
           <div style={{ fontSize: 13.5, color: "#8E8F94", marginTop: 8 }}>
-            {rl ? `${rl} · envío 24–48 h` : "envío 24–48 h"}
+            {rl ? `${rl} · llega en ${formatDeliveryRange(air)}` : `llega en ${formatDeliveryRange(air)}`}
             {card.source && ` · de ${card.source}`}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
@@ -282,6 +338,20 @@ export function ProductView({
               <span style={{ fontSize: 12, color: "#8E8F94" }}>· buscando tallas y colores…</span>
             </div>
           )}
+          {/* Peso: calculado en background — skeleton hasta que llega, jamás bloquea. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+            {weight ? (
+              <span style={{ fontSize: 12.5, color: "#8E8F94" }}>
+                ⚖ {weight.estimated ? "peso estimado" : "peso"}: <b style={{ color: "#55565B" }}>{gramsToLb(weight.grams)} lb</b> ({weight.grams} g)
+                {weight.source === "measured" && " · pesado en báscula"}
+              </span>
+            ) : (
+              <>
+                <div style={{ width: 88, height: 11, borderRadius: 6, background: "linear-gradient(90deg,#E9E9E4 25%,#DFDFD9 40%,#E9E9E4 55%)", backgroundSize: "460px 100%", animation: "shimmer 1.1s linear infinite" }} />
+                <span style={{ fontSize: 12, color: "#8E8F94" }}>· calculando peso…</span>
+              </>
+            )}
+          </div>
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 16, color: cat.deep, marginTop: 12 }}>✦ encaja con lo que has estado mirando</div>
 
           {da.colors.length > 0 && (
@@ -396,16 +466,23 @@ export function ProductView({
         </div>
       </div>
 
-      {combos.length > 0 && (
-        <>
-          <div style={{ fontFamily: "var(--font-brico)", fontSize: 22, fontWeight: 700, margin: "44px 0 4px" }}>Combínalo con</div>
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14.5, color: "#8E8F94", marginBottom: 16 }}>quienes lo llevaron, sumaron esto</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
-            {combos.map((c) => (
-              <ProductCard key={c.id} card={c} source="direct" variant="grid" />
-            ))}
-          </div>
-        </>
+      {rails.map(
+        (rail) =>
+          rail.items.length > 0 && (
+            <div key={rail.placement_id}>
+              <div style={{ fontFamily: "var(--font-brico)", fontSize: 22, fontWeight: 700, margin: "44px 0 4px" }}>{rail.title}</div>
+              {RAIL_SUBTITLES[rail.section_type] && (
+                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14.5, color: "#8E8F94", marginBottom: 16 }}>
+                  {RAIL_SUBTITLES[rail.section_type]}
+                </div>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+                {rail.items.slice(0, 4).map((c) => (
+                  <ProductCard key={c.id} card={c} source="direct" variant="grid" />
+                ))}
+              </div>
+            </div>
+          ),
       )}
     </div>
   );

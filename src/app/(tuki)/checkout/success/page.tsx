@@ -3,14 +3,17 @@
 // ?m= (método) y calcula la eta client-side. useSearchParams exige <Suspense> en Next 16.
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SHIP, etaLine } from "@/components/tuki/checkout-core";
+import { shipOptions, etaLine } from "@/components/tuki/checkout-core";
 
 function SuccessInner() {
   const router = useRouter();
   const params = useSearchParams();
   const orderId = params.get("order") ?? "";
   const metodo = params.get("m") ?? "estandar";
-  const m = SHIP.find((s) => s.id === metodo) ?? SHIP[1];
+  // El carrito ya se vació: sin tiendas conocidas, shipOptions usa el rango
+  // default conservador (peso/subtotal irrelevantes para los días).
+  const opts = shipOptions(0, 0);
+  const m = opts.find((s) => s.id === metodo) ?? opts[1];
   const okLine = orderId
     ? `${etaLine(m.d1, m.d2)} en envío ${m.name.toLowerCase()} · pedido ${orderId}`
     : `pedido ${orderId}`;
