@@ -33,6 +33,17 @@ import type { SearchTrace } from "./debug/trace";
 
 const RETRIEVE_K = 50;
 
+// Enum real del catálogo — única fuente de verdad para filtrar categorías
+// normalizadas (ver comentario en la construcción de filters).
+const VALID_CATEGORIES = new Set<string>([
+  "ropa",
+  "electronica",
+  "hogar",
+  "juguetes_bebe",
+  "belleza",
+  "otros",
+] satisfies MockCategory[]);
+
 export interface HybridSearchCtx {
   pg: Client;
   anonymous_id: string | null;
@@ -224,9 +235,16 @@ export async function hybridSearch(
   const ageMin = normalized?.recipient_age_min ?? undefined;
   const ageMax = normalized?.recipient_age_max ?? undefined;
   const ageBothPresent = typeof ageMin === "number" && typeof ageMax === "number";
+  // El normalizador LLM puede inventar categorías fuera del enum del catálogo
+  // (visto en vivo 2026-07-12: "guantes de boxeo" → ["deportes"], que no existe
+  // → filtro insatisfacible → 0 resultados con los productos correctos en DB).
+  // Categoría desconocida se descarta; si no queda ninguna, no se filtra.
+  const knownCategories = normalized?.categories?.filter((c) =>
+    VALID_CATEGORIES.has(c),
+  );
   const filters: SearchFilters = normalized
     ? {
-        categories: normalized.categories?.length ? normalized.categories : undefined,
+        categories: knownCategories?.length ? knownCategories : undefined,
         gender_target: normalized.recipient_gender ?? undefined,
         age_min: ageBothPresent ? ageMin : undefined,
         age_max: ageBothPresent ? ageMax : undefined,
@@ -402,7 +420,10 @@ export async function hybridSearch(
   // el job la invalidaría al terminar, pero si terminara ANTES de esta línea
   // la escritura resucitaría el resultado local-only por 24h (race). Ese
   // request simplemente no cachea; la siguiente búsqueda puebla la caché.
-  if (normalized && !ingestion) {
+  // Tampoco se cachea un resultado VACÍO: congelarlo 24h deja la query muerta
+  // aunque el catálogo crezca (visto en vivo 2026-07-12 — un poll durante la
+  // ingesta cacheó 0 productos), y recomputar un vacío es barato.
+  if (normalized && !ingestion && productIds.length > 0) {
     tracer.start("persist");
     await writeExact(
       {
