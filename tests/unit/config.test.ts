@@ -10,8 +10,7 @@ describe("config", () => {
     // Every required key should appear in the error message
     for (const k of [
       "SUPABASE_DB_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-      "DEEPSEEK_API_KEY", "VOYAGE_API_KEY", "AUTH0_DOMAIN", "AUTH0_CLIENT_ID",
-      "AUTH0_CLIENT_SECRET", "AUTH0_SECRET", "APP_BASE_URL",
+      "DEEPSEEK_API_KEY", "VOYAGE_API_KEY", "APP_BASE_URL",
     ]) {
       expect(caught!.message).toContain(k);
     }
@@ -26,10 +25,6 @@ describe("config", () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
       DEEPSEEK_API_KEY: "ds-test-key",
       VOYAGE_API_KEY: "pa-test",
-      AUTH0_DOMAIN: "x.auth0.com",
-      AUTH0_CLIENT_ID: "cid",
-      AUTH0_CLIENT_SECRET: "csec",
-      AUTH0_SECRET: "thirty-two-bytes-of-random-chars",
       APP_BASE_URL: "http://localhost:3000",
     };
     const cfg = loadConfig(env);
@@ -40,10 +35,6 @@ describe("config", () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
       DEEPSEEK_API_KEY: "ds-test-key",
       VOYAGE_API_KEY: "pa-test",
-      AUTH0_DOMAIN: "x.auth0.com",
-      AUTH0_CLIENT_ID: "cid",
-      AUTH0_CLIENT_SECRET: "csec",
-      AUTH0_SECRET: "thirty-two-bytes-of-random-chars",
       APP_BASE_URL: "http://localhost:3000",
     });
   });
@@ -55,10 +46,6 @@ describe("config", () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
       DEEPSEEK_API_KEY: "ds-test-key",
       VOYAGE_API_KEY: "pa-test",
-      AUTH0_DOMAIN: "x.auth0.com",
-      AUTH0_CLIENT_ID: "cid",
-      AUTH0_CLIENT_SECRET: "csec",
-      AUTH0_SECRET: "thirty-two-bytes-of-random-chars",
       APP_BASE_URL: "http://localhost:3000",
     };
     const cfg = loadConfig(env);

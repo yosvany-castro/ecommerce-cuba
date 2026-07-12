@@ -4,13 +4,13 @@ import { embed } from "@/lib/embeddings/voyage";
 
 export async function createUser(
   pg: Client,
-  overrides: Partial<{ auth0_sub: string; email: string; name: string }> = {},
+  overrides: Partial<{ auth_sub: string; email: string; name: string }> = {},
 ): Promise<{ id: string; email: string }> {
   const email = overrides.email ?? `u-${randomUUID()}@test.local`;
-  const auth0_sub = overrides.auth0_sub ?? `auth0|${randomUUID()}`;
+  const auth_sub = overrides.auth_sub ?? `auth0|${randomUUID()}`;
   const r = await pg.query(
-    `INSERT INTO users (auth0_sub, email, name) VALUES ($1, $2, $3) RETURNING id, email`,
-    [auth0_sub, email, overrides.name ?? null],
+    `INSERT INTO users (auth_sub, email, name) VALUES ($1, $2, $3) RETURNING id, email`,
+    [auth_sub, email, overrides.name ?? null],
   );
   return r.rows[0];
 }

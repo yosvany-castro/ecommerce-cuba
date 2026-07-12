@@ -72,12 +72,12 @@ test.describe("tracking-flow", () => {
     const productId = productRow.rows[0].id;
     await page.goto(`/products/${productId}`);
 
-    // Login
-    await page.goto("/auth/login");
-    await page.fill('input[name="username"], input[name="email"]', process.env.E2E_TEST_USER_EMAIL!);
-    await page.fill('input[name="password"]', process.env.E2E_TEST_USER_PASSWORD!);
-    await page.click('button[type="submit"]');
-    await page.waitForURL((url) => !url.pathname.startsWith("/auth/"), { timeout: 30_000 });
+    // Login (página propia con Supabase Auth)
+    await page.goto("/login");
+    await page.getByTestId("auth-email").fill(process.env.E2E_TEST_USER_EMAIL!);
+    await page.getByTestId("auth-password").fill(process.env.E2E_TEST_USER_PASSWORD!);
+    await page.getByTestId("auth-submit").click();
+    await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
 
     // Wait for the merge call (POST /api/identity/merge) to complete
     await page.waitForResponse(

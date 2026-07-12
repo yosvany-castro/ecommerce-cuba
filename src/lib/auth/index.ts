@@ -1,45 +1,79 @@
-import { Auth0Client } from "@auth0/nextjs-auth0/server";
 import type { Client } from "pg";
-
-export const auth0 = new Auth0Client({
-  domain: process.env.AUTH0_DOMAIN!,
-  clientId: process.env.AUTH0_CLIENT_ID!,
-  clientSecret: process.env.AUTH0_CLIENT_SECRET!,
-  appBaseUrl: process.env.APP_BASE_URL!,
-  secret: process.env.AUTH0_SECRET!,
-});
+import { createClient } from "@/lib/supabase/server";
 
 /**
- * Looks up or creates a `users` row by `auth0_sub`. Returns the user id.
- * Idempotent: running twice with the same sub returns the same id.
+ * Identidad autenticada vía Supabase Auth (migrado de Auth0 el 2026-07-12).
+ * public.users sigue siendo la fuente del user_id INTERNO (uuid propio, FKs
+ * de orders/events/profiles intactas); auth.users de Supabase solo aporta el
+ * sub (uuid externo) que se guarda en users.auth_sub como clave de lookup —
+ * exactamente el mismo rol que cumplía el sub de Auth0.
  */
-export async function getOrCreateUserByAuth0Sub(
-  pg: Client,
-  auth0Sub: string,
-  email: string,
-  name: string | null = null,
-): Promise<{ id: string }> {
-  const r = await pg.query(
-    `INSERT INTO users (auth0_sub, email, name)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (auth0_sub) DO UPDATE SET email = EXCLUDED.email, name = COALESCE(EXCLUDED.name, users.name)
-     RETURNING id`,
-    [auth0Sub, email, name],
-  );
-  return { id: r.rows[0].id };
+
+export interface AuthUser {
+  sub: string;
+  email: string | null;
+  name: string | null;
 }
 
 /**
- * Admin gate (PageSlate foundation F3). Until now every /admin page and
- * /api/admin route only checked that an Auth0 session EXISTED — any logged-in
- * user could read admin surfaces, and any future placement write-path would
- * have been stored-UI injection for all users.
- *
- * Allowlist via ADMIN_EMAILS (comma-separated, case-insensitive). Empty or
- * unset ⇒ NOBODY is admin (fail-closed).
- *
- * Returns the admin's email, or null when the caller is not an admin
- * (callers decide redirect vs 401/403 per surface).
+ * Usuario autenticado del request actual, o null. Usa getClaims(): valida la
+ * firma del JWT localmente (sin viaje al Auth server) — la regla oficial es
+ * NUNCA confiar en getSession() en server; el refresh real lo hace el proxy.
+ */
+export async function getAuthUser(): Promise<AuthUser | null> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+    const claims = data?.claims;
+    if (!claims?.sub) return null;
+    return {
+      sub: claims.sub,
+      email: (claims.email as string | undefined) ?? null,
+      name: ((claims.user_metadata as { full_name?: string; name?: string } | undefined)?.full_name ??
+        (claims.user_metadata as { name?: string } | undefined)?.name ??
+        null),
+    };
+  } catch {
+    return null; // sin sesión / cookies inválidas: anónimo
+  }
+}
+
+/**
+ * Looks up or creates a `users` row by `auth_sub`. Returns the user id.
+ * Idempotent. Si el email ya existe con otro sub (usuario de la era Auth0, o
+ * demo del checkout anónimo que luego se registra), CLAIM de esa fila: se le
+ * asigna el sub nuevo y conserva su historial (orders/events por users.id).
+ */
+export async function getOrCreateUserBySub(
+  pg: Client,
+  sub: string,
+  email: string,
+  name: string | null = null,
+): Promise<{ id: string }> {
+  try {
+    const r = await pg.query(
+      `INSERT INTO users (auth_sub, email, name)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (auth_sub) DO UPDATE SET email = EXCLUDED.email, name = COALESCE(EXCLUDED.name, users.name)
+       RETURNING id`,
+      [sub, email, name],
+    );
+    return { id: r.rows[0].id };
+  } catch (e) {
+    if ((e as { code?: string }).code !== "23505") throw e; // solo unique_violation de email
+    const claimed = await pg.query(
+      `UPDATE users SET auth_sub = $1, name = COALESCE($3, name) WHERE email = $2 RETURNING id`,
+      [sub, email, name],
+    );
+    if (claimed.rows.length === 0) throw e;
+    return { id: claimed.rows[0].id };
+  }
+}
+
+/**
+ * Admin gate (PageSlate foundation F3). Allowlist via ADMIN_EMAILS
+ * (comma-separated, case-insensitive). Empty or unset ⇒ NOBODY is admin
+ * (fail-closed). Returns the admin's email, or null.
  */
 export function isAdminEmail(
   email: string | null | undefined,
@@ -54,10 +88,10 @@ export function isAdminEmail(
   return allowlist.includes(email.trim().toLowerCase());
 }
 
-export async function requireAdmin(req?: Request): Promise<string | null> {
-  const session = req
-    ? await auth0.getSession(req as never).catch(() => null)
-    : await auth0.getSession().catch(() => null);
-  const email = (session?.user?.email as string | undefined) ?? null;
+/** El param req se conserva por compatibilidad de firma (los route handlers lo
+ * pasaban para Auth0); con Supabase las cookies llegan por el request context. */
+export async function requireAdmin(_req?: Request): Promise<string | null> {
+  const user = await getAuthUser();
+  const email = user?.email ?? null;
   return isAdminEmail(email, process.env.ADMIN_EMAILS) ? email!.trim().toLowerCase() : null;
 }

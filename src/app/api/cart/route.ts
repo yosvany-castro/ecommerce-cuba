@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
+import { getAuthUser, getOrCreateUserBySub } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 import {
   getCartByUserId,
@@ -9,11 +9,11 @@ import {
 } from "@/sectors/a-tracking/cart-repo";
 
 async function resolveUserId(req: NextRequest): Promise<string | null> {
-  const session = await auth0.getSession(req).catch(() => null);
-  if (!session?.user?.sub) return null;
-  const sub = session.user.sub as string;
-  const email = (session.user.email as string) ?? `${sub}@noemail.local`;
-  return await withPg(async (pg) => (await getOrCreateUserByAuth0Sub(pg, sub, email)).id);
+  const session = await getAuthUser();
+  if (!session?.sub) return null;
+  const sub = session.sub;
+  const email = session.email ?? `${sub}@noemail.local`;
+  return await withPg(async (pg) => (await getOrCreateUserBySub(pg, sub, email)).id);
 }
 
 export async function GET(req: NextRequest) {

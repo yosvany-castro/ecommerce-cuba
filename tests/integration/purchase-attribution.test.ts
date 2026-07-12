@@ -23,7 +23,7 @@ beforeEach(async () => {
 async function seedUserWithCart(pg: Client, productIds: string[]) {
   const user = (
     await pg.query(
-      `INSERT INTO users (auth0_sub, email) VALUES ($1, $2) RETURNING id::text`,
+      `INSERT INTO users (auth_sub, email) VALUES ($1, $2) RETURNING id::text`,
       [`auth0|${randomUUID()}`, `${randomUUID()}@x.com`],
     )
   ).rows[0].id as string;

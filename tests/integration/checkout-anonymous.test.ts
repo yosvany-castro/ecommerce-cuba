@@ -67,8 +67,8 @@ describe("POST /api/checkout/anonymous", () => {
       expect(order.shipping.ci).toBe("12345678");
       expect(order.shipping.metodo).toBe("estandar");
 
-      const user = (await pg.query(`SELECT auth0_sub, email FROM users WHERE id=$1`, [order.user_id])).rows[0];
-      expect(user.auth0_sub).toBe(`demo|${anonId}`);
+      const user = (await pg.query(`SELECT auth_sub, email FROM users WHERE id=$1`, [order.user_id])).rows[0];
+      expect(user.auth_sub).toBe(`demo|${anonId}`);
       expect(user.email).toBe(`demo+${anonId}@tuki.local`);
 
       const items = (await pg.query(`SELECT product_id, quantity, unit_price_cents FROM order_items WHERE order_id=$1`, [body.order_id])).rows;

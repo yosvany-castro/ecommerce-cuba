@@ -17,6 +17,7 @@ const ALLOWED = [
   /^@\/lib\/weight$/,
   /^@\/lib\/delivery$/,
   /^@\/lib\/img$/,
+  /^@\/lib\/supabase\/client$/, // browser client de Supabase Auth (menú login/logout)
   /^\.\.?\//, // relativo, dentro del propio directorio tuki
   /^react$/,
   /^react\//,

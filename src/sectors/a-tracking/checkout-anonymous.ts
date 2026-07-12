@@ -1,5 +1,5 @@
 import type { Client } from "pg";
-import { getOrCreateUserByAuth0Sub } from "@/lib/auth";
+import { getOrCreateUserBySub } from "@/lib/auth";
 import { insertEvent } from "./events/insert";
 import { attributePurchaseAndExclude } from "./attribution";
 import { findVariantPriceCents, type CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
@@ -55,7 +55,7 @@ export async function createAnonymousOrder(
 ): Promise<CheckoutResult> {
   // Usuario demo sintético (idempotente por anonymous_id). Fuera de la tx: es un
   // upsert inofensivo que puede sobrevivir aunque la orden falle.
-  const user = await getOrCreateUserByAuth0Sub(
+  const user = await getOrCreateUserBySub(
     pg,
     `demo|${input.anonymous_id}`,
     `demo+${input.anonymous_id}@tuki.local`,

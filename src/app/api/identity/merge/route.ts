@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
+import { getAuthUser, getOrCreateUserBySub } from "@/lib/auth";
 import { mergeIdentities } from "@/sectors/a-tracking/events/merge";
 import { withPg } from "@/lib/db/helpers";
 
@@ -11,17 +11,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no_anonymous_id" }, { status: 400 });
   }
 
-  const session = await auth0.getSession(req).catch(() => null);
-  if (!session?.user?.sub) {
+  const session = await getAuthUser();
+  if (!session?.sub) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
-  const sub = session.user.sub as string;
-  const email = (session.user.email as string) ?? `${sub}@noemail.local`;
-  const name = (session.user.name as string | null) ?? null;
+  const sub = session.sub;
+  const email = session.email ?? `${sub}@noemail.local`;
+  const name = session.name;
 
   const result = await withPg(async (pg) => {
-    const user = await getOrCreateUserByAuth0Sub(pg, sub, email, name);
+    const user = await getOrCreateUserBySub(pg, sub, email, name);
     const merge = await mergeIdentities(anonymous_id, user.id, pg);
     return { user_id: user.id, ...merge };
   });

@@ -9,7 +9,7 @@ export interface UserDebugInfo {
   user: {
     id: string;
     email: string;
-    auth0_sub: string | null;
+    auth_sub: string | null;
     created_at: Date;
   };
   anonymous_ids_merged: string[];
@@ -52,7 +52,7 @@ export async function getUserDebugInfo(
   pg: Client,
 ): Promise<UserDebugInfo | null> {
   const ur = await pg.query(
-    `SELECT id::text, email, auth0_sub, created_at FROM users WHERE id = $1`,
+    `SELECT id::text, email, auth_sub, created_at FROM users WHERE id = $1`,
     [user_id],
   );
   if (ur.rows.length === 0) return null;
@@ -177,7 +177,7 @@ export async function getUserDebugInfo(
     user: {
       id: user.id,
       email: user.email,
-      auth0_sub: user.auth0_sub ?? null,
+      auth_sub: user.auth_sub ?? null,
       created_at: user.created_at,
     },
     anonymous_ids_merged: anonIds,

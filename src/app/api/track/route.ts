@@ -5,7 +5,7 @@ import { insertEvent } from "@/sectors/a-tracking/events/insert";
 import { ensureIdentityRows } from "@/sectors/a-tracking/identity";
 import { dbHealth } from "@/lib/db/health";
 import { withPg } from "@/lib/db/helpers";
-import { auth0, getOrCreateUserByAuth0Sub } from "@/lib/auth";
+import { getAuthUser, getOrCreateUserBySub } from "@/lib/auth";
 import { processEventForPersonalization } from "@/sectors/d-personalization/track-hook";
 import { handleDismissAutoExclude } from "@/sectors/d-personalization/exclusion/dismiss-handler";
 import { compactSlateForDismiss, bumpSlateVersion } from "@/sectors/d-personalization/slate/store";
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     throw e;
   }
 
-  const auth0Session = await auth0.getSession(req).catch(() => null);
+  const auth0Session = await getAuthUser();
 
   try {
     // ONE pooled connection for the whole request (before: 3-4 separate
@@ -63,11 +63,11 @@ export async function POST(req: NextRequest) {
     const result = await withPg(async (pg) => {
       // Resolve user_id from Auth0 session if logged in.
       let user_id: string | null = null;
-      if (auth0Session?.user?.sub) {
-        const sub = auth0Session.user.sub as string;
-        const email = (auth0Session.user.email as string) ?? `${sub}@noemail.local`;
-        const name = (auth0Session.user.name as string | null) ?? null;
-        user_id = (await getOrCreateUserByAuth0Sub(pg, sub, email, name)).id;
+      if (auth0Session?.sub) {
+        const sub = auth0Session.sub;
+        const email = auth0Session.email ?? `${sub}@noemail.local`;
+        const name = auth0Session.name;
+        user_id = (await getOrCreateUserBySub(pg, sub, email, name)).id;
       }
 
       // First-writer (F2): the proxy no longer touches the DB — identity rows

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { preconnect } from "react-dom";
-import { Auth0Provider } from "@auth0/nextjs-auth0";
 import { IdentityMergeOnLogin } from "@/components/IdentityMergeOnLogin";
 import { Bricolage_Grotesque, Instrument_Sans, Instrument_Serif, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
@@ -32,10 +31,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${brico.variable} ${sans.variable} ${serif.variable} ${mono.variable}`}>
       <body>
-        <Auth0Provider>
-          <IdentityMergeOnLogin />
-          {children}
-        </Auth0Provider>
+        <IdentityMergeOnLogin />
+        {children}
       </body>
     </html>
   );

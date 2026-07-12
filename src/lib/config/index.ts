@@ -8,10 +8,6 @@ const ConfigSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   DEEPSEEK_API_KEY: z.string().min(1),
   VOYAGE_API_KEY: z.string().min(1),
-  AUTH0_DOMAIN: z.string().min(1),
-  AUTH0_CLIENT_ID: z.string().min(1),
-  AUTH0_CLIENT_SECRET: z.string().min(1),
-  AUTH0_SECRET: z.string().min(1),
   APP_BASE_URL: z.string().url(),
 });
 

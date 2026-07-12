@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth0, requireAdmin } from "@/lib/auth";
+import { getAuthUser, requireAdmin } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 import { hybridSearch } from "@/sectors/c-search/search";
 import { SearchTraceView } from "@/components/SearchTraceView";
@@ -11,8 +11,8 @@ export default async function ExplainPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const session = await auth0.getSession().catch(() => null);
-  if (!session?.user?.sub) redirect("/auth/login?returnTo=/admin/search/explain" as Parameters<typeof redirect>[0]);
+  const session = await getAuthUser();
+  if (!session?.sub) redirect("/auth/login?returnTo=/admin/search/explain" as Parameters<typeof redirect>[0]);
   if (!(await requireAdmin())) redirect("/");
 
   const { q = "" } = await searchParams;

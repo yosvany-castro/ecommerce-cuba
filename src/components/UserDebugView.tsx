@@ -9,8 +9,8 @@ export function UserDebugView({ info }: { info: UserDebugInfo }) {
           <dd className="font-mono text-xs">{info.user.id}</dd>
           <dt>Email:</dt>
           <dd>{info.user.email}</dd>
-          <dt>Auth0 sub:</dt>
-          <dd className="font-mono text-xs">{info.user.auth0_sub ?? "—"}</dd>
+          <dt>Auth sub:</dt>
+          <dd className="font-mono text-xs">{info.user.auth_sub ?? "—"}</dd>
           <dt>Creado:</dt>
           <dd>{String(info.user.created_at)}</dd>
           <dt>Anon IDs:</dt>

@@ -9,6 +9,7 @@ import { CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
 import { DEMO_PROFILES, AVATAR_COLORS, profileForAnonId, type DemoProfile } from "./profiles";
+import { createClient as createSupabase } from "@/lib/supabase/client";
 
 // 3G: el drawer solo se ve al abrir el carro — fuera del First Load JS de
 // TODAS las páginas (client-only, cerrado por defecto: sin flash).
@@ -51,7 +52,26 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [recents, setRecents] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeProfile, setActiveProfile] = useState<DemoProfile>(DEMO_PROFILES[0]);
+  // Cuenta real de Supabase (null = anónimo). Solo para pintar el menú;
+  // ninguna funcionalidad del sitio depende de estar logueado.
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabase();
+    supabase.auth.getUser().then(({ data }) => setAuthEmail(data.user?.email ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthEmail(session?.user?.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    setMenuOpen(false);
+    await fetch("/auth/signout", { method: "POST" }).catch(() => {});
+    setAuthEmail(null);
+    location.assign("/"); // recarga limpia: el server re-lee cookies sin sesión
+  };
 
   // Rotación de avisos cada 4s (dc.html:1317).
   useEffect(() => {
@@ -505,6 +525,38 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   })}
                   <div style={{ fontSize: 11, color: "#9A9B9F", padding: "6px 8px", lineHeight: 1.5 }}>
                     ✦ el feed se rearma al instante — la IA es invisible, solo se nota aquí
+                  </div>
+                  {/* Cuenta real (Supabase Auth) — convive con los perfiles demo de la tesis */}
+                  <div style={{ borderTop: "1px solid #EFEFEA", marginTop: 4, paddingTop: 8 }}>
+                    {authEmail ? (
+                      <>
+                        <div style={{ fontSize: 11.5, color: "#8E8F94", padding: "0 8px 6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          conectado como <b style={{ color: "#55565B" }}>{authEmail}</b>
+                        </div>
+                        <div
+                          onClick={() => { setMenuOpen(false); router.push("/profile"); }}
+                          className="tk-hov-bg"
+                          style={{ padding: "9px 10px", borderRadius: 12, cursor: "pointer", fontSize: 13.5, fontWeight: 600 }}
+                        >
+                          Mi cuenta
+                        </div>
+                        <div
+                          onClick={signOut}
+                          className="tk-hov-bg"
+                          style={{ padding: "9px 10px", borderRadius: 12, cursor: "pointer", fontSize: 13.5, fontWeight: 600, color: "#B4533F" }}
+                        >
+                          Cerrar sesión
+                        </div>
+                      </>
+                    ) : (
+                      <div
+                        onClick={() => { setMenuOpen(false); router.push("/login"); }}
+                        className="tk-hov-bg"
+                        style={{ padding: "9px 10px", borderRadius: 12, cursor: "pointer", fontSize: 13.5, fontWeight: 700 }}
+                      >
+                        Iniciar sesión →
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

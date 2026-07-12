@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth0, requireAdmin } from "@/lib/auth";
+import { getAuthUser, requireAdmin } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -14,8 +14,8 @@ const bodySchema = z.object({ grams: z.number().int().min(1).max(100_000) });
 // este peso medido como contexto de calibración — pesar uno mejora los
 // similares sin ningún job extra.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth0.getSession(req).catch(() => null);
-  if (!session?.user?.sub) {
+  const session = await getAuthUser();
+  if (!session?.sub) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
   if (!(await requireAdmin(req))) {

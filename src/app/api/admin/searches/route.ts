@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth0, requireAdmin } from "@/lib/auth";
+import { getAuthUser, requireAdmin } from "@/lib/auth";
 import { withPg } from "@/lib/db/helpers";
 import { listSearches } from "@/sectors/c-search/admin/list";
 
@@ -35,8 +35,8 @@ const queryParamSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = await auth0.getSession(req).catch(() => null);
-  if (!session?.user?.sub) {
+  const session = await getAuthUser();
+  if (!session?.sub) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
   if (!(await requireAdmin(req))) {
