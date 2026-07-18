@@ -11,6 +11,7 @@
     "build": "next build",
     "apify:smoke": "tsx scripts/apify-smoke.ts",
     "weight:eval": "tsx scripts/weight-eval.ts",
+    "measure:price-gap": "tsx scripts/measure-price-gap.ts",
     "perf:3g": "tsx scripts/perf-3g.ts",
     "cron:catalog-fill": "tsx scripts/cron-catalog-fill.ts",
     "cron:catalog-refresh": "tsx scripts/cron-catalog-refresh.ts",
