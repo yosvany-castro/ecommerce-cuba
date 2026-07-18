@@ -136,7 +136,7 @@ export function classifyDetail(source: string, json: unknown): "ok" | "pending" 
   }
   if (source === "aliexpress") {
     const code = toNumber(asRecord(asRecord(asRecord(json)?.result)?.status)?.code);
-    if (code !== null && PENDING_DATAHUB_CODES.has(code)) return "pending";
+    if (code !== undefined && PENDING_DATAHUB_CODES.has(code)) return "pending";
     return parseAliexpressDetail(json) ? "ok" : "failed";
   }
   if (source === "amazon") return parseAmazonDetail(json) ? "ok" : "failed";
