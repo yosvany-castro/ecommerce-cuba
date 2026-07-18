@@ -6,6 +6,7 @@ import {
   parseSheinDetail,
   computeVerdict,
   revalidateProduct,
+  classifyDetail,
   type RevalidateProductRow,
 } from "@/sectors/b-catalog/revalidate";
 import amazonFx from "../fixtures/rapidapi/amazon-rtd-detail.json";
@@ -188,5 +189,38 @@ describe("revalidateProduct — skip por frescura y fail-open", () => {
     };
     const v = await revalidateProduct(stale);
     expect(v).toEqual({ status: "unverifiable", stored_price_cents: 3642 });
+  });
+});
+
+describe("classifyDetail", () => {
+  test("shein ItemIsNotComplete → pending (OTAPI indexa perezoso, verificado 2026-07-17)", () => {
+    const json = { ErrorCode: "NotAvailable", SubErrorCode: { Value: "ItemIsNotComplete" } };
+    expect(classifyDetail("shein", json)).toBe("pending");
+  });
+
+  test("aliexpress code 205 no results → pending", () => {
+    expect(classifyDetail("aliexpress", { result: { status: { code: 205 } } })).toBe("pending");
+  });
+
+  test("aliexpress code 5040 endpoint caído → pending", () => {
+    expect(classifyDetail("aliexpress", { result: { status: { code: 5040 } } })).toBe("pending");
+  });
+
+  test("shein Ok con precio → ok", () => {
+    const json = {
+      ErrorCode: "Ok",
+      Result: { Item: { MasterQuantity: 3, Price: { ConvertedPriceList: { Internal: { Price: "9.99" } } } } },
+    };
+    expect(classifyDetail("shein", json)).toBe("ok");
+  });
+
+  test("aliexpress con detalle válido → ok", () => {
+    expect(classifyDetail("aliexpress", aliexpressFx)).toBe("ok");
+  });
+
+  test("json irreconocible → failed", () => {
+    expect(classifyDetail("shein", { basura: true })).toBe("failed");
+    expect(classifyDetail("amazon", null)).toBe("failed");
+    expect(classifyDetail("ebay", {})).toBe("failed");
   });
 });

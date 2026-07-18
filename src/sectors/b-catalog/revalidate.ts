@@ -122,6 +122,28 @@ export function parseSheinDetail(json: unknown): DetailResult | null {
   return { price_cents: price, available: qty > 0 };
 }
 
+const PENDING_DATAHUB_CODES = new Set([205, 5040]); // no-results-aún / endpoint caído temporal
+
+/** ¿El detalle vivo está OK, pendiente de que el proveedor lo indexe, o roto?
+ * "pending" es la clase que justifica REINTENTAR (OTAPI shein indexa perezoso:
+ * la 1ª llamada dispara el indexado y pide "try again later" — verificado en
+ * vivo 2026-07-17; DataHub 205/5040 son transitorios del tier gratis). */
+export function classifyDetail(source: string, json: unknown): "ok" | "pending" | "failed" {
+  if (source === "shein") {
+    const code = (json as { ErrorCode?: unknown } | null)?.ErrorCode;
+    if (code === "NotAvailable") return "pending";
+    return parseSheinDetail(json) ? "ok" : "failed";
+  }
+  if (source === "aliexpress") {
+    const code = toNumber(asRecord(asRecord(asRecord(json)?.result)?.status)?.code);
+    if (code !== null && PENDING_DATAHUB_CODES.has(code)) return "pending";
+    return parseAliexpressDetail(json) ? "ok" : "failed";
+  }
+  if (source === "amazon") return parseAmazonDetail(json) ? "ok" : "failed";
+  if (source === "walmart") return parseWalmartDetail(json) ? "ok" : "failed";
+  return "failed";
+}
+
 // ---------------------------------------------------------------------------
 // Verdict — puro, testeable sin red: dado el precio guardado y el resultado
 // (ya parseado) del lookup vivo, decide qué le pasa al checkout.
