@@ -19,7 +19,7 @@ function Loader({ q, progress, resolvingUrl }: { q: string; progress: number; re
   // Pegaron el link de un producto: no se está "buscando", se está leyendo
   // ese enlace puntual (Tarea 2) — misma cáscara del loader, otra frase.
   const searchPhrases = resolvingUrl
-    ? ["leyendo el enlace…", "leyendo el enlace…", "leyendo el enlace…", "leyendo el enlace…"]
+    ? ["leyendo el enlace…", "pidiéndole el producto a la tienda…", "la tienda está preparando los datos…", "casi — dándole unos segundos más…"]
     : [
         `buscando «${q}» por todo internet…`,
         "leyendo precios y reseñas…",
@@ -83,13 +83,25 @@ const cacheBadge = (
   </div>
 );
 
-// Chip discreto para el poll de fondo (item 1.1): visible mientras sigue buscando en
-// más tiendas tras pintar los resultados locales, desaparece solo cuando termina.
-const pollingChip = (
-  <div style={{ display: "inline-flex", alignItems: "center", marginBottom: 14, marginLeft: 8, padding: "5px 13px", borderRadius: 999, border: "1px solid #ECECE7", background: "#fff", fontSize: 11.5, color: "#55565B" }}>
-    ⋯ buscando en más tiendas…
-  </div>
-);
+// Búsqueda en vivo VISIBLE (spec B1-C): banner claro mientras el poll sigue
+// trayendo de las tiendas — el chip sutil anterior pasaba desapercibido y el
+// usuario no sabía que faltaban resultados por llegar.
+function LiveSearchBanner({ newCount }: { newCount: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "12px 16px", borderRadius: 14, border: "1px solid #ECECE7", background: "#fff" }}>
+      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#1C1D20", animation: "sparkPulse 1.3s ease-in-out infinite" }} />
+      <div style={{ fontSize: 13, color: "#1C1D20", fontWeight: 600 }}>
+        buscando en Amazon, AliExpress y Shein en vivo…
+        <span style={{ fontWeight: 500, color: "#8E8F94" }}> los resultados nuevos aparecen solos</span>
+      </div>
+      {newCount > 0 && (
+        <div style={{ marginLeft: "auto", background: "#1C1D20", color: "#fff", borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 700 }}>
+          +{newCount} nuevos
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Pegaron un link de producto que no pudimos leer (URL inválida para nuestros
 // parsers, fetch falló, cuota agotada, etc.) — mensaje discreto, mismo empty
@@ -97,6 +109,14 @@ const pollingChip = (
 const urlFailedNotice = (
   <div style={{ display: "inline-flex", alignItems: "center", marginBottom: 14, padding: "5px 13px", borderRadius: 999, border: "1px solid #ECECE7", background: "#fff", fontSize: 11.5, color: "#55565B" }}>
     no pudimos leer ese enlace
+  </div>
+);
+
+// El resolve del link no llegó a tiempo → caímos a búsqueda por las palabras
+// del slug: resultados parecidos, aviso honesto (spec B1-A).
+const urlFallbackNotice = (
+  <div style={{ display: "inline-flex", alignItems: "center", marginBottom: 14, padding: "5px 13px", borderRadius: 999, border: "1px solid #ECECE7", background: "#FBEFE2", fontSize: 11.5, color: "#A2683B" }}>
+    no pudimos traer el producto exacto del enlace — esto es lo más parecido
   </div>
 );
 
@@ -128,11 +148,13 @@ export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
       sidebar
       overlay={loading ? <Loader q={q} progress={progress} resolvingUrl={resolvingUrl} /> : undefined}
       notice={
-        !loading && (meta?.hit_cache || polling || meta?.method === "url_resolve_failed") ? (
+        !loading &&
+        (meta?.hit_cache || polling || meta?.method === "url_resolve_failed" || meta?.method === "url_pending_failed" || meta?.method === "url_fallback_search") ? (
           <>
             {meta?.hit_cache && cacheBadge}
-            {polling && pollingChip}
-            {meta?.method === "url_resolve_failed" && urlFailedNotice}
+            {(meta?.method === "url_resolve_failed" || meta?.method === "url_pending_failed") && urlFailedNotice}
+            {meta?.method === "url_fallback_search" && urlFallbackNotice}
+            {polling && <LiveSearchBanner newCount={search.newCount} />}
           </>
         ) : undefined
       }
