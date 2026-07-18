@@ -47,6 +47,22 @@ export function toAbsoluteUrl(raw: string): string | null {
   return url ? url.toString() : null;
 }
 
+// Palabras que aparecen en paths de tienda y no describen el producto.
+const SLUG_NOISE = new Set(["dp", "gp", "product", "item", "ip", "html", "p", "cat", "ref"]);
+
+/** Slug del pathname → query de texto para el fallback cuando el detalle del
+ * proveedor no resuelve (p. ej. OTAPI shein "ItemIsNotComplete"). null si el
+ * path no trae título legible (aliexpress /item/ID.html). Máx 10 palabras. */
+export function slugQueryFromUrl(raw: string): string | null {
+  const url = normalizeUrl(raw);
+  if (!url) return null;
+  const words = url.pathname
+    .split(/[/\-_.]+/)
+    .filter((w) => w.length > 0 && !SLUG_NOISE.has(w.toLowerCase()) && !/^\d{6,}$/.test(w) && !/^[A-Z0-9]{10}$/.test(w));
+  if (words.length < 2) return null;
+  return words.slice(0, 10).join(" ");
+}
+
 export function parseProductUrl(raw: string): ParsedProductUrl | null {
   const url = normalizeUrl(raw);
   if (!url) return null;

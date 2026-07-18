@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { parseProductUrl } from "@/sectors/b-catalog/url-resolver";
+import { parseProductUrl, slugQueryFromUrl } from "@/sectors/b-catalog/url-resolver";
 
 describe("parseProductUrl — amazon", () => {
   test("amazon.com/dp/ASIN", () => {
@@ -187,5 +187,31 @@ describe("parseProductUrl — negativos generales", () => {
       source_product_id: "B0018QS5HU",
     });
     expect(parseProductUrl("https://sheinoutlet.com/Vestido-p-123.html")).toBeNull();
+  });
+});
+
+describe("slugQueryFromUrl", () => {
+  test("shein: slug largo → primeras 10 palabras sin ids ni stopwords de URL", () => {
+    expect(
+      slugQueryFromUrl(
+        "https://us.shein.com/24pcs-Random-Color-Women-s-Men-s-Multi-Color-Minimalist-Comfortable-Elastic-Sports-Headbands-Sweat-Absorbent-Durable-p-423099565.html",
+      ),
+    ).toBe("24pcs Random Color Women s Men s Multi Color Minimalist");
+  });
+
+  test("amazon con slug de título", () => {
+    expect(slugQueryFromUrl("https://www.amazon.com/Levis-505-Regular-Fit-Jeans/dp/B0018QS5HU")).toBe(
+      "Levis 505 Regular Fit Jeans",
+    );
+  });
+
+  test("aliexpress /item/ID.html no trae título → null", () => {
+    expect(
+      slugQueryFromUrl("https://www.aliexpress.us/item/3256812204334285.html?x_object_id=1005012390649037"),
+    ).toBeNull();
+  });
+
+  test("texto que no es URL → null", () => {
+    expect(slugQueryFromUrl("mini camera 1080p")).toBeNull();
   });
 });
