@@ -48,6 +48,7 @@ export function toCard(
     source: string;
     metadata?: unknown;
     weight_grams?: number | null;
+    url?: string | null;
   },
   reason?: string,
   position?: number,
@@ -64,6 +65,7 @@ export function toCard(
     category: meta?.category ?? null,
     source: product.source,
     ...(product.weight_grams != null ? { weight_grams: product.weight_grams } : {}),
+    ...(product.url ? { url: product.url } : {}),
     ...(reason ? { reason } : {}),
     ...(position ? { position } : {}),
     ...(attrs ? { attrs } : {}),

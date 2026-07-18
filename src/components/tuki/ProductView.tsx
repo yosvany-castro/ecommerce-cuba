@@ -10,6 +10,7 @@ import { track } from "@/lib/client/track";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
 import { estimateDelivery, deliveryDates, deliveryPhrase, type ProviderShipDays } from "@/lib/delivery";
 import { gramsToLb } from "@/lib/weight";
+import { shipRateCentsPerLb } from "@/lib/shipping";
 import { attrsOf, catOf, fmt, hasPriceRange, imageForColor, matchVariant, minPriceCents, ratingLine, resolveColorHex, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
@@ -85,6 +86,9 @@ export function ProductView({
   // en vez de un useEffect que dispara setState — evita el render extra).
   const [liveAttrs, setLiveAttrs] = useState(card.attrs);
   const [liveAttrsId, setLiveAttrsId] = useState(card.id);
+  // Títulos de proveedor kilométricos (spec B1-D5): clamp de 2 líneas +
+  // "ver título completo" — el título entero jamás rompe el layout.
+  const [titleFull, setTitleFull] = useState(false);
   // REGLA DE ORO: el precio jamás cambia solo delante del comprador — arranca
   // SIN selección (null), tanto al cargar como al navegar a otro producto
   // (antes se auto-elegía la primera opción y el precio grande saltaba solo).
@@ -286,8 +290,10 @@ export function ProductView({
       body: (
         <div style={{ fontSize: 14, color: "#55565B", lineHeight: 1.65, maxWidth: 560 }}>
           Vía aérea: llega {deliveryPhrase(air)}. Vía marítima: {deliveryPhrase(sea)} (más económica, ideal para
-          pedidos pesados). Fechas estimadas según la tienda de origen ({card.source}); el envío se factura por
-          peso. Devolución sin costo dentro de 30 días: la recogemos en tu puerta.
+          pedidos pesados). Fechas estimadas según la tienda de origen ({card.source}). El envío a Cuba se cobra
+          por libra ({fmt(shipRateCentsPerLb("aereo") ?? 0)}/lb vía aérea) con un colchón que cubre caja y
+          protección — si al pesar tu paquete sobra, se te acredita al saldo. Devolución sin costo dentro de 30
+          días: la recogemos en tu puerta.
         </div>
       ),
     },
@@ -303,7 +309,7 @@ export function ProductView({
         <span onClick={() => router.push(`/c/${cat.id}`)} className="tk-hov-dark tk-hov-underline" style={{ cursor: "pointer" }}>
           {cat.label}
         </span>{" "}
-        / <span style={{ color: "#1C1D20", fontWeight: 600 }}>{card.title}</span>
+        / <span style={{ color: "#1C1D20", fontWeight: 600, display: "inline-block", maxWidth: 420, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "bottom" }}>{card.title}</span>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "480px 1fr", gap: 48, marginTop: 20, alignItems: "start" }}>
@@ -353,10 +359,30 @@ export function ProductView({
         {/* info */}
         <div>
           <div style={{ display: "inline-block", background: cat.tint, color: cat.deep, borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 700 }}>{cat.label}</div>
-          <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px", marginTop: 10, lineHeight: 1.1 }}>{card.title}</div>
+          <div
+            style={{
+              fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px", marginTop: 10, lineHeight: 1.1,
+              ...(titleFull ? {} : { overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }),
+            }}
+          >
+            {card.title}
+          </div>
+          {card.title.length > 90 && (
+            <div onClick={() => setTitleFull((v) => !v)} style={{ fontSize: 12, color: "#8E8F94", cursor: "pointer", textDecoration: "underline", marginTop: 4 }}>
+              {titleFull ? "ver menos" : "ver título completo"}
+            </div>
+          )}
           <div style={{ fontSize: 13.5, color: "#8E8F94", marginTop: 8 }}>
             {rl ? `${rl} · llega ${deliveryPhrase(air)}` : `llega ${deliveryPhrase(air)}`}
             {card.source && ` · de ${card.source}`}
+            {card.url && (
+              <>
+                {" · "}
+                <a href={card.url} target="_blank" rel="noopener noreferrer" style={{ color: "#55565B", textDecoration: "underline" }}>
+                  ver en la tienda ↗
+                </a>
+              </>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
             <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.7px" }}>
