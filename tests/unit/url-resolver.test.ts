@@ -62,6 +62,26 @@ describe("parseProductUrl — aliexpress", () => {
   test("id no numérico → null", () => {
     expect(parseProductUrl("https://www.aliexpress.com/item/abc.html")).toBeNull();
   });
+
+  test("aliexpress.us con x_object_id en query → gana el ID del query (el del path es SEO)", () => {
+    expect(
+      parseProductUrl(
+        "https://www.aliexpress.us/item/3256812204334285.html?spm=a2g0o.productlist.main.18&x_object_id=1005012390649037&gatewayAdapt=glo2usa",
+      ),
+    ).toEqual({ source: "aliexpress", source_product_id: "1005012390649037" });
+  });
+
+  test("aliexpress con object_id (variante del param) también gana al path", () => {
+    expect(
+      parseProductUrl("https://es.aliexpress.com/item/3256812204334285.html?object_id=1005012390649037"),
+    ).toEqual({ source: "aliexpress", source_product_id: "1005012390649037" });
+  });
+
+  test("x_object_id no numérico se ignora → ID del path", () => {
+    expect(
+      parseProductUrl("https://www.aliexpress.com/item/1005006109476487.html?x_object_id=abc"),
+    ).toEqual({ source: "aliexpress", source_product_id: "1005006109476487" });
+  });
 });
 
 describe("parseProductUrl — shein", () => {

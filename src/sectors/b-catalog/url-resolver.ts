@@ -58,6 +58,11 @@ export function parseProductUrl(raw: string): ParsedProductUrl | null {
     return m ? { source: "amazon", source_product_id: m[1].toUpperCase() } : null;
   }
   if (hostMatches(host, "aliexpress")) {
+    // El path suele traer un ID SEO/legacy (3256…) que el detalle de DataHub
+    // NO resuelve; el productId real (1005…) viaja en el query como
+    // x_object_id / object_id (verificado en vivo 2026-07-17). Query primero.
+    const queryId = url.searchParams.get("x_object_id") ?? url.searchParams.get("object_id");
+    if (queryId && /^\d+$/.test(queryId)) return { source: "aliexpress", source_product_id: queryId };
     const m = path.match(ALIEXPRESS_ITEM);
     return m ? { source: "aliexpress", source_product_id: m[1] } : null;
   }
