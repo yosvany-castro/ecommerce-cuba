@@ -21,6 +21,10 @@ import type { MockProduct } from "@/sectors/b-catalog/mock/types";
 
 const bodySchema = z.object({ url: z.string().min(1) }).strict();
 
+// El detalle de OTAPI shein tarda ~16s medidos (2026-07-17) — el default de
+// 8s de revalidate (pensado para checkout) abortaba SIEMPRE esta ruta.
+const RESOLVE_TIMEOUT_MS = 20_000;
+
 export async function POST(req: NextRequest) {
   let body: z.infer<typeof bodySchema>;
   try {
@@ -59,8 +63,17 @@ export async function POST(req: NextRequest) {
 
     try {
       const ref: ProviderRef = { source, source_product_id, url: absoluteUrl };
-      const fetched = await fetchDetailJson(ref);
-      const cls = fetched ? classifyDetail(source, fetched.json) : "failed";
+      // Timeout propio (20s, no los 8s del checkout): OTAPI shein tarda ~16s
+      // medidos. Un throw (timeout/red) es TRANSITORIO → pending, no failed:
+      // el retry de fondo puede lograrlo y el cliente igual cae al slug.
+      let fetched: Awaited<ReturnType<typeof fetchDetailJson>> = null;
+      let fetchThrew = false;
+      try {
+        fetched = await fetchDetailJson(ref, RESOLVE_TIMEOUT_MS);
+      } catch {
+        fetchThrew = true;
+      }
+      const cls = fetchThrew ? "pending" : fetched ? classifyDetail(source, fetched.json) : "failed";
 
       if (cls === "ok" && fetched) {
         const detail = parseDetail(source, fetched.json);

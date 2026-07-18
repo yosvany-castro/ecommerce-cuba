@@ -21,6 +21,9 @@ import type { MockProduct, MockProductSource } from "./mock/types";
 // ponytail: backoff fijo — 3 reintentos en ~2 min tras el intento inmediato de
 // la ruta. Si OTAPI tarda más, el fallback por slug ya cubrió al usuario.
 const RETRY_DELAYS_MS = [20_000, 40_000, 60_000];
+// Mismo timeout largo que la ruta (OTAPI tarda ~16s medidos, el default de
+// revalidate son 8s de checkout y abortaría cada reintento).
+const RESOLVE_TIMEOUT_MS = 20_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -67,7 +70,7 @@ export function queueResolveRetry(input: ResolveRetryInput): Promise<void> {
       for (const delay of RETRY_DELAYS_MS) {
         await sleep(delay);
         try {
-          const fetched = await fetchDetailJson(input.ref);
+          const fetched = await fetchDetailJson(input.ref, RESOLVE_TIMEOUT_MS);
           if (!fetched) return;
           const cls = classifyDetail(input.ref.source, fetched.json);
           if (cls === "failed") return;
