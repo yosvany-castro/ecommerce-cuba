@@ -6,12 +6,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
 import { hasMultipleStores } from "@/lib/delivery";
+import { shipQuote } from "@/lib/shipping";
 import { catOf, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 import type { TukiCartItem } from "./cart-core";
-
-const FREE = 5000; // $50 (dc.html:1174 envioGratisDesde).
-const SHIP = 499; // $4.99 (dc.html:1271 ship = freeOk ? 0 : 4.99).
 
 function itemVars(item: TukiCartItem) {
   const varLine = [item.color, item.size].filter(Boolean).join(" · ");
@@ -115,15 +113,12 @@ export function CartDrawer() {
   if (!open) return null;
 
   const cartHas = items.length > 0;
-  const freeOk = subtotal >= FREE;
-  const ship = freeOk ? 0 : SHIP;
-  const totF = fmt(subtotal + (items.length ? ship : 0));
-  const shipF = items.length && !freeOk ? fmt(SHIP) : "Gratis";
-  const shipColor = freeOk ? "#557A55" : "#55565B";
-  const freePct = Math.min(100, (subtotal / FREE) * 100) + "%";
-  const freeBarColor = freeOk ? "#557A55" : "#1C1D20";
-  const freeLine = freeOk ? "✓ envío gratis desbloqueado" : `te faltan ${fmt(FREE - subtotal)} para envío gratis`;
-  const upsellLine = freeOk ? "y esto le encanta a gente como tú…" : "por poquito más llegas al envío gratis…";
+  // Estimado honesto por libra — misma aritmética que el checkout (lib/shipping)
+  const quote = shipQuote(weightLb, "aereo");
+  const ship = cartHas && quote ? quote.ship_cents : 0;
+  const totF = fmt(subtotal + ship);
+  const shipF = fmt(ship);
+  const upsellLine = "y esto le encanta a gente como tú…";
   const cartIds = new Set(items.map((i) => i.product_id));
   const upsellShown = upsell.filter((p) => !cartIds.has(p.id));
 
@@ -220,14 +215,7 @@ export function CartDrawer() {
             </div>
           ) : (
             <>
-              <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #EFEFEA", padding: "13px 15px" }}>
-                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "#55565B" }}>{freeLine}</div>
-                <div style={{ height: 8, borderRadius: 999, background: "#F1F1EE", marginTop: 9, overflow: "hidden" }}>
-                  <div style={{ height: "100%", borderRadius: 999, background: freeBarColor, width: freePct, transition: "width .6s cubic-bezier(.2,.8,.2,1)" }} />
-                </div>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {items.map((item) => {
                   const { nameVar, meta } = itemVars(item);
                   const navToProduct = () => {
@@ -245,7 +233,7 @@ export function CartDrawer() {
                         )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.25 }}>{nameVar}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{nameVar}</div>
                         <div style={{ fontSize: 11.5, color: "#8E8F94", marginTop: 2 }}>{meta}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
                           <div style={{ display: "flex", alignItems: "center", border: "1px solid #ECECE7", borderRadius: 999, overflow: "hidden" }}>
@@ -301,8 +289,8 @@ export function CartDrawer() {
               <span style={{ fontWeight: 600 }}>⚖ {weightLb.toFixed(1).replace(".0", "")} lb</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#55565B", marginTop: 6 }}>
-              <span>Envío</span>
-              <span style={{ fontWeight: 600, color: shipColor }}>{shipF}</span>
+              <span>Envío estimado (aéreo)</span>
+              <span style={{ fontWeight: 600 }}>{shipF}</span>
             </div>
             {hasMultipleStores(items.map((i) => i.source)) && (
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "#8E8F94", marginTop: 6 }}>
