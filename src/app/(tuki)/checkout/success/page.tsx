@@ -9,11 +9,11 @@ function SuccessInner() {
   const router = useRouter();
   const params = useSearchParams();
   const orderId = params.get("order") ?? "";
-  const metodo = params.get("m") ?? "estandar";
+  const metodo = params.get("m") ?? "aereo";
   // El carrito ya se vació: sin tiendas conocidas, shipOptions usa el rango
-  // default conservador (peso/subtotal irrelevantes para los días).
-  const opts = shipOptions(0, 0);
-  const m = opts.find((s) => s.id === metodo) ?? opts[1];
+  // default conservador (el peso es irrelevante para los días).
+  const opts = shipOptions(0);
+  const m = opts.find((s) => s.id === metodo) ?? opts[0];
   const okLine = orderId
     ? `${etaLine(m.d1, m.d2)} en envío ${m.name.toLowerCase()} · pedido ${orderId}`
     : `pedido ${orderId}`;

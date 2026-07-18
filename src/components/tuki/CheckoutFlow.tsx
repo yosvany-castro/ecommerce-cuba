@@ -5,11 +5,12 @@
 // del formulario precargados (demo, dc.html script 990–991).
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fmt } from "./lib";
+import { catOf, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 import { cartKey } from "./cart-core";
 import { useToast } from "./Toast";
-import { etaLine, shipOptions, validateBilling, validateShipping } from "./checkout-core";
+import { etaLine, shipOptions, validateBilling, validateShipping, type ShipId } from "./checkout-core";
+import { taxCents, taxPct } from "@/lib/shipping";
 import { hasMultipleStores } from "@/lib/delivery";
 
 // Aviso de precio por línea (T2): "changed" = el precio real ya no es el del
@@ -27,7 +28,6 @@ const PAY_DEFS = [
   { id: "transfer", label: "Transferencia", sub: "confirmación inmediata", mark: "🏦" },
 ] as const;
 type PayId = (typeof PAY_DEFS)[number]["id"];
-type ShipId = "rapido" | "estandar" | "lento";
 
 const inputBase: React.CSSProperties = {
   width: "100%",
@@ -136,8 +136,15 @@ export function CheckoutFlow() {
   });
   const [fb, setFb] = useState({ razon: "", rfc: "", correo: "dani@correo.mx", dirf: "" });
   const [pago, setPago] = useState<PayId>("tarjeta");
-  const [shipSel, setShipSel] = useState<ShipId>("estandar");
+  const [shipSel, setShipSel] = useState<ShipId>("aereo");
   const [billSame, setBillSame] = useState(true);
+  // 409 totals_changed: el server recalculó envío/tax distinto a lo mostrado —
+  // se pinta el suyo VISIBLEMENTE y se pide re-confirmar (REGLA DE ORO).
+  const [serverTotals, setServerTotals] = useState<{ ship: number; tax: number } | null>(null);
+  const itemsSig = items.map((i) => i.key + i.qty).join(",");
+  useEffect(() => {
+    setServerTotals(null); // cambió el carrito o la vía: el total local vuelve a mandar
+  }, [itemsSig, shipSel]);
 
   const setFK = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setF((s) => ({ ...s, [k]: e.target.value }));
@@ -149,12 +156,12 @@ export function CheckoutFlow() {
   // necesita una capa de override aparte, solo sumar lo que hay.
   const effectiveSubtotal = items.reduce((s, ri) => s + ri.price_cents * ri.qty, 0);
 
-  const opts = shipOptions(weightLb, effectiveSubtotal, items.map((i) => i.source));
-  const selBlocked = opts.find((o) => o.id === shipSel)?.blocked ?? false;
-  const sel: ShipId = selBlocked ? "estandar" : shipSel;
+  const opts = shipOptions(weightLb, items.map((i) => i.source));
+  const sel: ShipId = opts.some((o) => o.id === shipSel) ? shipSel : "aereo";
   const cur = opts.find((o) => o.id === sel)!;
-  const shipCostCents = items.length ? cur.effectivePriceCents : 0;
-  const totalCents = effectiveSubtotal + shipCostCents;
+  const shipCostCents = items.length ? (serverTotals?.ship ?? cur.quote.ship_cents) : 0;
+  const taxCentsShown = serverTotals?.tax ?? taxCents(effectiveSubtotal);
+  const totalCents = effectiveSubtotal + taxCentsShown + shipCostCents;
   const wS = weightLb.toFixed(1).replace(".0", "");
 
   const shipErrs = validateShipping(f);
@@ -208,7 +215,9 @@ export function CheckoutFlow() {
             dir: f.dir,
             ciudad: f.ciudad,
             ...(f.cp.trim() ? { cp: f.cp } : {}),
-            metodo: sel,
+            via: sel,
+            ship_total_cents: shipCostCents,
+            tax_cents: taxCentsShown,
             pago,
             ...(billSame ? {} : { factura: { razon: fb.razon, rfc: fb.rfc, correo: fb.correo, dirf: fb.dirf } }),
           },
@@ -219,10 +228,21 @@ export function CheckoutFlow() {
       // orden creada. Se corrige la línea + el total VISIBLEMENTE y se pide
       // re-confirmar — el botón vuelve a habilitarse solo con el total nuevo.
       if (res.status === 409) {
-        const body = (await res.json()) as {
-          code: string;
-          items: { product_id: string; color: string | null; size: string | null; shown_cents: number; current_cents: number }[];
-        };
+        const body = (await res.json()) as
+          | {
+              code: "price_changed";
+              items: { product_id: string; color: string | null; size: string | null; shown_cents: number; current_cents: number }[];
+            }
+          | { code: "totals_changed"; ship_total_cents: number; tax_cents: number };
+        if (body.code === "totals_changed") {
+          // El server recalculó peso/tarifa/tax distinto a lo que la UI mostró
+          // (p. ej. el peso del producto se actualizó tras un pesaje admin).
+          // Se pinta el total nuevo y se pide re-confirmar (REGLA DE ORO).
+          setServerTotals({ ship: body.ship_total_cents, tax: body.tax_cents });
+          toast("el envío o los impuestos cambiaron — revisa el total y confirma de nuevo");
+          setPending(false);
+          return;
+        }
         const notes: Record<string, PriceNote> = { ...priceNotes };
         const priceUpdates: Record<string, number> = {};
         for (const it of body.items) {
@@ -394,7 +414,7 @@ export function CheckoutFlow() {
             <>
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26 }}>¿con qué prisa lo quieres?</div>
               <div style={{ fontSize: 13, color: "#8E8F94", margin: "6px 0 16px" }}>
-                tu caja pesa <span style={{ fontWeight: 700, color: "#1C1D20" }}>{wS} lb</span> — el peso decide qué envíos aplican
+                tu caja pesa <span style={{ fontWeight: 700, color: "#1C1D20" }}>{wS} lb</span> — el envío se cobra por libra, con un colchón que cubre caja y protección; si al pesarla real sobra, se te acredita al saldo
                 {hasMultipleStores(items.map((i) => i.source)) && (
                   <>
                     <br />
@@ -404,16 +424,14 @@ export function CheckoutFlow() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 520 }}>
                 {opts.map((s) => {
-                  const on = sel === s.id && !s.blocked;
-                  const priceF = s.effectivePriceCents === 0 ? "Gratis" : fmt(s.effectivePriceCents);
-                  const req = s.id === "estandar" ? "gratis desde $50" : s.maxLb ? `máx ${s.maxLb} lb` : s.minLb ? `mín ${s.minLb} lb` : "";
+                  const on = sel === s.id;
                   return (
                     <div
                       key={s.id}
-                      onClick={() => { if (!s.blocked) setShipSel(s.id); }}
-                      style={{ position: "relative", background: s.blocked ? "#F4F4F1" : "#fff", borderRadius: 18, border: `1.5px solid ${on ? "#1C1D20" : "#EFEFEA"}`, padding: "16px 18px", cursor: s.blocked ? "default" : "pointer", opacity: s.blocked ? 0.8 : 1, transition: "border-color .2s" }}
+                      onClick={() => setShipSel(s.id)}
+                      style={{ position: "relative", background: "#fff", borderRadius: 18, border: `1.5px solid ${on ? "#1C1D20" : "#EFEFEA"}`, padding: "16px 18px", cursor: "pointer", transition: "border-color .2s" }}
                     >
-                      {s.reco && !s.blocked && (
+                      {s.reco && (
                         <div style={{ position: "absolute", top: -10, right: 16, background: "#1C1D20", color: "#fff", borderRadius: 999, padding: "3px 11px", fontSize: 10.5, fontWeight: 700, letterSpacing: ".4px" }}>la que más eligen</div>
                       )}
                       <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
@@ -429,13 +447,12 @@ export function CheckoutFlow() {
                           <div style={{ fontSize: 12.5, color: "#55565B", marginTop: 3 }}>{etaLine(s.d1, s.d2)}</div>
                         </div>
                         <div style={{ flex: "none", textAlign: "right" }}>
-                          <div style={{ fontSize: 15.5, fontWeight: 700, color: s.effectivePriceCents === 0 ? "#557A55" : "#1C1D20" }}>{priceF}</div>
-                          <div style={{ fontSize: 10.5, color: "#8E8F94", marginTop: 2 }}>{req}</div>
+                          <div style={{ fontSize: 15.5, fontWeight: 700 }}>{fmt(s.quote.ship_cents)}</div>
+                          <div style={{ fontSize: 10.5, color: "#8E8F94", marginTop: 2 }}>
+                            {s.quote.chargeable_lb} lb × {fmt(s.quote.rate_cents_per_lb)}/lb
+                          </div>
                         </div>
                       </div>
-                      {s.blocked && (
-                        <div style={{ marginTop: 11, background: "#FBEBEA", borderRadius: 10, padding: "8px 12px", fontSize: 12, color: "#B4533F", fontWeight: 600 }}>✕ {s.reason}</div>
-                      )}
                     </div>
                   );
                 })}
@@ -537,7 +554,7 @@ export function CheckoutFlow() {
                 <ReviewCard title="ENTREGA" onEdit={() => setStep(2)}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
                     <span style={{ fontSize: 14.5 }}>{cur.icon} {cur.name}</span>
-                    <span style={{ fontSize: 14.5, fontWeight: 700, color: shipCostCents === 0 ? "#557A55" : "#55565B" }}>{shipCostCents === 0 ? "Gratis" : fmt(shipCostCents)}</span>
+                    <span style={{ fontSize: 14.5, fontWeight: 700, color: "#55565B" }}>{fmt(shipCostCents)}</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: "#557A55", marginTop: 2 }}>{etaLine(cur.d1, cur.d2)}</div>
                 </ReviewCard>
@@ -568,12 +585,21 @@ export function CheckoutFlow() {
           <div style={{ fontSize: 15, fontWeight: 700 }}>Tu pedido</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
             {items.map((ri) => {
-              // chico y gris, igual que el drawer (CartDrawer.itemVars): "M · azul · aliexpress"
+              // miniatura + título recortado (spec B1-D5): los títulos de
+              // proveedor son kilométricos — 1 línea con clamp, meta debajo.
               const meta = [ri.color, ri.size, ri.source].filter(Boolean).join(" · ");
               return (
-                <div key={ri.key} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13.5, color: "#55565B" }}>
-                  <span style={{ minWidth: 0 }}>
-                    <div>{ri.qty}× {ri.title}</div>
+                <div key={ri.key} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13.5, color: "#55565B" }}>
+                  <div style={{ flex: "none", width: 40, height: 40, borderRadius: 10, background: stripe(catOf(ri.category)), overflow: "hidden" }}>
+                    {ri.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ri.image_url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    )}
+                  </div>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>
+                      {ri.qty}× {ri.title}
+                    </div>
                     {meta && <div style={{ fontSize: 11, color: "#B0B1AE", marginTop: 1 }}>{meta}</div>}
                   </span>
                   <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(ri.price_cents * ri.qty)}</span>
@@ -583,8 +609,17 @@ export function CheckoutFlow() {
           </div>
           <div style={{ height: 1, background: "#F1F1EE", margin: "14px 0" }} />
           <Row label="Subtotal" value={fmt(effectiveSubtotal)} />
-          <Row label="Peso de la caja" value={`${wS} lb`} />
-          <Row label={`Envío · ${cur.name.toLowerCase()}`} value={shipCostCents === 0 ? "Gratis" : fmt(shipCostCents)} valueColor={shipCostCents === 0 ? "#557A55" : "#55565B"} />
+          <Row label={`Impuestos de compra (FL ${taxPct()}%)`} value={fmt(taxCentsShown)} />
+          <Row label={`Envío · ${cur.name.toLowerCase()}`} value={fmt(shipCostCents)} />
+          <details style={{ margin: "4px 0 0" }}>
+            <summary style={{ fontSize: 11.5, color: "#8E8F94", cursor: "pointer" }}>ver desglose del envío</summary>
+            <div style={{ fontSize: 11.5, color: "#8E8F94", marginTop: 4, lineHeight: 1.5 }}>
+              {cur.quote.est_lb} lb estimadas + {cur.quote.buffer_lb} lb de colchón (caja y protección) →{" "}
+              {cur.quote.chargeable_lb} lb × {fmt(cur.quote.rate_cents_per_lb)}/lb.
+              <br />
+              si al pesar tu paquete real sobra, la diferencia se acredita a tu saldo.
+            </div>
+          </details>
           <div style={{ height: 1, background: "#F1F1EE", margin: "14px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: 15, fontWeight: 700 }}>Total</span>

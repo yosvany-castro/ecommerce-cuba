@@ -38,7 +38,12 @@ const shipping = {
   dir: "Av. Siempre Viva 742",
   ciudad: "Ciudad de México",
   cp: "06100",
-  metodo: "estandar" as const,
+  via: "aereo" as const,
+  // El server recalcula por libra + tax y compara contra esto (REGLA DE ORO).
+  // 0/0 nunca coincide → el primer intento da 409 totals_changed con los
+  // valores correctos, que el test re-envía (mismo flujo que el cliente real).
+  ship_total_cents: 0,
+  tax_cents: 0,
   pago: "tarjeta" as const,
 };
 
@@ -49,10 +54,20 @@ describe("POST /api/checkout/anonymous", () => {
       const sessionId = randomUUID();
       const product = await seedProduct(pg, { title: "Camiseta", price_cents: 2500 });
 
+      // 1º intento con totales mostrados en 0 → 409 totals_changed con el
+      // recálculo server-side (envío por libra + tax 7.5%).
+      const reqItems = [{ product_id: product.id, quantity: 2, unit_price_cents: 2500 }];
+      const res409 = await POST(makeReq({ items: reqItems, shipping }, { anonymous_id: anonId, session_id: sessionId }));
+      expect(res409.status).toBe(409);
+      const totals = await res409.json();
+      expect(totals.code).toBe("totals_changed");
+      expect(totals.tax_cents).toBe(375); // 7.5% de $50.00
+      expect(totals.ship_total_cents).toBeGreaterThan(0);
+
+      // 2º intento con los totales que el server dijo → 200 (flujo real del cliente).
       const res = await POST(
         makeReq(
-          // unit_price_cents = lo que la UI mostró; coincide con products.price_cents -> ok.
-          { items: [{ product_id: product.id, quantity: 2, unit_price_cents: 2500 }], shipping },
+          { items: reqItems, shipping: { ...shipping, ship_total_cents: totals.ship_total_cents, tax_cents: totals.tax_cents } },
           { anonymous_id: anonId, session_id: sessionId },
         ),
       );
@@ -65,7 +80,10 @@ describe("POST /api/checkout/anonymous", () => {
       expect(order.total_charged_cents).toBe(5000); // 2500 * 2, re-leído del catálogo
       expect(order.shipping).not.toBeNull();
       expect(order.shipping.ci).toBe("12345678");
-      expect(order.shipping.metodo).toBe("estandar");
+      expect(order.shipping.via).toBe("aereo");
+      expect(order.shipping.ship_cents).toBe(totals.ship_total_cents);
+      expect(order.shipping.tax_cents).toBe(375);
+      expect(order.shipping.chargeable_lb).toBeGreaterThan(0);
 
       const user = (await pg.query(`SELECT auth_sub, email FROM users WHERE id=$1`, [order.user_id])).rows[0];
       expect(user.auth_sub).toBe(`demo|${anonId}`);
@@ -95,26 +113,6 @@ describe("POST /api/checkout/anonymous", () => {
     const res = await POST(makeReq({ items: [{ product_id, quantity: 1 }], shipping }));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("no_identity");
-  });
-
-  test("persiste shipping.ship_price_cents — estándar con subtotal<5000 → 499", async () => {
-    await withTestDb(async (pg) => {
-      const anonId = randomUUID();
-      const sessionId = randomUUID();
-      const product = await seedProduct(pg, { title: "Taza", price_cents: 1000 });
-
-      const res = await POST(
-        makeReq(
-          { items: [{ product_id: product.id, quantity: 2, unit_price_cents: 1000 }], shipping }, // subtotal 2000 < 5000
-          { anonymous_id: anonId, session_id: sessionId },
-        ),
-      );
-      expect(res.status).toBe(200);
-      const body = await res.json();
-
-      const order = (await pg.query(`SELECT shipping FROM orders WHERE id=$1`, [body.order_id])).rows[0];
-      expect(order.shipping.ship_price_cents).toBe(499);
-    });
   });
 
   test("quantity 1000 (sobre la cota de 999) → 400 bad_request", async () => {

@@ -4,6 +4,7 @@ import {
   variantSelectionSchema,
   findPriceMismatches,
   PriceChangedError,
+  TotalsChangedError,
 } from "@/sectors/a-tracking/checkout-schema";
 
 // Valid RFC 4122 v4 UUID (zod 4 enforces version/variant bits)
@@ -128,5 +129,14 @@ describe("PriceChangedError", () => {
     expect(err.name).toBe("PriceChangedError");
     expect(err.items).toBe(items);
     expect(err).toBeInstanceOf(Error);
+  });
+});
+
+describe("TotalsChangedError", () => {
+  test("lleva los totales recalculados por el server", () => {
+    const e = new TotalsChangedError(4200, 750);
+    expect(e.ship_total_cents).toBe(4200);
+    expect(e.tax_cents).toBe(750);
+    expect(e.message).toBe("totals_changed");
   });
 });

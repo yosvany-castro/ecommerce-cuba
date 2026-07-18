@@ -64,6 +64,19 @@ export function findPriceMismatches(lines: PriceCheckLine[]): PriceMismatch[] {
   return out;
 }
 
+/** El envío/tax que la UI mostró ya no cuadra con el recálculo server-side
+ * (peso actualizado, knob de tarifa/tax cambiado entre pintado y confirm).
+ * Misma filosofía que PriceChangedError: 409 ANTES de tocar la DB. */
+export class TotalsChangedError extends Error {
+  constructor(
+    readonly ship_total_cents: number,
+    readonly tax_cents: number,
+  ) {
+    super("totals_changed");
+    this.name = "TotalsChangedError";
+  }
+}
+
 /** El precio mostrado ya no es el precio real — createCheckoutOrder/
  * createAnonymousOrder la lanzan ANTES de insertar nada (ver el ROLLBACK en
  * el catch de cada uno); la ruta HTTP la traduce a 409 con el detalle. */

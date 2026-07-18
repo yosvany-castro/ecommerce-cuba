@@ -3,7 +3,7 @@ import { z } from "zod";
 import { dbHealth } from "@/lib/db/health";
 import { withPg } from "@/lib/db/helpers";
 import { createAnonymousOrder } from "@/sectors/a-tracking/checkout-anonymous";
-import { anonymousCheckoutItemSchema, PriceChangedError } from "@/sectors/a-tracking/checkout-schema";
+import { anonymousCheckoutItemSchema, PriceChangedError, TotalsChangedError } from "@/sectors/a-tracking/checkout-schema";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -18,7 +18,9 @@ const bodySchema = z
         dir: z.string().min(1),
         ciudad: z.string().min(1),
         cp: z.string().optional(),
-        metodo: z.enum(["rapido", "estandar", "lento"]),
+        via: z.enum(["aereo", "maritimo"]),
+        ship_total_cents: z.number().int().min(0),
+        tax_cents: z.number().int().min(0),
         pago: z.enum(["tarjeta", "efectivo", "transfer"]),
         factura: z
           .object({
@@ -66,6 +68,12 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if (e instanceof PriceChangedError) {
       return NextResponse.json({ code: "price_changed", items: e.items }, { status: 409 });
+    }
+    if (e instanceof TotalsChangedError) {
+      return NextResponse.json(
+        { code: "totals_changed", ship_total_cents: e.ship_total_cents, tax_cents: e.tax_cents },
+        { status: 409 },
+      );
     }
     if (e instanceof Error && e.message === "empty_cart") {
       return NextResponse.json({ error: "empty_cart" }, { status: 400 });

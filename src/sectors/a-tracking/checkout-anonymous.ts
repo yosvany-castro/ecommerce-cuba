@@ -3,7 +3,9 @@ import { getOrCreateUserBySub } from "@/lib/auth";
 import { insertEvent } from "./events/insert";
 import { attributePurchaseAndExclude } from "./attribution";
 import { findVariantPriceCents, type CuratedAttrs } from "@/sectors/b-catalog/enrichment/attrs";
-import { findPriceMismatches, PriceChangedError } from "./checkout-schema";
+import { findPriceMismatches, PriceChangedError, TotalsChangedError } from "./checkout-schema";
+import { shipQuote, taxCents, type ShipVia } from "@/lib/shipping";
+import { estimateWeightGrams, gramsToLb } from "@/lib/weight";
 
 export interface AnonymousOrderInput {
   anonymous_id: string;
@@ -14,19 +16,17 @@ export interface AnonymousOrderInput {
   // lo que la UI le mostró al usuario — se compara contra lo calculado server-
   // side; si difiere, PriceChangedError ANTES de tocar la DB (REGLA DE ORO).
   items: { product_id: string; quantity: number; unit_price_cents: number; color?: string | null; size?: string | null }[];
-  // Datos de envío ya validados en la ruta (zod strict) — se guardan tal cual en orders.shipping.
-  shipping: Record<string, unknown> & { nombre?: string; metodo?: "rapido" | "estandar" | "lento" };
+  // Datos de envío ya validados en la ruta (zod strict) — se guardan (junto al
+  // desglose por libra recalculado) en orders.shipping. ship_total_cents/
+  // tax_cents = lo que la UI le MOSTRÓ al usuario, para comparar contra el
+  // recálculo server-side (misma regla de oro que unit_price_cents).
+  shipping: Record<string, unknown> & {
+    nombre?: string;
+    via?: ShipVia;
+    ship_total_cents?: number;
+    tax_cents?: number;
+  };
 }
-
-// Tarifas de envío (centavos). Duplicado intencional de SHIP en
-// src/components/tuki/checkout-core.ts: ese archivo es capa UI (client), este
-// sector es server-only — no cruzamos esa frontera por 3 números.
-const SHIP_PRICE_CENTS: Record<"rapido" | "estandar" | "lento", number> = {
-  rapido: 1299,
-  estandar: 499,
-  lento: 199,
-};
-const FREE_SHIP_THRESHOLD_CENTS = 5000;
 
 export interface CheckoutResult {
   order_id: string;
@@ -40,6 +40,7 @@ interface ProdRow {
   currency: string;
   image_url: string | null;
   metadata: unknown;
+  weight_grams: number | null;
 }
 
 /**
@@ -67,7 +68,7 @@ export async function createAnonymousOrder(
   try {
     const productIds = input.items.map((i) => i.product_id);
     const prodRows = await pg.query<ProdRow>(
-      `SELECT id AS product_id, title, description, price_cents, currency, image_url, metadata
+      `SELECT id AS product_id, title, description, price_cents, currency, image_url, metadata, weight_grams
        FROM products WHERE id = ANY($1::uuid[])`,
       [productIds],
     );
@@ -104,11 +105,26 @@ export async function createAnonymousOrder(
     const totalCharged = lineItems.reduce((s, { item, unitPriceCents }) => s + unitPriceCents * item.quantity, 0);
     const totalCost = Math.round(totalCharged * 0.6);
     // total_charged_cents es solo-productos (igual que createCheckoutOrder); el
-    // envío no se suma al cobro confirmado, se guarda aparte abajo.
-    const metodo: "rapido" | "estandar" | "lento" = input.shipping.metodo ?? "estandar";
-    const shipPriceCents =
-      metodo === "estandar" && totalCharged >= FREE_SHIP_THRESHOLD_CENTS ? 0 : SHIP_PRICE_CENTS[metodo];
-    const shippingWithPrice = { ...input.shipping, ship_price_cents: shipPriceCents };
+    // envío/tax no se suman al cobro confirmado, se guardan aparte abajo.
+    // Envío POR LIBRA + tax (spec B1) — recalculado server-side con la MISMA
+    // aritmética compartida (src/lib/shipping.ts) y el peso de la DB (cascada
+    // weight_grams > heurística pura, idéntica a la del cliente).
+    const via: ShipVia = input.shipping.via ?? "aereo";
+    const grams = lineItems.reduce((s, { item, prod }) => {
+      const meta = prod.metadata as { category?: string } | null;
+      const g = prod.weight_grams ?? estimateWeightGrams({ title: prod.title, category: meta?.category ?? null }).grams;
+      return s + g * item.quantity;
+    }, 0);
+    const quote = shipQuote(grams === 0 ? 0 : gramsToLb(grams), via);
+    if (!quote) throw new Error("bad_via"); // vía sin tarifa: el cliente no debería mandarla
+    const tax = taxCents(totalCharged);
+    if (
+      (input.shipping.ship_total_cents !== undefined && input.shipping.ship_total_cents !== quote.ship_cents) ||
+      (input.shipping.tax_cents !== undefined && input.shipping.tax_cents !== tax)
+    ) {
+      throw new TotalsChangedError(quote.ship_cents, tax);
+    }
+    const shippingWithPrice = { ...input.shipping, ...quote, via, tax_cents: tax };
 
     const order = await pg.query(
       `INSERT INTO orders (user_id, status, total_charged_cents, total_cost_cents, shipping)
