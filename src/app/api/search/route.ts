@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
 
   const timing = new RequestTiming();
   const result = await timing.time("search", () =>
-    withPg((pg) => hybridSearch(q, { pg, anonymous_id, user_id }, { trace: debug })),
+    withPg((pg) =>
+      hybridSearch(q, { pg, anonymous_id, user_id }, { trace: debug, forceIngest: req.nextUrl.searchParams.get("force") === "1" }),
+    ),
   );
   return NextResponse.json(
     {

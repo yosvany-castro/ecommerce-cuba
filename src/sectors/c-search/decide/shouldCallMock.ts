@@ -74,6 +74,13 @@ export function currentFreshnessThresholdHours(): number {
   return Number.isFinite(n) ? n : DEFAULT_FRESHNESS_THRESHOLD_HOURS;
 }
 
+/** Un query de >8 palabras es casi seguro un TÍTULO pegado (spec Bloque 1):
+ * el usuario busca ESE producto — la duda del normalizador (low_confidence)
+ * no debe frenar la ingesta en vivo. */
+export function isTitleLikeQuery(q: string): boolean {
+  return q.trim().split(/\s+/).length > 8;
+}
+
 export function shouldCallMock(
   localCount: number,
   confidence: number,

@@ -13,6 +13,7 @@ import {
   shouldCallMock,
   countStrongHits,
   currentStrongHitMinScore,
+  isTitleLikeQuery,
   LOCAL_HITS_THRESHOLD,
   FRESHNESS_THRESHOLD_HOURS,
 } from "./decide/shouldCallMock";
@@ -53,6 +54,9 @@ export interface HybridSearchCtx {
 
 export interface HybridSearchOpts {
   trace?: boolean;
+  /** Fuerza la ingesta externa aunque el normalizador dude (low_confidence):
+   * fallback de URL por slug (`/api/search?force=1`) — spec Bloque 1. */
+  forceIngest?: boolean;
 }
 
 export interface HybridSearchResult {
@@ -303,10 +307,13 @@ export async function hybridSearch(
   );
 
   if (normalized) {
-    let should = shouldCallMock(strongHits, normalized.confidence, lastRefreshedAt);
+    // Título pegado (>8 palabras) o force=1: la confianza del LLM no veta
+    // la ingesta (spec Bloque 1) — se pasa 1 en su lugar.
+    const titlePaste = isTitleLikeQuery(rawQuery) || opts.forceIngest === true;
+    let should = shouldCallMock(strongHits, titlePaste ? 1 : normalized.confidence, lastRefreshedAt);
     if (!should) {
       if (strongHits >= LOCAL_HITS_THRESHOLD) decisionReason = "enough_local_hits";
-      else if (normalized.confidence <= 0.5) decisionReason = "low_confidence";
+      else if (!titlePaste && normalized.confidence <= 0.5) decisionReason = "low_confidence";
       else if (
         lastRefreshedAt &&
         (Date.now() - lastRefreshedAt.getTime()) / (3600 * 1000) < FRESHNESS_THRESHOLD_HOURS

@@ -5,6 +5,7 @@ import {
   strongHitIdSet,
   currentStrongHitMinScore,
   currentResultMinScore,
+  isTitleLikeQuery,
   DEFAULT_STRONG_HIT_MIN_SCORE,
   LOCAL_HITS_THRESHOLD,
   CONFIDENCE_THRESHOLD,
@@ -174,5 +175,22 @@ describe("currentResultMinScore (piso de relevancia devuelto) — env override",
   test("SEARCH_RESULT_MIN_SCORE basura cae al strong-hit floor", () => {
     process.env.SEARCH_RESULT_MIN_SCORE = "not-a-number";
     expect(currentResultMinScore()).toBe(0.55);
+  });
+});
+
+describe("isTitleLikeQuery", () => {
+  test("título pegado de shein (muchas palabras) → true", () => {
+    expect(
+      isTitleLikeQuery(
+        "24pcs Random Color Women's & Men's Multi-Color Minimalist Comfortable Elastic Sports Headbands, Sweat-Absorbent & Durable, Suitable For Yoga",
+      ),
+    ).toBe(true);
+  });
+  test("query corta normal → false", () => {
+    expect(isTitleLikeQuery("mini camera 1080p")).toBe(false);
+  });
+  test("9 palabras justas → true, 8 → false", () => {
+    expect(isTitleLikeQuery("a b c d e f g h i")).toBe(true);
+    expect(isTitleLikeQuery("a b c d e f g h")).toBe(false);
   });
 });
