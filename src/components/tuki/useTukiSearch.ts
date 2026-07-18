@@ -53,6 +53,7 @@ export interface TukiSearch {
   meta: SearchMeta | null;
   polling: boolean; // poll de fondo activo buscando más productos (called_mock)
   resolvingUrl: boolean; // el texto sometido parseó como URL de producto — leyendo el link, no buscando
+  newCount: number; // resultados añadidos por el poll desde que se pintó r1 (badge "+N nuevos")
   run(q: string): void;
 }
 
@@ -103,6 +104,7 @@ export function useTukiSearch(): TukiSearch {
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [polling, setPolling] = useState(false);
   const [resolvingUrl, setResolvingUrl] = useState(false);
+  const [newCount, setNewCount] = useState(0);
   const runId = useRef(0);
   const animTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,10 +137,39 @@ export function useTukiSearch(): TukiSearch {
       clearPoll();
       setPolling(false);
       setResolvingUrl(false);
+      setNewCount(0);
+
+      // Igual que pollForMore (abajo) pero contra la query del slug del
+      // fallback de URL. Declarado ANTES de la rama URL porque esa rama
+      // hace return y el resto del cuerpo nunca corre para ella.
+      const pollForMoreUrl = (fq: string, attempt: number, knownCount: number) => {
+        if (myId !== runId.current || attempt >= POLL_SCHEDULE_MS.length) {
+          if (myId === runId.current) setPolling(false);
+          return;
+        }
+        pollTimer.current = setTimeout(() => {
+          if (myId !== runId.current) return;
+          fetch(`/api/search?q=${encodeURIComponent(fq)}`)
+            .then((r) => r.json() as Promise<ApiResp>)
+            .then((rN) => {
+              if (myId !== runId.current) return;
+              if (rN.products.length > knownCount) {
+                setNewCount((c) => c + (rN.products.length - knownCount));
+                setCards(toCards(rN.products));
+                knownCount = rN.products.length;
+              }
+              pollForMoreUrl(fq, attempt + 1, knownCount);
+            })
+            .catch(() => pollForMoreUrl(fq, attempt + 1, knownCount));
+        }, POLL_SCHEDULE_MS[attempt]);
+      };
 
       // Modelo de reventa: si pegan el link de un producto (amazon/aliexpress/
       // shein/walmart) en vez de buscar por texto, no hay nada que buscar —
-      // resolvemos directo a la ficha de ESE producto (Tarea 2).
+      // resolvemos directo a la ficha de ESE producto. El server puede tardar
+      // (202 pending + reintentos de fondo): hacemos poll ~65s y después
+      // caemos a búsqueda de texto con las palabras del slug (force=1) —
+      // el usuario nunca ve un vacío seco.
       const parsedUrl = parseProductUrl(q);
       if (parsedUrl) {
         setPhase("loading");
@@ -147,29 +178,78 @@ export function useTukiSearch(): TukiSearch {
         setProgress(p);
         animTimer.current = setInterval(() => {
           if (myId !== runId.current) return clearAnim();
-          p = Math.min(0.9, p + 0.08);
+          p = Math.min(0.9, p + 0.03); // más lento: el resolve puede tardar ~1 min
           setProgress(p);
-        }, 200);
-        fetch("/api/products/resolve-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: q }),
-        })
-          .then((r) => (r.ok ? (r.json() as Promise<{ product_id: string }>) : Promise.reject()))
-          .then(({ product_id }) => {
-            if (myId !== runId.current) return;
-            clearAnim();
-            router.push(`/products/${product_id}`);
-          })
-          .catch(() => {
-            if (myId !== runId.current) return;
-            clearAnim();
-            setResolvingUrl(false);
+        }, 400);
+
+        const fallbackToSlug = (fallbackQuery: string | null) => {
+          if (myId !== runId.current) return;
+          clearAnim();
+          setResolvingUrl(false);
+          if (!fallbackQuery) {
             setCards([]);
-            setMeta({ hit_cache: false, called_mock: false, method: "url_resolve_failed" });
+            setMeta({ hit_cache: false, called_mock: false, method: "url_pending_failed" });
             setProgress(1);
             setPhase("results");
+            return;
+          }
+          fetch(`/api/search?q=${encodeURIComponent(fallbackQuery)}&force=1`)
+            .then((r) => r.json() as Promise<ApiResp>)
+            .then((r1) => {
+              if (myId !== runId.current) return;
+              setCards(toCards(r1.products));
+              setMeta({ hit_cache: false, called_mock: r1.called_mock, method: "url_fallback_search" });
+              setProgress(1);
+              setPhase("results");
+              if (r1.called_mock) {
+                setPolling(true);
+                pollForMoreUrl(fallbackQuery, 0, r1.products.length);
+              }
+            })
+            .catch(() => {
+              if (myId !== runId.current) return;
+              setCards([]);
+              setMeta({ hit_cache: false, called_mock: false, method: "url_pending_failed" });
+              setProgress(1);
+              setPhase("results");
+            });
+        };
+
+        const RESOLVE_POLL_MS = [5_000, 10_000, 15_000, 15_000, 20_000];
+        const pollResolve = (attempt: number, lastFallback: string | null) => {
+          if (myId !== runId.current) return;
+          if (attempt >= RESOLVE_POLL_MS.length) return fallbackToSlug(lastFallback);
+          pollTimer.current = setTimeout(() => {
+            if (myId !== runId.current) return;
+            postResolve().then(handleResolve(attempt + 1)).catch(() => fallbackToSlug(lastFallback));
+          }, RESOLVE_POLL_MS[attempt]);
+        };
+
+        const postResolve = () =>
+          fetch("/api/products/resolve-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: q }),
           });
+
+        const handleResolve = (attempt: number) => async (r: Response) => {
+          if (myId !== runId.current) return;
+          const body = (await r.json().catch(() => null)) as
+            | { product_id?: string; status?: string; fallback_query?: string | null }
+            | null;
+          if (r.ok && body?.product_id) {
+            clearAnim();
+            router.push(`/products/${body.product_id}`);
+            return;
+          }
+          if (r.status === 202) {
+            pollResolve(attempt, body?.fallback_query ?? null);
+            return;
+          }
+          fallbackToSlug(body?.fallback_query ?? null); // 422/429/otro: al slug ya
+        };
+
+        postResolve().then(handleResolve(0)).catch(() => fallbackToSlug(null));
         return;
       }
 
@@ -218,6 +298,7 @@ export function useTukiSearch(): TukiSearch {
             .then((rN) => {
               if (myId !== runId.current) return;
               if (rN.products.length > knownCount) {
+                setNewCount((c) => c + (rN.products.length - knownCount));
                 setCards(toCards(rN.products));
                 setMeta(metaOf(rN));
                 knownCount = rN.products.length;
@@ -261,5 +342,5 @@ export function useTukiSearch(): TukiSearch {
     [clearAnim, clearPoll, router],
   );
 
-  return { phase, progress, cards, meta, polling, resolvingUrl, run };
+  return { phase, progress, cards, meta, polling, resolvingUrl, newCount, run };
 }
