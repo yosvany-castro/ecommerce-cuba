@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
-import type { StorefrontCard } from "@/storefront/contract";
+import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
 import { attrsOf, CATS } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { FiltersDrawer } from "./FiltersDrawer";
@@ -33,6 +33,7 @@ export function Listing({
   header,
   activeCat,
   initialAdv,
+  featured = [],
   overlay,
   notice,
 }: {
@@ -43,6 +44,9 @@ export function Listing({
   activeCat?: string;
   /** filtros iniciales (sugerencias-filtro del buscador: «q» en oferta / mejor valorados). */
   initialAdv?: Partial<AdvState>;
+  /** Secciones DESTACADAS del listado (superficie 'search' del slate — seed +
+   * placements del agente). Se pintan entre la barra de filtros y la grilla. */
+  featured?: StorefrontSection[];
   overlay?: React.ReactNode; // reemplaza la grilla (loader de búsqueda en loading)
   notice?: React.ReactNode; // pill sobre la grilla (badge de caché)
 }) {
@@ -175,6 +179,22 @@ export function Listing({
           </div>
         </div>
       )}
+
+      {/* destacados del listado (slate 'search': seed + agente) */}
+      {!overlay &&
+        featured
+          .filter((sec) => sec.items.length > 0)
+          .map((sec) => (
+            <div key={sec.placement_id} data-testid="tuki-listing-featured" style={{ background: "#EFEFF7", borderRadius: 22, padding: "18px 20px 14px", marginTop: 16 }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13.5, color: "#77787D" }}>destacado</div>
+              <div style={{ fontFamily: "var(--font-brico)", fontSize: 20, fontWeight: 700, letterSpacing: "-0.3px", margin: "2px 0 12px" }}>{sec.title}</div>
+              <div style={{ display: "flex", gap: 14, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 4 }}>
+                {sec.items.map((card) => (
+                  <ProductCard key={card.id} card={card} source={source} variant="aisle" />
+                ))}
+              </div>
+            </div>
+          ))}
 
       <div style={{ marginTop: 16 }}>
         {overlay ?? (

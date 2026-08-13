@@ -4,6 +4,7 @@ import { withPg } from "@/lib/db/helpers";
 import { dbHealth } from "@/lib/db/health";
 import { cartPage } from "@/storefront/pages/cart";
 import { productSections } from "@/storefront/pages/product";
+import { listingSections } from "@/storefront/pages/listing";
 import type { StorefrontSection } from "@/storefront/contract";
 import { RequestTiming } from "@/lib/timing";
 
@@ -21,7 +22,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  */
 const bodySchema = z
   .object({
-    surface: z.enum(["pdp", "cart"]),
+    surface: z.enum(["pdp", "cart", "search"]),
     surface_args: z
       .object({
         pdp_product_id: z.string().regex(UUID_REGEX).optional(),
@@ -68,6 +69,10 @@ export async function POST(req: NextRequest) {
           surface: page.surface,
           sections: served(page.sections),
         };
+      }
+      if (body.surface === "search") {
+        const sections = await listingSections(identity, body.surface_args.pdp_category ?? null, pg);
+        return { surface: "search" as const, sections: served(sections) };
       }
       const sections = await productSections(
         identity,

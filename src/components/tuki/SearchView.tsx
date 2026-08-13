@@ -1,6 +1,8 @@
 "use client";
 // src/components/tuki/SearchView.tsx — vista de búsqueda: loader por etapas (dc.html 342–374,
 // fórmulas del script 1256–1268) durante loading + Listing con resultados al terminar.
+import { useEffect, useState } from "react";
+import type { StorefrontSection } from "@/storefront/contract";
 import { Listing } from "./Listing";
 import type { TukiSearch } from "./useTukiSearch";
 
@@ -124,6 +126,37 @@ const urlFallbackNotice = (
 
 export function SearchView({ q, search, initialFilter }: { q: string; search: TukiSearch; initialFilter?: "oferta" | "top" }) {
   const { phase, progress, cards, meta, polling, resolvingUrl } = search;
+  // Destacados del listado (slate 'search', colocables por el agente): se piden
+  // al terminar la búsqueda, con la categoría DOMINANTE de los resultados.
+  const [featured, setFeatured] = useState<StorefrontSection[]>([]);
+  const gotResults = phase === "results" && cards.length > 0;
+  useEffect(() => {
+    if (!gotResults) {
+      setFeatured([]);
+      return;
+    }
+    const counts = new Map<string, number>();
+    for (const c of cards) if (c.category) counts.set(c.category, (counts.get(c.category) ?? 0) + 1);
+    const dominant = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/slate/resolve", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ surface: "search", surface_args: { pdp_category: dominant } }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as { sections: StorefrontSection[] };
+        setFeatured(body.sections);
+      } catch {
+        /* sin destacados: el listado sigue igual */
+      }
+    })();
+    return () => ctrl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gotResults, q]);
 
   if (!q) {
     return (
@@ -148,6 +181,7 @@ export function SearchView({ q, search, initialFilter }: { q: string; search: Tu
       source="search"
       header={header}
       initialAdv={initialFilter === "oferta" ? { oferta: true } : initialFilter === "top" ? { sort: "top" } : undefined}
+      featured={featured}
       overlay={loading ? <Loader q={q} progress={progress} resolvingUrl={resolvingUrl} /> : undefined}
       notice={
         !loading &&

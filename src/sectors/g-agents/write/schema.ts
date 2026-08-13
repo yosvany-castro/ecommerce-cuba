@@ -14,7 +14,7 @@ import { COHORT_IDS } from "@/sectors/d-personalization/cohorts/definitions";
  *  SECTION_REGISTRY (caso especial del runner) y es el feed principal
  *  (priority 0, "never sacrificed" — 0025:26). */
 export const AGENT_SECTION_WHITELIST = ["popular", "cross_sell", "cart_addons"] as const;
-export const AGENT_SURFACES = ["home", "pdp", "cart"] as const; // search: sin placements aún
+export const AGENT_SURFACES = ["home", "pdp", "cart", "search"] as const; // search = listados (categorías+búsqueda), destacados colocables
 
 /** Slots seed (0026): (home,10) hero, (pdp,10) cross_sell, (cart,10) cart_addons.
  *  El agente NUNCA aplica directo sobre un slot ocupado por una fila no-agente.

@@ -6,6 +6,7 @@ import {
   CATEGORY_PAGE_SIZE,
 } from "@/sectors/b-catalog/repository/category-page";
 import { CategoryView } from "@/components/tuki/CategoryView";
+import { getListingSections } from "@/storefront/pages/listing";
 import { CATS } from "@/components/tuki/lib";
 import type { StorefrontCard } from "@/storefront/contract";
 
@@ -45,6 +46,9 @@ export default async function CategoryPage({
   const page = Math.max(1, Math.min(200, Number.parseInt(pageRaw ?? "1", 10) || 1));
 
   const { items, hasNext } = await withPg((pg) => fetchCategoryPage(category, page, pg));
+  // Destacados del listado (slate 'search') — tras el grid principal para no
+  // competir por el pool (lección del hero en frío).
+  const featured = page === 1 ? await getListingSections(category) : [];
   if (items.length === 0 && page === 1) return notFound();
 
   const cards: StorefrontCard[] = items.map((it) => ({
@@ -73,7 +77,7 @@ export default async function CategoryPage({
 
   return (
     <>
-      <CategoryView cards={cards} header={header} activeCat={category} />
+      <CategoryView cards={cards} header={header} activeCat={category} featured={featured} />
       <nav
         aria-label="Paginación"
         style={{ maxWidth: 1280, margin: "0 auto", padding: "0 28px 60px", display: "flex", justifyContent: "space-between" }}
