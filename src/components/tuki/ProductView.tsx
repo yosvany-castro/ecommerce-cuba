@@ -19,7 +19,8 @@ type CardAttrs = NonNullable<StorefrontCard["attrs"]>;
 
 // Sin reseñas reales en el catálogo aún — antes había 2 testimonios fijos falsos
 // (dc.html 1289) puestos en TODOS los productos; se quitaron por deshonestos.
-const DESC_ROWS = ["Devolución gratis hasta 30 días", "Garantía tuki de 12 meses"];
+// Solo promesas que hoy se cumplen (nada de devoluciones/garantías inventadas).
+const DESC_ROWS = ["Rastreado desde la tienda hasta tu puerta", "Pagas al recibir si eliges efectivo"];
 
 // Subtítulo editorial por tipo de riel (los títulos vienen de ui_sections).
 const RAIL_SUBTITLES: Record<string, string> = {
@@ -119,6 +120,35 @@ export function ProductView({
   const rl = ratingLine(da.rating, da.sold);
 
   const [qty, setQty] = useState(1);
+  // Bundle "llévalos juntos" (v2 + decisión del dueño): lo sugiere el SISTEMA
+  // (cross_sell NPMI real vía /api/slate/resolve, el mismo motor del agente) y
+  // el ahorro mostrado SOLO si el compañero trae old_price REAL del proveedor —
+  // Tuki jamás financia el descuento.
+  const [bundle, setBundle] = useState<StorefrontCard | null>(null);
+  const [bundleOn, setBundleOn] = useState(false);
+  useEffect(() => {
+    setBundle(null);
+    setBundleOn(false);
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/slate/resolve", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ surface: "pdp", surface_args: { pdp_product_id: card.id, pdp_category: card.category ?? null } }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as { sections: { section_type: string; items: StorefrontCard[] }[] };
+        const cross = body.sections.find((s) => s.section_type === "cross_sell");
+        const companion = cross?.items.find((p) => p.id !== card.id);
+        if (companion) setBundle(companion);
+      } catch {
+        /* sin bundle: la PDP sigue igual */
+      }
+    })();
+    return () => ctrl.abort();
+  }, [card.id, card.category]);
   const [acc, setAcc] = useState<string>("desc");
 
   const variants = liveAttrs?.variants;
@@ -165,7 +195,16 @@ export function ProductView({
     // (el batch de 3s perdía la carrera en navegación SPA y el feed nunca se
     // enteraba de lo que miraste).
     track("product_view", { product_id: card.id, source }, { urgent: true });
-  }, [card.id, source]);
+    // Bento "retoma donde ibas": snapshot mínimo del último visto (localStorage).
+    try {
+      localStorage.setItem(
+        "tuki_last_viewed",
+        JSON.stringify({ id: card.id, title: card.title, price_cents: card.price_cents, currency: card.currency, image_url: card.image_url, category: card.category ?? null, source: card.source }),
+      );
+    } catch {
+      /* storage lleno/privado: el bento cae al fallback */
+    }
+  }, [card.id, card.title, card.price_cents, card.currency, card.image_url, card.category, card.source, source]);
 
   // Peso en background: nunca bloquea el render de la PDP (skeleton mientras).
   useEffect(() => {
@@ -218,6 +257,9 @@ export function ProductView({
 
   const onAdd = () => {
     if (isSoldOut || priceIsGated) return;
+    if (bundleOn && bundle) {
+      add({ id: bundle.id, title: bundle.title, price_cents: bundle.price_cents, category: bundle.category ?? null, image_url: bundle.image_url, source: bundle.source, weight_grams: bundle.weight_grams ?? null });
+    }
     add(
       {
         id: card.id,
@@ -229,6 +271,8 @@ export function ProductView({
         // el MISMO peso que el comprador vio en la fila de peso (o el de DB si
         // la fila aún cargaba) — el carrito/checkout facturan sobre este número
         weight_grams: weight?.grams ?? card.weight_grams ?? null,
+        // P1-8: la ETA del checkout usa los MISMOS días del proveedor que la PDP
+        provider_ship_days: providerShipDays ?? null,
       },
       qty,
       selColor,
@@ -241,7 +285,7 @@ export function ProductView({
   // si el proveedor reportó sus días de envío, el rango se acorta con el dato
   // real del producto.
   const air = estimateDelivery(card.source, "aereo", providerShipDays);
-  const sea = estimateDelivery(card.source, "maritimo", providerShipDays);
+  const exp = estimateDelivery(card.source, "express", providerShipDays);
   const airDates = deliveryDates(air);
 
   const specs = [
@@ -289,11 +333,11 @@ export function ProductView({
       label: "Envío y devoluciones",
       body: (
         <div style={{ fontSize: 14, color: "#55565B", lineHeight: 1.65, maxWidth: 560 }}>
-          Vía aérea: llega {deliveryPhrase(air)}. Vía marítima: {deliveryPhrase(sea)} (más económica, ideal para
-          pedidos pesados). Fechas estimadas según la tienda de origen ({card.source}). El envío a Cuba se cobra
-          por libra ({fmt(shipRateCentsPerLb("aereo") ?? 0)}/lb vía aérea) con un colchón que cubre caja y
-          protección — si al pesar tu paquete sobra, se te acredita al saldo. Devolución sin costo dentro de 30
-          días: la recogemos en tu puerta.
+          Express: llega {deliveryPhrase(exp)} ({fmt(shipRateCentsPerLb("express") ?? 0)}/lb — prioridad).
+          Aéreo: llega {deliveryPhrase(air)} ({fmt(shipRateCentsPerLb("aereo") ?? 0)}/lb). Fechas estimadas
+          según la tienda de origen ({card.source}). El envío a Cuba se cobra por libra, con un colchón que
+          cubre caja y protección — el desglose exacto lo ves antes de confirmar, y si algo cambia al pesar,
+          te lo mostramos siempre antes de cobrar.
         </div>
       ),
     },
@@ -343,16 +387,8 @@ export function ProductView({
                   style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", border: i === 0 ? "2px solid #1C1D20" : "2px solid transparent" }}
                 />
               ))
-            ) : (
-              <>
-                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), border: "2px solid #1C1D20" }} />
-                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.7 }} />
-                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.5 }} />
-                <div style={{ width: 76, height: 76, borderRadius: 14, background: stripe(cat), opacity: 0.35, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#77787D", fontWeight: 600 }}>
-                  +3
-                </div>
-              </>
-            )}
+            ) : null /* sin fotos reales NO se pintan thumbnails falsos a rayas
+              ("+3" era teatro del mockup — parecía galería rota) */}
           </div>
         </div>
 
@@ -508,9 +544,39 @@ export function ProductView({
                 ? "agotado en esta combinación"
                 : priceIsGated
                   ? `elige ${needsColor ? "color" : "talla"}`
-                  : `Agregar · ${fmt(effectivePriceCents * qty)}`}
+                  : bundleOn && bundle
+                    ? `Agregar los 2 · ${fmt(effectivePriceCents * qty + bundle.price_cents)}`
+                    : `Agregar · ${fmt(effectivePriceCents * qty)}`}
             </div>
           </div>
+
+          {/* bundle "llévalos juntos" — sugerido por el motor (NPMI real) */}
+          {bundle && !isSoldOut && (
+            <div
+              onClick={() => setBundleOn((v) => !v)}
+              style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, maxWidth: 480, padding: "12px 14px", borderRadius: 16, border: `1.5px dashed ${bundleOn ? "#1C1D20" : "#D8D8D3"}`, background: bundleOn ? "#F4F4F1" : "#fff", cursor: "pointer" }}
+            >
+              <div style={{ flex: "none", width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${bundleOn ? "#1C1D20" : "#D8D8D3"}`, background: bundleOn ? "#1C1D20" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 800 }}>
+                {bundleOn ? "✓" : ""}
+              </div>
+              <div style={{ flex: "none", width: 44, height: 44, borderRadius: 10, background: "#F1F1EE", overflow: "hidden" }}>
+                {bundle.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={bundle.image_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: "#8E8F94" }}>quienes lo llevaron, sumaron</div>
+                <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{bundle.title}</div>
+                <div style={{ fontSize: 12.5, marginTop: 2 }}>
+                  los 2 por <b>{fmt(effectivePriceCents + bundle.price_cents)}</b>
+                  {bundle.attrs?.old_price_cents != null && bundle.attrs.old_price_cents > bundle.price_cents && (
+                    <span style={{ color: "#557A55" }}> · el compañero está rebajado por la tienda (−{fmt(bundle.attrs.old_price_cents - bundle.price_cents)})</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: 26, borderTop: "1px solid #ECECE7" }}>
             {sections.map((s) => {

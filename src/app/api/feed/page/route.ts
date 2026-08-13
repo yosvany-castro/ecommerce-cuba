@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withPg } from "@/lib/db/helpers";
 import { dbHealth } from "@/lib/db/health";
+import { getAuthUser, getOrCreateUserBySub } from "@/lib/auth";
 import { serveFeedPage } from "@/sectors/d-personalization/feed";
 import { RequestTiming } from "@/lib/timing";
 import type { StorefrontCard } from "@/storefront/contract";
@@ -34,11 +35,17 @@ export async function GET(req: NextRequest) {
   }
 
   const cursor = req.nextUrl.searchParams.get("cursor");
+  // P1-7: páginas 2+ con el usuario REAL — con user_id null un logueado
+  // scrolleaba el perfil de OTRO (el anónimo) y perdía sus exclusiones.
+  const auth = await getAuthUser();
   const timing = new RequestTiming();
   const page = await timing.time("feed_page", () =>
-    withPg((pg) =>
-      serveFeedPage({ user_id: null, anonymous_id, session_id, cursor }, pg),
-    ),
+    withPg(async (pg) => {
+      const user_id = auth?.sub
+        ? (await getOrCreateUserBySub(pg, auth.sub, auth.email ?? `${auth.sub}@noemail.local`)).id
+        : null;
+      return serveFeedPage({ user_id, anonymous_id, session_id, cursor }, pg);
+    }),
   );
 
   const items: StorefrontCard[] = page.items.map((it) => toCard(it.product, it.reason, it.position));

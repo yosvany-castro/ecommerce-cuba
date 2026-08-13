@@ -17,20 +17,10 @@ async function mergeOnce(sub: string) {
   const r1 = await fetch("/api/identity/merge", { method: "POST" }).catch(() => null);
   if (!r1?.ok) return;
   localStorage.setItem(flag, "1");
-
-  const cartRaw = localStorage.getItem(`cart:${anonId}`);
-  if (!cartRaw) return;
-  try {
-    const items = JSON.parse(cartRaw);
-    const r2 = await fetch("/api/cart/merge", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(items),
-    });
-    if (r2.ok) localStorage.removeItem(`cart:${anonId}`);
-  } catch {
-    /* malformed cart, ignore */
-  }
+  // Solo EVENTOS: el carrito Tuki vive en localStorage (tuki_cart:*) y
+  // sobrevive el login por sí solo. El viejo merge a cart_items estaba doble-
+  // roto (clave 'cart:' inexistente + shape qty/quantity) y NADIE lee esa
+  // tabla — eliminado en vez de arreglar un camino muerto (auditoría DAL-6).
 }
 
 /** Al detectar sesión de Supabase (login nuevo o sesión existente al montar),
