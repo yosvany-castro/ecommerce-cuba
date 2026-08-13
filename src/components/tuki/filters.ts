@@ -8,7 +8,6 @@ export interface AdvState {
   price: "p1" | "p2" | "p3" | "p4" | null;
   colors: string[];
   oferta: boolean;
-  envio: boolean;
   r4: boolean;
 }
 export interface FilterableCard {
@@ -16,7 +15,21 @@ export interface FilterableCard {
   attrs: ProductAttrs;
 }
 
-export const EMPTY_ADV: AdvState = { sort: "rel", price: null, colors: [], oferta: false, envio: false, r4: false };
+export const EMPTY_ADV: AdvState = { sort: "rel", price: null, colors: [], oferta: false, r4: false };
+
+// Labels compartidos por el drawer y las pills removibles (v2).
+export const PRICE_LABELS: Record<NonNullable<AdvState["price"]>, string> = {
+  p1: "Hasta $15",
+  p2: "$15–30",
+  p3: "$30–50",
+  p4: "$50+",
+};
+export const SORT_LABELS: Record<AdvState["sort"], string> = {
+  rel: "Para ti ✦",
+  asc: "Precio ↑",
+  desc: "Precio ↓",
+  top: "Mejor valorados",
+};
 
 // Productos reales (Apify) traen nombres de color en inglés ("Black"); los chips del
 // filtro (FILTER_COLORS, tuki/lib.ts) son en español. Sin este alias, un color real
@@ -43,7 +56,7 @@ function colorMatches(productColorName: string, selected: string[]): boolean {
 
 /** Cuenta filtros activos (para el "Más filtros · N"). sort≠rel cuenta como 1. */
 export function advCount(a: AdvState): number {
-  return (a.oferta ? 1 : 0) + (a.r4 ? 1 : 0) + (a.envio ? 1 : 0) + (a.price ? 1 : 0) + (a.colors.length ? 1 : 0) + (a.sort !== "rel" ? 1 : 0);
+  return (a.oferta ? 1 : 0) + (a.r4 ? 1 : 0) + (a.price ? 1 : 0) + (a.colors.length ? 1 : 0) + (a.sort !== "rel" ? 1 : 0);
 }
 
 export function applyFilters(list: FilterableCard[], adv: AdvState): FilterableCard[] {
@@ -51,7 +64,6 @@ export function applyFilters(list: FilterableCard[], adv: AdvState): FilterableC
   if (adv.oferta) l = l.filter((x) => x.attrs.oldPriceCents != null);
   // Sin rating real no puede afirmar "4.6+" — se excluye, no se le inventa un 0.
   if (adv.r4) l = l.filter((x) => x.attrs.rating != null && x.attrs.rating >= 4.6);
-  if (adv.envio) l = l.filter((x) => x.card.price_cents >= 2000);
   if (adv.price === "p1") l = l.filter((x) => x.card.price_cents < 1500);
   if (adv.price === "p2") l = l.filter((x) => x.card.price_cents >= 1500 && x.card.price_cents < 3000);
   if (adv.price === "p3") l = l.filter((x) => x.card.price_cents >= 3000 && x.card.price_cents < 5000);

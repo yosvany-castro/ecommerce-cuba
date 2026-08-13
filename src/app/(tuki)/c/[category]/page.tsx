@@ -73,7 +73,7 @@ export default async function CategoryPage({
 
   return (
     <>
-      <CategoryView cards={cards} header={header} />
+      <CategoryView cards={cards} header={header} activeCat={category} />
       <nav
         aria-label="Paginación"
         style={{ maxWidth: 1280, margin: "0 auto", padding: "0 28px 60px", display: "flex", justifyContent: "space-between" }}

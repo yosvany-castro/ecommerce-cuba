@@ -22,6 +22,7 @@ const ALLOWED = [
   /^\.\.?\//, // relativo, dentro del propio directorio tuki
   /^react$/,
   /^react\//,
+  /^react-dom$/, // createPortal (FiltersDrawer: portal a body para escapar transforms)
   /^next\//,
 ];
 

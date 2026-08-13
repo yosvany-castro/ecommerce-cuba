@@ -7,10 +7,12 @@ import type { TukiSearch } from "./useTukiSearch";
 // Las 4 tiendas reales del catálogo (nada inventado — antes había dominios falsos aquí).
 const REAL_STORES = ["amazon", "aliexpress", "shein", "walmart"];
 const SCAN_PHRASES = ["rastreando tiendas…", "leyendo precios…", "comparando…", "verificando stock…"];
+// Tips HONESTOS: solo promesas que el sistema cumple (fuera "devolución
+// gratis", "ordena por tu historial" y "reseñas" — nada de eso existía).
 const SEARCH_TIPS = [
-  "mientras esperas: todo tiene devolución gratis de 30 días",
-  "dato: la IA ordena resultados según lo que has mirado",
-  "casi listo — también comparamos reseñas, no solo precios",
+  "mientras esperas: el precio que ves es el que pagas",
+  "dato: el envío se cobra por peso real — sin sorpresas",
+  "casi listo — comparando precios tienda por tienda",
 ];
 
 function Loader({ q, progress, resolvingUrl }: { q: string; progress: number; resolvingUrl: boolean }) {
@@ -22,8 +24,8 @@ function Loader({ q, progress, resolvingUrl }: { q: string; progress: number; re
     ? ["leyendo el enlace…", "pidiéndole el producto a la tienda…", "la tienda está preparando los datos…", "casi — dándole unos segundos más…"]
     : [
         `buscando «${q}» por todo internet…`,
-        "leyendo precios y reseñas…",
-        "comparando tienda por tienda…",
+        "leyendo precios tienda por tienda…",
+        "comparando lo que encontramos…",
         "ordenando lo mejor para ti…",
       ];
   const steps = ["rastrear tiendas", "leer precios", "comparar", "ordenar"].map((label, i) => ({
@@ -68,8 +70,8 @@ function Loader({ q, progress, resolvingUrl }: { q: string; progress: number; re
         </div>
         <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "#9A9B9F", marginTop: 14, textAlign: "center" }}>{searchTip}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 22 }}>
-        {[0.7, 0.5, 0.35].map((opacity) => (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginTop: 22 }}>
+        {[0.7, 0.55, 0.4, 0.28].map((opacity) => (
           <div key={opacity} style={{ height: 220, borderRadius: 20, background: "linear-gradient(90deg,#F0F0EC 25%,#E6E6E1 40%,#F0F0EC 55%)", backgroundSize: "460px 100%", animation: "shimmer 1.1s linear infinite", opacity }} />
         ))}
       </div>
@@ -120,7 +122,7 @@ const urlFallbackNotice = (
   </div>
 );
 
-export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
+export function SearchView({ q, search, initialFilter }: { q: string; search: TukiSearch; initialFilter?: "oferta" | "top" }) {
   const { phase, progress, cards, meta, polling, resolvingUrl } = search;
 
   if (!q) {
@@ -145,7 +147,7 @@ export function SearchView({ q, search }: { q: string; search: TukiSearch }) {
       cards={loading ? [] : cards}
       source="search"
       header={header}
-      sidebar
+      initialAdv={initialFilter === "oferta" ? { oferta: true } : initialFilter === "top" ? { sort: "top" } : undefined}
       overlay={loading ? <Loader q={q} progress={progress} resolvingUrl={resolvingUrl} /> : undefined}
       notice={
         !loading &&

@@ -5,6 +5,6 @@
 import type { StorefrontCard } from "@/storefront/contract";
 import { Listing, type ListingHeader } from "./Listing";
 
-export function CategoryView({ cards, header }: { cards: StorefrontCard[]; header: ListingHeader }) {
-  return <Listing cards={cards} source="category" header={header} sidebar />;
+export function CategoryView({ cards, header, activeCat }: { cards: StorefrontCard[]; header: ListingHeader; activeCat?: string }) {
+  return <Listing cards={cards} source="category" header={header} activeCat={activeCat} />;
 }

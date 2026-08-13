@@ -1,5 +1,9 @@
 "use client";
 // src/components/tuki/FiltersDrawer.tsx — drawer de filtros avanzados (dc.html 821–866).
+// PORTAL a document.body: dentro del árbol, cualquier ancestro con transform/
+// animation (screenIn) encierra el position:fixed y el drawer se abría al
+// ancho de la SECCIÓN (visto en vivo, desktop) — el portal lo escapa siempre.
+import { createPortal } from "react-dom";
 import { track } from "@/lib/client/track";
 import { FILTER_COLORS } from "./lib";
 import type { AdvState } from "./filters";
@@ -7,7 +11,8 @@ import { EMPTY_ADV } from "./filters";
 
 const SORTS: [AdvState["sort"], string][] = [["rel", "Relevancia"], ["asc", "Precio ↑"], ["desc", "Precio ↓"], ["top", "Mejor valorados"]];
 const PRICES: [NonNullable<AdvState["price"]>, string][] = [["p1", "Hasta $15"], ["p2", "$15–30"], ["p3", "$30–50"], ["p4", "$50+"]];
-const SOLOS: [keyof Pick<AdvState, "oferta" | "envio" | "r4">, string][] = [["oferta", "Solo en oferta"], ["envio", "Con envío gratis"], ["r4", "Valoración ★ 4.6+"]];
+// "Con envío gratis" MURIÓ: no existe envío gratis en el modelo por libra.
+const SOLOS: [keyof Pick<AdvState, "oferta" | "r4">, string][] = [["oferta", "Solo en oferta"], ["r4", "Valoración ★ 4.6+"]];
 
 const radioSty = (on: boolean) => ({ background: on ? "#1C1D20" : "#fff", color: on ? "#fff" : "#55565B", border: `1px solid ${on ? "#1C1D20" : "#ECECE7"}` });
 const label11 = { fontSize: 11.5, fontWeight: 700, letterSpacing: 0.8, color: "#8E8F94" } as const;
@@ -24,11 +29,11 @@ export function FiltersDrawer({
   count: number; // advCount = resultados tras filtros
   onClose: () => void;
 }) {
-  return (
+  return createPortal(
     <>
       <div
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(28,29,32,.4)", zIndex: 80, animation: "fadeIn .25s ease both" }}
+        style={{ position: "fixed", inset: 0, background: "rgba(28,29,32,.4)", backdropFilter: "blur(3px)", zIndex: 80, animation: "fadeIn .25s ease both" }}
       />
       <div
         style={{
@@ -146,6 +151,7 @@ export function FiltersDrawer({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
