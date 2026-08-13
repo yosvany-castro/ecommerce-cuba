@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
-import { CATS } from "./lib";
+import { CATS, fmt } from "./lib";
 import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
 import { DEMO_PROFILES, AVATAR_COLORS, profileForAnonId, type DemoProfile } from "./profiles";
@@ -15,11 +15,12 @@ import { createClient as createSupabase } from "@/lib/supabase/client";
 // TODAS las páginas (client-only, cerrado por defecto: sin flash).
 const CartDrawer = dynamic(() => import("./CartDrawer").then((m) => m.CartDrawer), { ssr: false });
 
-// FREE = $50 (dc.html:1174 envioGratisDesde=50; freeS = "$50").
+// Avisos HONESTOS (2026-08-12): solo promesas que el checkout cumple.
+// Tarifas de src/lib/shipping.ts — una sola fuente de verdad.
 const AVISO_MSGS = [
-  "🚚 envío estándar gratis desde $50 — siempre",
-  "⚡ ¿prisa? el envío rápido llega en 1–2 días",
-  "la factura llega sola a tu correo al comprar",
+  "⚡ ¿prisa? envío Express a Cuba — llega primero",
+  "✈️ envío aéreo $3.50/lb — pagas por peso, sin sorpresas",
+  "💵 paga en efectivo al recibir tu paquete",
 ];
 const TRENDING = ["freidora de aire", "audífonos", "yoga", "monstera", "sérum", "mochila"];
 const NAV_IDS = ["electronica", "ropa", "hogar", "belleza"] as const;
@@ -32,23 +33,20 @@ function setAnonymousIdCookie(id: string): void {
   document.cookie = `anonymous_id=${id}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
-interface Suggestion {
-  id: string;
-  title: string;
-  category: string | null;
-}
+// Suggest v2: CONSULTAS (búsquedas pasadas con resultados, tolerantes a typo
+// vía pg_trgm), no títulos de producto.
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { count, setOpen } = useTukiCart();
+  const { count, subtotal, setOpen } = useTukiCart();
   const showToast = useToast();
 
   const [avisoIdx, setAvisoIdx] = useState(0);
   const [avisoOff, setAvisoOff] = useState(false);
   const [q, setQ] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [recents, setRecents] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeProfile, setActiveProfile] = useState<DemoProfile>(DEMO_PROFILES[0]);
@@ -120,8 +118,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       }
       try {
         const res = await fetch(`/api/suggest?q=${encodeURIComponent(term)}`);
-        const data = (await res.json()) as { suggestions?: Suggestion[] };
-        setSuggestions(data.suggestions ?? []);
+        const data = (await res.json()) as { queries?: string[] };
+        setSuggestions(data.queries ?? []);
       } catch {
         setSuggestions([]);
       }
@@ -129,11 +127,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [q]);
 
-  const runSearch = (term: string) => {
+  // f: filtro inicial opcional ("oferta" | "top") — las sugerencias-filtro del
+  // dropdown lo pasan por query param y Listing lo aplica al aterrizar.
+  const runSearch = (term: string, f?: "oferta" | "top") => {
     const t = term.trim();
     if (!t) return;
     setSearchFocus(false);
-    router.push(`/search?q=${encodeURIComponent(t)}`);
+    router.push(`/search?q=${encodeURIComponent(t)}${f ? `&f=${f}` : ""}`);
   };
 
   const goCategory = (id: string) => {
@@ -277,10 +277,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") runSearch(q);
                   }}
-                  onFocus={() => {
+                  onFocus={(e) => {
                     if (blurTimer.current) clearTimeout(blurTimer.current);
                     readRecents();
                     setSearchFocus(true);
+                    // texto viejo seleccionado: teclear lo REEMPLAZA (antes se
+                    // concatenaba: "mochila para adultomochila escolar")
+                    e.currentTarget.select();
                   }}
                   onBlur={() => {
                     blurTimer.current = setTimeout(() => setSearchFocus(false), 140);
@@ -332,33 +335,46 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 >
                   {typing ? (
                     <>
-                      {suggestions.map((sg) => {
-                        const c = CATS[sg.category ?? ""] ?? CATS.otros;
-                        return (
-                          <div
-                            key={sg.id}
-                            onMouseDown={() => runSearch(sg.title)}
-                            className="tk-hov-bg"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              padding: "12px 16px",
-                              borderBottom: "1px solid #F6F6F3",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 18 18">
-                              <circle cx="8" cy="8" r="5.5" fill="none" stroke="#B0B1AE" strokeWidth="1.8" />
-                              <line x1="12.6" y1="12.6" x2="16.2" y2="16.2" stroke="#B0B1AE" strokeWidth="1.8" strokeLinecap="round" />
-                            </svg>
-                            <span style={{ flex: 1, fontSize: 14 }}>{sg.title}</span>
-                            <span style={{ fontSize: 11, color: "#8E8F94", background: c.tint, borderRadius: 999, padding: "3px 9px" }}>
-                              {c.label}
-                            </span>
-                          </div>
-                        );
-                      })}
+                      {suggestions.length > 0 && (
+                        <div style={{ padding: "14px 16px 4px", fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8, color: "#8E8F94" }}>
+                          BÚSQUEDAS SIMILARES
+                        </div>
+                      )}
+                      {suggestions.map((sq) => (
+                        <div
+                          key={sq}
+                          onMouseDown={() => runSearch(sq)}
+                          className="tk-hov-bg"
+                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderBottom: "1px solid #F6F6F3", cursor: "pointer" }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 18 18">
+                            <circle cx="8" cy="8" r="5.5" fill="none" stroke="#B0B1AE" strokeWidth="1.8" />
+                            <line x1="12.6" y1="12.6" x2="16.2" y2="16.2" stroke="#B0B1AE" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                          <span style={{ flex: 1, fontSize: 14 }}>{sq}</span>
+                        </div>
+                      ))}
+                      {/* sugerencias-filtro (v2): buscar aplicando el filtro de una */}
+                      <div
+                        onMouseDown={() => runSearch(q, "oferta")}
+                        className="tk-hov-bg"
+                        style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderBottom: "1px solid #F6F6F3", cursor: "pointer" }}
+                      >
+                        <span style={{ fontSize: 13 }}>🏷</span>
+                        <span style={{ flex: 1, fontSize: 13.5, color: "#55565B" }}>
+                          «{q}» <b>en oferta</b>
+                        </span>
+                      </div>
+                      <div
+                        onMouseDown={() => runSearch(q, "top")}
+                        className="tk-hov-bg"
+                        style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderBottom: "1px solid #F6F6F3", cursor: "pointer" }}
+                      >
+                        <span style={{ fontSize: 13 }}>★</span>
+                        <span style={{ flex: 1, fontSize: 13.5, color: "#55565B" }}>
+                          «{q}» <b>mejor valorados</b>
+                        </span>
+                      </div>
                       <div
                         onMouseDown={() => runSearch(q)}
                         className="tk-hov-bg"
@@ -562,7 +578,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            {/* carro */}
+            {/* carro — pill v2: ícono + subtotal visible + badge de count */}
             <div
               data-testid="tuki-cart-btn"
               onClick={() => {
@@ -572,21 +588,26 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="tk-hov-bd-dark"
               style={{
                 position: "relative",
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: "#fff",
-                border: "1px solid #ECECE7",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 8,
+                height: 44,
+                borderRadius: 999,
+                background: "#fff",
+                border: "1px solid #ECECE7",
+                padding: "0 14px",
                 cursor: "pointer",
               }}
             >
-              <svg width="19" height="19" viewBox="0 0 20 20">
+              <svg width="18" height="18" viewBox="0 0 20 20">
                 <rect x="3" y="6.5" width="14" height="10.5" rx="3" fill="none" stroke="#1C1D20" strokeWidth="1.8" />
                 <path d="M7 6.5 a3 3 0 0 1 6 0" fill="none" stroke="#1C1D20" strokeWidth="1.8" />
               </svg>
+              {count > 0 && (
+                <span key={count} style={{ fontSize: 12.5, fontWeight: 700, animation: "popIn .35s ease both" }}>
+                  {fmt(subtotal)}
+                </span>
+              )}
               {count > 0 && (
                 <div
                   key={count}

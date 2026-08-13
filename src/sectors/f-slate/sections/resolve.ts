@@ -79,8 +79,26 @@ export async function resolveSections(
           resolve_ms: Math.round(performance.now() - started),
         });
       } catch (e) {
-        console.warn(`[slate] hero_grid failed (${(e as Error).message}) — page continues`);
-        results.push({ ...base, items: [], outcome: isTimeout(e) ? "timeout" : "error", resolve_ms: Math.round(performance.now() - started) });
+        // Fail-open a RECIENTES, jamás a vacío: el compose personalizado en
+        // frío (primer render tras deploy/restart, pool sin calentar) revienta
+        // su budget y la home quedaba SIN FEED (visto en vivo 2×). Una query
+        // barata de catálogo reciente mantiene la tienda viva y comprable;
+        // la personalización vuelve sola en la siguiente navegación.
+        console.warn(`[slate] hero_grid failed (${(e as Error).message}) — sirviendo fallback recientes`);
+        try {
+          const fb = await pg.query(
+            `SELECT id::text, title, price_cents, currency, image_url, metadata, source, weight_grams
+             FROM products WHERE is_active = true AND image_url IS NOT NULL AND image_url <> ''
+             ORDER BY last_refreshed_at DESC NULLS LAST, created_at DESC LIMIT 24`,
+          );
+          const items: SectionCardDTO[] = (fb.rows as Parameters<typeof toCard>[0][]).map((row, i) =>
+            toCard(row, "para descubrir", i + 1),
+          );
+          for (const it of items) claimed.add(it.id);
+          results.push({ ...base, items, outcome: "served", resolve_ms: Math.round(performance.now() - started) });
+        } catch {
+          results.push({ ...base, items: [], outcome: isTimeout(e) ? "timeout" : "error", resolve_ms: Math.round(performance.now() - started) });
+        }
       }
       continue;
     }

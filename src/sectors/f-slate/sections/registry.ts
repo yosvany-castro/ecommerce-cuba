@@ -19,31 +19,6 @@ const limitSchema = (def: number, max: number) =>
 // sección similar). Fallback honesto mientras co_occurrence_top acumula
 // tráfico real — con pocas sesiones la tabla NPMI está vacía y los rieles
 // quedaban en blanco (bug reportado: "no aparece ninguna recomendación").
-const COMPLEMENT_CAT: Record<string, string> = {
-  ropa: "belleza",
-  belleza: "ropa",
-  electronica: "hogar",
-  hogar: "electronica",
-  juguetes_bebe: "ropa",
-  otros: "hogar",
-};
-
-async function popularOfCategory(cat: string, excludeIds: string[], limit: number, pg: Client): Promise<string[]> {
-  if (limit <= 0) return [];
-  const r = await pg.query(
-    `SELECT p.id::text AS id
-     FROM products p
-     LEFT JOIN product_popularity_7d pop ON pop.product_id = p.id
-     WHERE p.is_active = true
-       AND p.metadata->>'category' = $1
-       AND NOT (p.id = ANY($2::uuid[]))
-     ORDER BY COALESCE(pop.events_7d, 0) DESC, p.created_at DESC, p.id ASC
-     LIMIT $3`,
-    [cat, excludeIds, limit],
-  );
-  return (r.rows as { id: string }[]).map((x) => x.id);
-}
-
 /** cross_sell: "combina con esto" — NPMI co-occurrence from the PDP anchor;
  * con NPMI escaso cae a populares de la categoría complementaria. */
 const crossSell: SectionResolver<{ limit: number }> = {
@@ -61,10 +36,10 @@ const crossSell: SectionResolver<{ limit: number }> = {
       [anchor, params.limit * 2],
     );
     const ids = (r.rows as { id: string }[]).map((x) => x.id);
-    if (ids.length >= 3) return ids;
-    const comp = COMPLEMENT_CAT[ctx.rule_ctx.pdp_category ?? ""] ?? "hogar";
-    const fb = await popularOfCategory(comp, [anchor, ...ids], params.limit * 2 - ids.length, pg);
-    return [...ids, ...fb];
+    // Sin fallback de categoría complementaria: inventaba relaciones absurdas
+    // (cámaras espía junto a ollas arroceras) bajo un título que afirma compras
+    // reales. Con NPMI escaso la sección se OCULTA (min_items) — honesto.
+    return ids;
   },
 };
 
@@ -88,18 +63,24 @@ const cartAddons: SectionResolver<{ limit: number }> = {
     );
     const ids = (r.rows as { id: string }[]).map((x) => x.id);
     if (ids.length >= 3) return ids;
-    const cats = await pg.query(
-      `SELECT DISTINCT metadata->>'category' AS cat FROM products WHERE id = ANY($1::uuid[])`,
-      [cartIds],
+    // Cold-start (NPMI aún sin tráfico): populares de las MISMAS categorías
+    // del carrito — relevante sin inventar relaciones absurdas (el fallback
+    // viejo de categoría COMPLEMENTARIA ponía cámaras espía junto a ollas).
+    // UNA query (subquery de categorías): respeta el budget single-roundtrip.
+    const fb = await pg.query(
+      `SELECT p.id::text AS id
+       FROM products p
+       LEFT JOIN product_popularity_7d pop ON pop.product_id = p.id
+       WHERE p.is_active = true
+         AND NOT (p.id = ANY($1::uuid[]))
+         AND p.metadata->>'category' IN (
+           SELECT DISTINCT metadata->>'category' FROM products WHERE id = ANY($1::uuid[])
+         )
+       ORDER BY COALESCE(pop.events_7d, 0) DESC, p.created_at DESC, p.id ASC
+       LIMIT $2`,
+      [cartIds, params.limit * 2 - ids.length],
     );
-    const compCats = [...new Set((cats.rows as { cat: string | null }[]).map((c) => COMPLEMENT_CAT[c.cat ?? ""] ?? "hogar"))];
-    const out = [...ids];
-    for (const comp of compCats) {
-      if (out.length >= params.limit * 2) break;
-      const fb = await popularOfCategory(comp, [...cartIds, ...out], params.limit * 2 - out.length, pg);
-      out.push(...fb);
-    }
-    return out;
+    return [...ids, ...(fb.rows as { id: string }[]).map((x) => x.id).filter((id) => !ids.includes(id))];
   },
 };
 
@@ -152,6 +133,25 @@ const upsell: SectionResolver<{ limit: number }> = {
   },
 };
 
+/** intent_complements: EL VENDEDOR — complementos de la intención inferida de
+ * la sesión (session_intents, computada fire-and-forget en product_view).
+ * Lectura pura y rápida (1 query); sin intención fresca → oculto (min_items). */
+const intentComplements: SectionResolver<{ limit: number }> = {
+  section_type: "intent_complements",
+  paramsSchema: limitSchema(8, 20),
+  async resolve(params, ctx: ResolveCtx, pg: Client) {
+    const sid = ctx.identity.session_id;
+    if (!sid) return [];
+    const r = await pg.query(
+      `SELECT product_ids FROM session_intents
+       WHERE session_id = $1 AND computed_at > now() - interval '2 hours'`,
+      [sid],
+    );
+    const ids = (r.rows[0]?.product_ids ?? []) as string[];
+    return ids.slice(0, params.limit * 2);
+  },
+};
+
 /** popular: 7d popularity — global, cohort-targeted, or PDP-category. */
 const popular: SectionResolver<{ limit: number; mode: "global" | "cohort" | "pdp_category" }> = {
   section_type: "popular",
@@ -198,5 +198,6 @@ export const SECTION_REGISTRY: Record<string, SectionResolver<never>> = {
   popular: popular as SectionResolver<never>,
   similar: similar as SectionResolver<never>,
   upsell: upsell as SectionResolver<never>,
+  intent_complements: intentComplements as SectionResolver<never>,
   // hero_grid: caso especial del runner (slate feed completo, ya hidratado).
 };

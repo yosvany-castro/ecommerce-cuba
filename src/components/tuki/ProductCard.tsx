@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
 import { observeSeen } from "@/lib/client/seen-reporter";
+import { deliveryDates, estimateDelivery } from "@/lib/delivery";
 import { attrsOf, catOf, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 
@@ -55,6 +56,15 @@ export function ProductCard({
   const moreN = Math.max(0, da.colors.length - 4);
   const cat = catOf(card.category);
   const isGrid = variant === "grid";
+  // v2: la meta gana la ETA — HONESTA (estimateDelivery real por tienda/vía
+  // aérea, primer día del rango), no el hash fake del mockup.
+  const etaFrom = deliveryDates(estimateDelivery(card.source, "aereo")).from;
+  const metaLine = [
+    da.rating != null ? `★ ${da.rating}${isGrid && da.sold ? ` (${da.sold})` : ""}` : null,
+    `llega el ${etaFrom}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const open = () => router.push(`/products/${card.id}?src=${source}`);
   const addToCart = (e: React.MouseEvent) => {
@@ -145,6 +155,9 @@ export function ProductCard({
         }}
       >
         {card.title}
+      </div>
+      <div style={{ fontSize: isGrid ? 11.5 : 10.5, color: "#8E8F94", margin: "3px 5px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {metaLine}
       </div>
       {dots.length > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 4, margin: "6px 5px 0" }}>
