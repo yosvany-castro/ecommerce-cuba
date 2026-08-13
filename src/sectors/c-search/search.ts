@@ -167,9 +167,36 @@ export async function hybridSearch(
     };
   }
 
-  // 2. Embed query (used by semantic cache + cosine retrieval)
+  // 2. LLM normalize ANTES del embed (P1-1): la corrección de typos del
+  // normalizador ahora SÍ llega al vector — antes se embebía la query CRUDA y
+  // "olla arocera" daba 0 resultados con 14 ollas en catálogo (el fix del LLM
+  // se tiraba). Coste: el hit semántico ahora paga el normalize (~centésimas,
+  // prompt cacheado server-side); a cambio los typos convergen al mismo vector.
+  tracer.start("llm_normalize");
+  let normalized: (NormalizedQuery & { prompt_version: string }) | null = null;
+  try {
+    normalized = await normalizeQueryWithLLM(rawQuery);
+  } catch {
+    normalized = null;
+  }
+  tracer.end("llm_normalize");
+  tracer.set("normalized", normalized);
+
+  const searchTerms = normalized?.search_terms ?? rawQuery;
+  // P1-2: la frescura de ingesta se deduplica por la query CORREGIDA — antes
+  // cada variante con typo pagaba su propia ingesta de la misma búsqueda.
+  const freshnessHash = normalized ? hashQuery(searchTerms) : hash;
+
+  // 3. Embed de la query NORMALIZADA (fallback: cruda). Voyage caído NO tumba
+  // la búsqueda: se degrada a BM25 solo (sin caché semántica, sin coseno, sin
+  // writeExact) — mismo criterio que el normalizador.
   tracer.start("embed");
-  const [queryEmbedding] = await embed([rawQuery], { inputType: "query" });
+  let queryEmbedding: number[] | undefined;
+  try {
+    [queryEmbedding] = await embed([searchTerms], { inputType: "query" });
+  } catch (e) {
+    console.warn("[search] embed falló — degradando a bm25_only:", e instanceof Error ? e.message : e);
+  }
   tracer.end("embed");
   if (queryEmbedding) {
     let norm = 0;
@@ -182,9 +209,9 @@ export async function hybridSearch(
     });
   }
 
-  // 3. Semantic cache
+  // 3. Semantic cache (solo con embedding disponible)
   tracer.start("semantic_cache_lookup");
-  const semantic = await lookupSemantic(queryEmbedding, getSemanticCacheTheta(), pg);
+  const semantic = queryEmbedding ? await lookupSemantic(queryEmbedding, getSemanticCacheTheta(), pg) : null;
   tracer.end("semantic_cache_lookup");
 
   if (semantic) {
@@ -225,18 +252,6 @@ export async function hybridSearch(
     };
   }
 
-  // 4. LLM normalize (with fallback to graceful degradation)
-  tracer.start("llm_normalize");
-  let normalized: (NormalizedQuery & { prompt_version: string }) | null = null;
-  try {
-    normalized = await normalizeQueryWithLLM(rawQuery);
-  } catch {
-    normalized = null;
-  }
-  tracer.end("llm_normalize");
-  tracer.set("normalized", normalized);
-
-  const searchTerms = normalized?.search_terms ?? rawQuery;
   const ageMin = normalized?.recipient_age_min ?? undefined;
   const ageMax = normalized?.recipient_age_max ?? undefined;
   const ageBothPresent = typeof ageMin === "number" && typeof ageMax === "number";
@@ -265,7 +280,7 @@ export async function hybridSearch(
     return res;
   });
   tracer.start("cosine");
-  const cosP = cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg).then((res) => {
+  const cosP = (queryEmbedding ? cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg) : Promise.resolve([])).then((res) => {
     tracer.end("cosine");
     return res;
   });
@@ -279,10 +294,10 @@ export async function hybridSearch(
 
   // 7. Freshness check (POR QUERY, F4 T4) + mock fallback decision.
   tracer.start("freshness_check");
-  const lastRefreshedAt = normalized ? await getQueryFreshness(hash, pg) : null;
+  const lastRefreshedAt = normalized ? await getQueryFreshness(freshnessHash, pg) : null;
   tracer.end("freshness_check");
   tracer.set("freshness", {
-    query_hash: hash,
+    query_hash: freshnessHash,
     last_called_at: lastRefreshedAt ? lastRefreshedAt.toISOString() : null,
     hours_old: lastRefreshedAt
       ? (Date.now() - lastRefreshedAt.getTime()) / (3600 * 1000)
@@ -341,7 +356,7 @@ export async function hybridSearch(
       tracer.start("mock_fallback");
       const searchPath = (await pg.query(`SHOW search_path`)).rows[0].search_path as string;
       ingestion = queueExternalIngest({
-        hash,
+        hash: freshnessHash,
         query: normalized.search_terms,
         category: normalized.categories?.[0] as MockCategory | undefined,
         limit: process.env.HYBRID_SEARCH_MOCK_LIMIT
@@ -380,7 +395,7 @@ export async function hybridSearch(
         );
         // F4 T4: registra la llamada por-query (freshness + negative cache) —
         // incluso 0 resultados cuenta, para no re-consultar la misma query.
-        await recordQueryAggregatorCall(hash, mockResult.products.length, pg);
+        await recordQueryAggregatorCall(freshnessHash, mockResult.products.length, pg);
         const seen = new Set<string>();
         for (const raw of mockResult.products) {
           const key = `${raw.source}:${raw.source_product_id}`;
@@ -396,7 +411,7 @@ export async function hybridSearch(
         calledMock = true;
         const [bm25Re, cosRe] = await Promise.all([
           bm25Search(searchTerms, filters, RETRIEVE_K, pg),
-          cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg),
+          queryEmbedding ? cosineSearch(queryEmbedding, filters, RETRIEVE_K, pg) : Promise.resolve([]),
         ]);
         fused = fuseRelevant(bm25Re, cosRe);
       } catch {
@@ -432,7 +447,7 @@ export async function hybridSearch(
   // Tampoco se cachea un resultado VACÍO: congelarlo 24h deja la query muerta
   // aunque el catálogo crezca (visto en vivo 2026-07-12 — un poll durante la
   // ingesta cacheó 0 productos), y recomputar un vacío es barato.
-  if (normalized && !ingestion && productIds.length > 0) {
+  if (normalized && !ingestion && productIds.length > 0 && queryEmbedding) {
     tracer.start("persist");
     await writeExact(
       {

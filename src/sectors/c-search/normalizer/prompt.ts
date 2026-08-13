@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PROMPT_VERSION = "v1.0.0-fase2";
+export const PROMPT_VERSION = "v1.1.0-typos";
 
 export const SYSTEM_PROMPT = `Eres un normalizador de queries de búsqueda en e-commerce. Recibes la consulta cruda del usuario y devuelves JSON estructurado en español.
 
@@ -12,12 +12,13 @@ Campos:
 - categories: array de strings (preferencia: una de [ropa, electronica, hogar, juguetes_bebe, belleza, otros], pero subcategorías como "ropa_niña" están permitidas)
 - style: array de strings (descriptores subjetivos: bonito, elegante, deportivo, etc.)
 - price_range: 'bajo'|'medio'|'alto'|null
-- search_terms: string — keywords core para BM25 (sin stop-words, en orden lógico, sin acentos)
+- search_terms: string — keywords core para BM25 (sin stop-words, en orden lógico, sin acentos, CON typos corregidos)
 - confidence: number entre 0 y 1
 
 Reglas:
 - Query ambigua o basura ('asdfgh', strings sin sentido, caracteres aleatorios sin significado) → confidence debe ser 0.1 o menor
 - search_terms debe ser concreto y útil para búsqueda full-text
+- CORRIGE typos y errores ortográficos obvios en search_terms ('olla arocera' → 'olla arrocera', 'awdifonos' → 'audifonos', 'zapatiyas' → 'zapatillas'); si la palabra podría ser una marca o término válido que no reconoces, déjala tal cual
 - Sin invención: si no puedes inferir un campo, usa null o array vacío
 
 Devuelve SOLO el JSON, sin markdown ni texto adicional.`;

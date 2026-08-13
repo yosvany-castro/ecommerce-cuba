@@ -30,6 +30,17 @@ async function runIngest(
   pg: Client,
 ): Promise<IngestOutcome> {
   const t0 = Date.now();
+  // P1-9: la fila de gasto nace AL INICIO con costo estimado — una ingesta que
+  // muere a mitad (proceso caído) ya quedó contada y el freno de presupuesto no
+  // subcuenta. Al terminar se ACTUALIZA con el costo/latencia reales.
+  const startRow = await pg
+    .query(
+      `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
+       VALUES ($1::jsonb, 0, 4, NULL, false) RETURNING id`,
+      [JSON.stringify({ source: "async_ingest", provider: activeProvider.name, query: input.query, in_flight: true })],
+    )
+    .then((r) => r.rows[0]?.id as string | undefined)
+    .catch(() => undefined);
   try {
     const res = await activeProvider.fetch({
       category: input.category,
@@ -37,13 +48,14 @@ async function runIngest(
       limit: input.limit,
     });
     await pg.query(
-      `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
-       VALUES ($1::jsonb, $2, $3, $4, false)`,
+      `UPDATE mock_calls SET params = $1::jsonb, response_size = $2, simulated_cost_cents = $3, latency_ms = $4, was_error = false
+       WHERE id = $5`,
       [
         JSON.stringify({ source: "async_ingest", provider: activeProvider.name, query: input.query }),
         res.products.length,
         res.cost_cents,
         Math.round(Date.now() - t0),
+        startRow,
       ],
     );
     let processed = 0;
@@ -68,10 +80,13 @@ async function runIngest(
     return { fetched: res.products.length, processed, failed, was_error: false };
   } catch {
     try {
+      // La fila de inicio ya existe: solo se marca el error (costo estimado
+      // conservador se conserva — un fetch fallido pudo cobrar igual).
       await pg.query(
-        `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
-         VALUES ($1::jsonb, 0, 4, 0, true)`,
-        [JSON.stringify({ source: "async_ingest", provider: activeProvider.name, query: input.query })],
+        `UPDATE mock_calls SET was_error = true, latency_ms = $2,
+           params = params - 'in_flight'
+         WHERE id = $1`,
+        [startRow, Math.round(Date.now() - t0)],
       );
     } catch {
       // el logging jamás tumba el job

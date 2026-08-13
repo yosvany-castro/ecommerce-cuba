@@ -37,6 +37,9 @@ export async function embed(
   const doFetch = () =>
     fetch(API_URL, {
       method: "POST",
+      // Sin timeout un cuelgue de Voyage colgaba la búsqueda entera; el
+      // AbortError cae al mismo retry de red de abajo.
+      signal: AbortSignal.timeout(10_000),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
