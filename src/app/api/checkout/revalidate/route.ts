@@ -50,7 +50,31 @@ interface ProductRow extends RevalidateProductRow {
  * el precio vivo cambió (así createCheckoutOrder/createAnonymousOrder cobran
  * el precio real, ver src/sectors/b-catalog/revalidate.ts para el porqué).
  */
+// Freno anti-abuso: revalidar dispara llamadas RapidAPI de pago — sin
+// identidad ni límite, cualquier anónimo podía quemar la cuota rotando ids.
+// ponytail: límite in-memory por nodo (single-node hoy); mover a DB si se
+// escala horizontal.
+const RATE_LIMIT_PER_HOUR = 12;
+const rateLog = new Map<string, number[]>();
+function rateLimited(id: string): boolean {
+  const now = Date.now();
+  const hits = (rateLog.get(id) ?? []).filter((t) => now - t < 3600_000);
+  if (hits.length >= RATE_LIMIT_PER_HOUR) return true;
+  hits.push(now);
+  rateLog.set(id, hits);
+  if (rateLog.size > 5000) rateLog.clear(); // tope de memoria burdo
+  return false;
+}
+
 export async function POST(req: NextRequest) {
+  const anonymousId = req.cookies.get("anonymous_id")?.value;
+  if (!anonymousId || !UUID_REGEX.test(anonymousId)) {
+    return NextResponse.json({ error: "no_identity" }, { status: 400 });
+  }
+  if (rateLimited(anonymousId)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "retry-after": "3600" } });
+  }
+
   let body: z.infer<typeof bodySchema>;
   try {
     body = bodySchema.parse(await req.json());

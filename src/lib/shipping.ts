@@ -7,8 +7,11 @@
 // tax 7.5% (Tampa/Hillsborough: 6% FL + 1.5% county) sobre productos.
 // Knobs NEXT_PUBLIC_ para que cliente y server vean el mismo número.
 
-export type ShipVia = "aereo" | "maritimo";
+export type ShipVia = "express" | "aereo" | "maritimo";
 
+// Decisión 2026-08-12: dos vías reales — Express $6/lb (precio PROVISIONAL,
+// Yosvany lo confirmará) y Aéreo $3.50/lb. Marítimo sin tarifa → oculto.
+const DEFAULT_EXPRESS_CENTS_PER_LB = 600;
 const DEFAULT_AEREO_CENTS_PER_LB = 350;
 const DEFAULT_TAX_PCT = 7.5;
 
@@ -20,6 +23,7 @@ function envInt(name: string): number | null {
 }
 
 export function shipRateCentsPerLb(via: ShipVia): number | null {
+  if (via === "express") return envInt("NEXT_PUBLIC_SHIP_EXPRESS_CENTS_PER_LB") ?? DEFAULT_EXPRESS_CENTS_PER_LB;
   if (via === "aereo") return envInt("NEXT_PUBLIC_SHIP_AEREO_CENTS_PER_LB") ?? DEFAULT_AEREO_CENTS_PER_LB;
   return envInt("NEXT_PUBLIC_SHIP_MARITIMO_CENTS_PER_LB"); // sin knob → vía oculta
 }

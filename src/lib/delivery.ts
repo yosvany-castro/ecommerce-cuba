@@ -12,7 +12,7 @@
 // conocimiento del negocio de Yosvany y se ajustan con la experiencia real de
 // cada envío; mover a DB/admin cuando exista el admin.
 
-export type ShippingVia = "aereo" | "maritimo";
+export type ShippingVia = "express" | "aereo" | "maritimo";
 
 /** Días marketplace → depósito, por tienda (default para producto sin dato del
  * proveedor — AliExpress da su shippingTime por producto y ese manda). */
@@ -21,11 +21,14 @@ const STORE_TO_HUB_DAYS: Record<string, [number, number]> = {
   walmart: [3, 8],
   shein: [8, 15],
   aliexpress: [10, 25],
+  temu: [10, 25], // China directo, mismo perfil que aliexpress (provisional)
   default: [8, 20],
 };
 
-/** Días depósito → entrega en Cuba, por vía. */
+/** Días depósito → entrega en Cuba, por vía.
+ * express: PROVISIONAL — Yosvany debe confirmar los días reales de su cadena. */
 const HUB_TO_CUBA_DAYS: Record<ShippingVia, [number, number]> = {
+  express: [3, 7],
   aereo: [7, 15],
   maritimo: [25, 45],
 };
@@ -53,10 +56,17 @@ export function estimateDelivery(
   return { minDays: store[0] + cuba[0], maxDays: store[1] + cuba[1], via };
 }
 
+export interface CartDeliveryItem {
+  source?: string | null;
+  providerDays?: ProviderShipDays | null;
+}
+
 /** Carrito multi-tienda: manda el item MÁS LENTO (todo viaja junto desde el
- * depósito), y el rango se calcula sobre el peor tramo 1 del carrito. */
-export function estimateDeliveryForCart(sources: (string | null | undefined)[], via: ShippingVia): DeliveryEstimate {
-  const ests = (sources.length ? sources : [null]).map((s) => estimateDelivery(s, via));
+ * depósito), y el rango se calcula sobre el peor tramo 1 del carrito. Acepta
+ * los días del proveedor por item (P1-8: la MISMA base que usa la PDP). */
+export function estimateDeliveryForCart(items: CartDeliveryItem[], via: ShippingVia): DeliveryEstimate {
+  const list = items.length ? items : [{}];
+  const ests = list.map((i) => estimateDelivery(i.source, via, i.providerDays));
   return {
     minDays: Math.max(...ests.map((e) => e.minDays)),
     maxDays: Math.max(...ests.map((e) => e.maxDays)),

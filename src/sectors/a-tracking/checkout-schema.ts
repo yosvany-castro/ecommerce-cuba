@@ -71,9 +71,21 @@ export class TotalsChangedError extends Error {
   constructor(
     readonly ship_total_cents: number,
     readonly tax_cents: number,
+    /** Descuento de cupón recalculado server-side (0 = cupón inválido/expirado). */
+    readonly discount_cents: number = 0,
   ) {
     super("totals_changed");
     this.name = "TotalsChangedError";
+  }
+}
+
+/** Un producto pedido ya no existe o está desactivado (is_active=false):
+ * 409 con los ids ANTES de crear la orden — nada de saltarlo en silencio y
+ * cobrar un carrito distinto al que el usuario vio. */
+export class UnavailableError extends Error {
+  constructor(readonly product_ids: string[]) {
+    super("unavailable");
+    this.name = "UnavailableError";
   }
 }
 

@@ -51,14 +51,18 @@ export async function attributePurchaseAndExclude(
     ],
   );
 
+  // anonymous_id TAMBIÉN: el comprador anónimo cuelga del user demo sintético
+  // que ninguna lectura del feed resuelve — sin la columna anon, "lo comprado
+  // deja de perseguirte" era inerte para el flujo real (auditoría P1-7).
   await pg.query(
-    `INSERT INTO excluded_products (user_id, product_id, ttl_until, reason)
-     SELECT $1, pid, now() + interval '30 days', 'purchased'
+    `INSERT INTO excluded_products (user_id, anonymous_id, product_id, ttl_until, reason)
+     SELECT $1, $3, pid, now() + interval '30 days', 'purchased'
      FROM unnest($2::uuid[]) AS p(pid)
      WHERE NOT EXISTS (
        SELECT 1 FROM excluded_products ep
-       WHERE ep.user_id = $1 AND ep.product_id = p.pid AND ep.ttl_until > now()
+       WHERE (ep.user_id = $1 OR ($3::uuid IS NOT NULL AND ep.anonymous_id = $3))
+         AND ep.product_id = p.pid AND ep.ttl_until > now()
      )`,
-    [input.user_id, productIds],
+    [input.user_id, productIds, input.anonymous_id],
   );
 }

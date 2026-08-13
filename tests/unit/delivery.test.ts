@@ -34,7 +34,7 @@ describe("estimateDelivery", () => {
 
 describe("estimateDeliveryForCart", () => {
   it("manda el item más lento del carrito", () => {
-    const mix = estimateDeliveryForCart(["amazon", "aliexpress"], "aereo");
+    const mix = estimateDeliveryForCart([{ source: "amazon" }, { source: "aliexpress" }], "aereo");
     expect(mix).toEqual(estimateDelivery("aliexpress", "aereo"));
   });
   it("carrito vacío no revienta", () => {

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { dbHealth } from "@/lib/db/health";
 import { withPg } from "@/lib/db/helpers";
+import { getAuthUser } from "@/lib/auth";
 import { createAnonymousOrder } from "@/sectors/a-tracking/checkout-anonymous";
-import { anonymousCheckoutItemSchema, PriceChangedError, TotalsChangedError } from "@/sectors/a-tracking/checkout-schema";
+import { anonymousCheckoutItemSchema, PriceChangedError, TotalsChangedError, UnavailableError } from "@/sectors/a-tracking/checkout-schema";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -16,12 +17,15 @@ const bodySchema = z
         ci: z.string().regex(/^\d{6,}$/),
         tel: z.string().min(1),
         dir: z.string().min(1),
+        provincia: z.string().min(1),
         ciudad: z.string().min(1),
         cp: z.string().optional(),
-        via: z.enum(["aereo", "maritimo"]),
+        via: z.enum(["express", "aereo", "maritimo"]),
         ship_total_cents: z.number().int().min(0),
         tax_cents: z.number().int().min(0),
         pago: z.enum(["tarjeta", "efectivo", "transfer"]),
+        coupon_code: z.string().max(24).optional(),
+        discount_cents: z.number().int().min(0).optional(),
         factura: z
           .object({
             razon: z.string(),
@@ -55,11 +59,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
+  // Sesión Supabase (si existe): la orden cuelga del usuario real.
+  const auth = await getAuthUser();
+
   try {
     const result = await withPg((pg) =>
       createAnonymousOrder(pg, {
         anonymous_id,
         session_id,
+        auth_sub: auth?.sub ?? null,
+        auth_email: auth?.email ?? null,
         items: body.items,
         shipping: body.shipping,
       }),
@@ -71,12 +80,18 @@ export async function POST(req: NextRequest) {
     }
     if (e instanceof TotalsChangedError) {
       return NextResponse.json(
-        { code: "totals_changed", ship_total_cents: e.ship_total_cents, tax_cents: e.tax_cents },
+        { code: "totals_changed", ship_total_cents: e.ship_total_cents, tax_cents: e.tax_cents, discount_cents: e.discount_cents },
         { status: 409 },
       );
     }
+    if (e instanceof UnavailableError) {
+      return NextResponse.json({ code: "unavailable", product_ids: e.product_ids }, { status: 409 });
+    }
     if (e instanceof Error && e.message === "empty_cart") {
       return NextResponse.json({ error: "empty_cart" }, { status: 400 });
+    }
+    if (e instanceof Error && e.message === "bad_via") {
+      return NextResponse.json({ error: "bad_via" }, { status: 400 });
     }
     throw e;
   }
