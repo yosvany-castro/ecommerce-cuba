@@ -212,8 +212,10 @@ de la sección) · input de búsqueda selecciona al enfocar (se concatenaba text
 del carrito restaurado pero de MISMA categoría (relevante, sin cámaras espía) + copy honesto.
 
 ### Pendiente del feedback de Yosvany (próximo bloque)
-- **Destacados en listados** (categorías/búsqueda): secciones resaltadas arriba del grid,
-  colocables por el agente (extender superficie del slate a 'category'/'search').
+- ✅ **Destacados en listados** (verificado en vivo /c/hogar): superficie 'search' del slate viva —
+  "Lo más buscado" por categoría + intención del vendedor arriba del grid; la búsqueda usa la
+  categoría dominante de sus resultados; AGENT_SURFACES incluye 'search' (el agente ya puede
+  resaltar en listados). Migración 0043.
 - **Taxonomía de categorías**: 6 categorías brutas ("mochila escolar" cae en Otros). Propuesta:
   2 niveles (categoria → subcategoria en metadata, enum ampliado ~25 subcategorías), prompt de
   enriquecimiento actualizado + job de re-categorización del catálogo con LLM + chips de pasillo
