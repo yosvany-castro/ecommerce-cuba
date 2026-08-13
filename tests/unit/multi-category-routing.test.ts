@@ -53,13 +53,14 @@ describe("makeMultiProvider — ruteo por categoría", () => {
     expect(calls.sort()).toEqual(["aliexpress-prod", "walmart-prod"]);
   });
 
-  test("sin categoría: usa el default (aliexpress-prod + amazon-prod, igual que 'otros')", async () => {
+  test("sin categoría: usa el default (los de 'otros' presentes en el universo)", async () => {
     const calls: string[] = [];
     const universe = [
       makeProvider("shein-prod", calls),
       makeProvider("aliexpress-prod", calls),
       makeProvider("walmart-prod", calls),
       makeProvider("amazon-prod", calls),
+      makeProvider("temu-prod", calls),
     ];
     const multi = makeMultiProvider(universe);
     await multi.fetch({});

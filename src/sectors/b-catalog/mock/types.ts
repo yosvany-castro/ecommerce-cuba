@@ -1,4 +1,4 @@
-export type MockProductSource = "amazon" | "aliexpress" | "shein" | "walmart";
+export type MockProductSource = "amazon" | "aliexpress" | "shein" | "walmart" | "temu";
 
 export type MockCategory =
   | "ropa"

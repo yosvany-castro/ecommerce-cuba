@@ -3,6 +3,7 @@ import { withPg } from "@/lib/db/helpers";
 import { liveLookupVariants } from "@/sectors/b-catalog/hydrate";
 import { curateColors, curateStrings, type CuratedAttrs, type CuratedVariant } from "@/sectors/b-catalog/enrichment/attrs";
 import type { ProviderRef } from "@/sectors/b-catalog/revalidate";
+import { toCardAttrs } from "@/storefront/map";
 import { reserveAliexpressQuota } from "@/sectors/b-catalog/aliexpress-quota";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,9 +21,13 @@ function hydrateEnabled(): boolean {
 // hosts también tienen plan free-tier limitado, replicar el mismo patrón de lock+
 // reserva para ese source (ver aliexpress-quota.ts, ya compartido con resolve-url).
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!UUID_REGEX.test(id) || !hydrateEnabled()) return NextResponse.json({ skipped: true });
+  // {refresh:true} (lo manda el checkout para items con variante elegida):
+  // permite RE-hidratar si el dato tiene >12h — las variantes capturadas una
+  // sola vez se pudren (visto en vivo: guantes Shein a $23 de julio vs $18 hoy).
+  const refresh = await req.json().then((b) => Boolean((b as { refresh?: boolean })?.refresh)).catch(() => false);
 
   return withPg(async (pg) => {
     // Claim atómico: UNA query hace de lock Y de lectura de source/url/attrs
@@ -41,9 +46,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
              )
        WHERE id = $1 AND is_active = true
          AND source IN ('amazon','aliexpress','walmart','shein')
-         AND (metadata->'attrs'->>'hydrated_at') IS NULL
+         AND (
+           (metadata->'attrs'->>'hydrated_at') IS NULL
+           OR ($2 AND (metadata->'attrs'->>'hydrated_at')::timestamptz < now() - interval '12 hours')
+         )
        RETURNING source, source_product_id, url, metadata->'attrs' AS attrs_before`,
-      [id],
+      [id, refresh],
     );
     const row = claim.rows[0] as { source: string; source_product_id: string; url: string | null; attrs_before: CuratedAttrs | null } | undefined;
     if (!row) return NextResponse.json({ skipped: true });
@@ -137,6 +145,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         [JSON.stringify({ source: `hydrate_${row.source}`, product_id: id }), variants?.length ?? 0, lookupFailed],
       );
     }
-    return NextResponse.json(freshAttrs ? { ok: true, attrs: freshAttrs } : { ok: true });
+    // DAL-7: attrs CURADOS (imgSrc aplicado) — antes viajaban URLs full-size del
+    // proveedor (92-343KB) que reventaban la política 3G en la primera visita.
+    return NextResponse.json(freshAttrs ? { ok: true, attrs: toCardAttrs(freshAttrs, row.source) } : { ok: true });
   });
 }

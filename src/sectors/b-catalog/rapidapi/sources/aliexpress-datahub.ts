@@ -23,6 +23,8 @@ export function mapItem(raw: unknown): MockProduct | null {
   const id = str(o.itemId);
   const title = str(o.title);
   const def = asRecord(asRecord(o.sku)?.def);
+  // promotionPrice = precio welcome/anónimo; def.price = lista inflada del
+  // tachado (NO el precio real de cuenta logueada — ver revalidate.ts).
   const price = usdToCents(def?.promotionPrice ?? def?.price);
   if (!id || !title || price === null) return null;
 

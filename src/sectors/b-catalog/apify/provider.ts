@@ -5,10 +5,11 @@ import { runActorGetItems } from "./client";
 import * as amazon from "./sources/amazon";
 import * as aliexpress from "./sources/aliexpress";
 import * as shein from "./sources/shein";
+import * as temu from "./sources/temu";
 
-export type ApifySource = "amazon" | "aliexpress" | "shein";
+export type ApifySource = "amazon" | "aliexpress" | "shein" | "temu";
 
-const SOURCES = { amazon, aliexpress, shein };
+const SOURCES = { amazon, aliexpress, shein, temu };
 
 export function makeApifyProvider(source: ApifySource): AggregatorProvider {
   const mod = SOURCES[source];

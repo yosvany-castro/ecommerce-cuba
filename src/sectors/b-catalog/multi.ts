@@ -30,11 +30,11 @@ function dedupe(products: MockProduct[]): MockProduct[] {
  */
 export const CATEGORY_PROVIDER_MAP: Record<MockCategory, string[]> = {
   ropa: ["shein-prod", "aliexpress-prod"],
-  belleza: ["shein-prod", "aliexpress-prod"],
+  belleza: ["shein-prod", "aliexpress-prod", "temu-prod"],
   electronica: ["aliexpress-prod", "walmart-prod"],
-  hogar: ["aliexpress-prod", "walmart-prod"],
-  juguetes_bebe: ["aliexpress-prod", "walmart-prod"],
-  otros: ["aliexpress-prod", "amazon-prod"],
+  hogar: ["aliexpress-prod", "walmart-prod", "temu-prod"],
+  juguetes_bebe: ["aliexpress-prod", "walmart-prod", "temu-prod"],
+  otros: ["aliexpress-prod", "amazon-prod", "temu-prod"],
 };
 // Sin categoría (o categoría desconocida): mismo criterio que "otros".
 const DEFAULT_CATEGORY_PROVIDERS = CATEGORY_PROVIDER_MAP.otros;

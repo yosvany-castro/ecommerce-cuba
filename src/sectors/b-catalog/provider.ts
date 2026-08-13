@@ -47,6 +47,7 @@ const rapidapiSheinOtapi: AggregatorProvider = {
   fetch: sheinOtapi.fetchProducts,
 };
 const apifyShein = makeApifyProvider("shein");
+const apifyTemu = makeApifyProvider("temu");
 
 const PROVIDERS: Record<string, AggregatorProvider> = {
   mock,
@@ -68,6 +69,10 @@ const PROVIDERS: Record<string, AggregatorProvider> = {
   // apify (pay-per-event, más rico) → otapi (fallback intermedio) → pinto
   // (última instancia, 10 req/mes — ver comentario de cuota en shein-pinto.ts).
   "shein-prod": withFallback(apifyShein, withFallback(rapidapiSheinOtapi, rapidapiSheinPinto)),
+  // Temu: SOLO Apify (amit123). El RapidAPI de Temu tiene 5 búsquedas/MES —
+  // cuota sagrada de verificación manual, JAMÁS cablearlo como fallback.
+  "apify-temu": apifyTemu,
+  "temu-prod": apifyTemu,
 };
 
 // "multi": fan-out sobre otras entradas del registry por nombre — se construye
@@ -85,7 +90,10 @@ const multiSources = multiSourceNames
     console.warn(`MULTI_PROVIDER_SOURCES: fuente '${n}' no reconocida — omitida`);
     return false;
   })
-  .map((n) => PROVIDERS[n]);
+  // Conservar la CLAVE del registry como name: el ruteo por categoría
+  // (CATEGORY_PROVIDER_MAP) filtra por estos nombres — con los names internos
+  // ('apify-amazon+fb:…') nunca matcheaba y toda ingesta pagaba las 4 fuentes.
+  .map((n) => ({ ...PROVIDERS[n], name: n }));
 
 if (multiSources.length > 0) {
   PROVIDERS.multi = makeMultiProvider(multiSources);
@@ -97,6 +105,11 @@ if (multiSources.length > 0) {
 const envProvider = process.env.AGGREGATOR_PROVIDER;
 if (envProvider && !PROVIDERS[envProvider]) {
   console.warn(`AGGREGATOR_PROVIDER '${envProvider}' no reconocido — usando mock`);
+}
+// En producción el mock jamás entra por accidente: un deploy sin la env (o con
+// typo) inventaría catálogo con LLM en silencio. Opt-in explícito o nada.
+if (process.env.NODE_ENV === "production" && (!envProvider || !PROVIDERS[envProvider]) && envProvider !== "mock") {
+  throw new Error("AGGREGATOR_PROVIDER inválido o ausente en producción (usa 'mock' explícito si lo quieres)");
 }
 
 export const activeProvider: AggregatorProvider =

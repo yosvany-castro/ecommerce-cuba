@@ -23,11 +23,12 @@ import { runActorGetItems } from "@/sectors/b-catalog/apify/client";
 import * as amazon from "@/sectors/b-catalog/apify/sources/amazon";
 import * as aliexpress from "@/sectors/b-catalog/apify/sources/aliexpress";
 import * as shein from "@/sectors/b-catalog/apify/sources/shein";
+import * as temu from "@/sectors/b-catalog/apify/sources/temu";
 import type { MockProduct } from "@/sectors/b-catalog/mock/types";
 import { withPgDirect } from "@/lib/db/helpers";
 import { processProduct } from "@/sectors/b-catalog/enrichment/pipeline";
 
-const SOURCES = { amazon, aliexpress, shein };
+const SOURCES = { amazon, aliexpress, shein, temu };
 type SourceName = keyof typeof SOURCES;
 
 const { values } = parseArgs({

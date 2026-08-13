@@ -15,7 +15,7 @@ function formatSold(orders: string | number | undefined): string | undefined {
   return orders >= 1000 ? (orders / 1000).toFixed(1) + "k" : String(orders);
 }
 
-function toCardAttrs(attrs: CuratedAttrs | undefined, source: string): StorefrontCard["attrs"] {
+export function toCardAttrs(attrs: CuratedAttrs | undefined, source: string): StorefrontCard["attrs"] {
   if (!attrs) return undefined;
   // 3G: imágenes de galería/variantes pueden volverse la foto GRANDE de la PDP
   // al elegir color → tamaño 640 (no 350). Ver src/lib/img.ts.

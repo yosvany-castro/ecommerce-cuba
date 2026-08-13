@@ -81,6 +81,11 @@ export function parseAliexpressDetail(json: unknown): DetailResult | null {
   const item = asRecord(result?.item);
   if (!item) return null;
   const def = asRecord(asRecord(item.sku)?.def);
+  // OJO (2026-08-12, verificado con datos): promotionPrice = precio welcome/
+  // anónimo; def.price = LISTA INFLADA del tachado (jeans 57.46 vs promo 10.77;
+  // arrocera 30.25 vs promo 8.13 vs REAL logueado 15.13). El precio real de
+  // cuenta logueada NO existe en esta API — corregirlo requiere el factor
+  // calibrado de measure:price-gap + política de margen (decisión de negocio).
   const price = usdToCents(def?.promotionPrice ?? def?.price);
   if (price === null) return null;
 
