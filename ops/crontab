@@ -1,0 +1,24 @@
+# Crontab versionado de Tuki (P1-5) — instalar con: crontab ops/crontab
+# (o copiar estas líneas con `crontab -e`). Antes NINGÚN cron tenía scheduler:
+# fatiga/popularidad/NPMI/recompute solo corrían a mano.
+# Rutas absolutas: ajustar REPO si el repo vive en otro lado.
+REPO=/home/yosvany/ecommerce-cuba
+SHELL=/bin/bash
+
+# Ofertas del día (bento home) — rota la selección justo pasada la medianoche.
+5 0 * * *  cd $REPO && pnpm cron:ofertas >> logs/cron.log 2>&1
+
+# Personalización nocturna
+15 3 * * * cd $REPO && pnpm cron:popularity-7d >> logs/cron.log 2>&1
+25 3 * * * cd $REPO && pnpm cron:npmi-recompute >> logs/cron.log 2>&1
+35 3 * * * cd $REPO && pnpm cron:profile-recompute >> logs/cron.log 2>&1
+45 3 * * * cd $REPO && pnpm cron:cohort-centroids >> logs/cron.log 2>&1
+55 3 * * * cd $REPO && pnpm cron:fatigue >> logs/cron.log 2>&1
+
+# Catálogo
+0 2 * * *  cd $REPO && pnpm cron:catalog-refresh >> logs/cron.log 2>&1
+0 5 * * 0  cd $REPO && pnpm cron:prune >> logs/cron.log 2>&1
+30 5 * * * cd $REPO && pnpm cron:rerank-cache-cleanup >> logs/cron.log 2>&1
+
+# Agente merchandiser (requiere AGENTS_ENABLED=true en .env.local)
+0 4 * * *  cd $REPO && pnpm cron:agent-merchandiser >> logs/cron.log 2>&1
