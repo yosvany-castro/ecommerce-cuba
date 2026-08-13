@@ -18,6 +18,7 @@ import { captureCoOccurrence } from "./co-occurrence/capture";
 import { modesForEvents } from "./multimode/thresholds";
 import { recomputeModesForBucket } from "./multimode/recompute";
 import { fetchAllModesInBucket, pickBestMode } from "./multimode/dispatch";
+import { triggerIntentInference } from "./intent/infer";
 
 interface TrackInput {
   anonymous_id: string;
@@ -175,6 +176,10 @@ async function runPipeline(
     } catch (e) {
       console.warn("[track-hook] slate expire on view failed (ignored):", e);
     }
+    // EL VENDEDOR: infiere la intención de la sesión (fire-and-forget, conexión
+    // propia, freshness por sesión) — la próxima navegación pinta "Completa tu
+    // idea" con complementos reales (o manda a ingerirlos).
+    triggerIntentInference(input.session_id);
   }
 
   if (!newCohort) return; // warmup not complete — no vector update yet
