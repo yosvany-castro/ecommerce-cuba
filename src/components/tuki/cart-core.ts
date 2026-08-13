@@ -18,6 +18,10 @@ export interface TukiCartItem {
   // Peso conocido al momento de agregar (products.weight_grams). Ausente en
   // carritos viejos o productos sin dato → heurística determinista compartida.
   weight_grams?: number | null;
+  // Días de envío tienda→depósito que reportó el proveedor (AliExpress hydrate).
+  // Al snapshot del carrito para que el checkout muestre la MISMA ETA que la
+  // PDP (P1-8: antes el checkout los ignoraba y las fechas divergían).
+  provider_ship_days?: { min: number; max: number } | null;
 }
 
 export interface CardSnapshot {
@@ -28,6 +32,7 @@ export interface CardSnapshot {
   image_url: string | null;
   source?: string;
   weight_grams?: number | null;
+  provider_ship_days?: { min: number; max: number } | null;
 }
 
 export function cartKey(productId: string, color: string | null, size: string | null): string {
@@ -58,6 +63,7 @@ export function addItem(
     image_url: snap.image_url,
     source: snap.source,
     weight_grams: snap.weight_grams ?? null,
+    provider_ship_days: snap.provider_ship_days ?? null,
   };
   return [...items, item];
 }

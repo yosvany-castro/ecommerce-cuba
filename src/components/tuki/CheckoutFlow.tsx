@@ -22,12 +22,21 @@ import { hasMultipleStores } from "@/lib/delivery";
 type PriceNote = { status: "changed"; from: number; to: number } | { status: "unavailable" } | { status: "unverifiable" };
 
 const STEP_LABELS = ["Envío", "Entrega", "Pago", "Revisar"];
+// Sin tarjeta: no hay procesador de pago — ofrecerla (con 4242 precargado)
+// era teatro. Métodos REALES hoy: efectivo al recibir y transferencia.
 const PAY_DEFS = [
-  { id: "tarjeta", label: "Tarjeta", sub: "crédito o débito", mark: "💳" },
   { id: "efectivo", label: "Efectivo al recibir", sub: "pagas en la puerta", mark: "💵" },
-  { id: "transfer", label: "Transferencia", sub: "confirmación inmediata", mark: "🏦" },
+  { id: "transfer", label: "Transferencia", sub: "coordinamos el pago al confirmar", mark: "🏦" },
 ] as const;
 type PayId = (typeof PAY_DEFS)[number]["id"];
+
+// Provincias de Cuba — la paquetería entrega por provincia/municipio.
+const PROVINCIAS = [
+  "Pinar del Río", "Artemisa", "La Habana", "Mayabeque", "Matanzas",
+  "Cienfuegos", "Villa Clara", "Sancti Spíritus", "Ciego de Ávila", "Camagüey",
+  "Las Tunas", "Holguín", "Granma", "Santiago de Cuba", "Guantánamo",
+  "Isla de la Juventud",
+] as const;
 
 const inputBase: React.CSSProperties = {
   width: "100%",
@@ -78,6 +87,23 @@ export function CheckoutFlow() {
     const ctrl = new AbortController();
     (async () => {
       try {
+        // Items con variante elegida: re-hidratar variantes ANTES de revalidar
+        // si el dato tiene >12h (el hydrate guarda cuota y decide solo) — los
+        // precios por variante capturados una vez se pudren (guantes Shein a
+        // $23 de julio vs $18 hoy). Best-effort: un fallo no frena el checkout.
+        const variantItems = items.filter((i) => i.color || i.size);
+        if (variantItems.length > 0) {
+          await Promise.allSettled(
+            [...new Set(variantItems.map((i) => i.product_id))].map((pid) =>
+              fetch(`/api/products/${pid}/hydrate`, {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ refresh: true }),
+                signal: ctrl.signal,
+              }),
+            ),
+          );
+        }
         const res = await fetch("/api/checkout/revalidate", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -123,27 +149,37 @@ export function CheckoutFlow() {
     return () => ctrl.abort();
   }, [hydrated, items, updatePrices]);
 
+  // Sin datos demo precargados: cada campo lo escribe el cliente real
+  // (con "Dani Torres · Ciudad de México" se podía confirmar un pedido a una
+  // dirección inventada sin teclear nada).
   const [f, setF] = useState({
-    nombre: "Dani Torres",
+    nombre: "",
     ci: "",
-    tel: "55 1234 5678",
-    dir: "Av. Siempre Viva 742, depto 3",
-    ciudad: "Ciudad de México",
-    cp: "06100",
-    card: "4242 4242 4242 4242",
-    exp: "08/27",
-    cvv: "123",
+    tel: "",
+    dir: "",
+    provincia: "",
+    ciudad: "",
+    cp: "",
   });
-  const [fb, setFb] = useState({ razon: "", rfc: "", correo: "dani@correo.mx", dirf: "" });
-  const [pago, setPago] = useState<PayId>("tarjeta");
+  const [fb, setFb] = useState({ razon: "", rfc: "", correo: "", dirf: "" });
+  const [pago, setPago] = useState<PayId>("efectivo");
   const [shipSel, setShipSel] = useState<ShipId>("aereo");
   const [billSame, setBillSame] = useState(true);
   // 409 totals_changed: el server recalculó envío/tax distinto a lo mostrado —
   // se pinta el suyo VISIBLEMENTE y se pide re-confirmar (REGLA DE ORO).
-  const [serverTotals, setServerTotals] = useState<{ ship: number; tax: number } | null>(null);
+  // totalsNote guarda el de→a para que el cambio quede EXPLICADO en pantalla
+  // (persistente, no solo un toast que desaparece).
+  const [serverTotals, setServerTotals] = useState<{ ship: number; tax: number; discount?: number } | null>(null);
+  const [totalsNote, setTotalsNote] = useState<{ fromShip: number; toShip: number; fromTax: number; toTax: number } | null>(null);
+  // Cupón de campaña (los crea el admin): validación de UI vía /api/coupons/
+  // validate; el cobro re-valida y consume el uso server-side (regla de oro).
+  const [coupon, setCoupon] = useState<{ code: string; pct: number } | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [couponErr, setCouponErr] = useState(false);
   const itemsSig = items.map((i) => i.key + i.qty).join(",");
   useEffect(() => {
     setServerTotals(null); // cambió el carrito o la vía: el total local vuelve a mandar
+    setTotalsNote(null);
   }, [itemsSig, shipSel]);
 
   const setFK = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -156,12 +192,30 @@ export function CheckoutFlow() {
   // necesita una capa de override aparte, solo sumar lo que hay.
   const effectiveSubtotal = items.reduce((s, ri) => s + ri.price_cents * ri.qty, 0);
 
-  const opts = shipOptions(weightLb, items.map((i) => i.source));
+  const opts = shipOptions(weightLb, items.map((i) => ({ source: i.source, providerDays: i.provider_ship_days })));
   const sel: ShipId = opts.some((o) => o.id === shipSel) ? shipSel : "aereo";
   const cur = opts.find((o) => o.id === sel)!;
   const shipCostCents = items.length ? (serverTotals?.ship ?? cur.quote.ship_cents) : 0;
   const taxCentsShown = serverTotals?.tax ?? taxCents(effectiveSubtotal);
-  const totalCents = effectiveSubtotal + taxCentsShown + shipCostCents;
+  const discountShown = serverTotals?.discount ?? (coupon ? Math.round((effectiveSubtotal * coupon.pct) / 100) : 0);
+  const totalCents = Math.max(0, effectiveSubtotal - discountShown + taxCentsShown + shipCostCents);
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    try {
+      const res = await fetch(`/api/coupons/validate?code=${encodeURIComponent(code)}&subtotal_cents=${effectiveSubtotal}`);
+      const body = (await res.json()) as { valid?: boolean; pct?: number };
+      if (body.valid && body.pct) {
+        setCoupon({ code, pct: body.pct });
+        setCouponErr(false);
+      } else {
+        setCouponErr(true);
+      }
+    } catch {
+      setCouponErr(true);
+    }
+  };
   const wS = weightLb.toFixed(1).replace(".0", "");
 
   const shipErrs = validateShipping(f);
@@ -213,12 +267,14 @@ export function CheckoutFlow() {
             ci: f.ci,
             tel: f.tel,
             dir: f.dir,
+            provincia: f.provincia,
             ciudad: f.ciudad,
             ...(f.cp.trim() ? { cp: f.cp } : {}),
             via: sel,
             ship_total_cents: shipCostCents,
             tax_cents: taxCentsShown,
             pago,
+            ...(coupon ? { coupon_code: coupon.code, discount_cents: discountShown } : {}),
             ...(billSame ? {} : { factura: { razon: fb.razon, rfc: fb.rfc, correo: fb.correo, dirf: fb.dirf } }),
           },
         }),
@@ -233,13 +289,32 @@ export function CheckoutFlow() {
               code: "price_changed";
               items: { product_id: string; color: string | null; size: string | null; shown_cents: number; current_cents: number }[];
             }
-          | { code: "totals_changed"; ship_total_cents: number; tax_cents: number };
+          | { code: "totals_changed"; ship_total_cents: number; tax_cents: number; discount_cents?: number }
+          | { code: "unavailable"; product_ids: string[] };
+        if (body.code === "unavailable") {
+          // Un producto del carrito ya no existe/está desactivado: se marca la
+          // línea con el aviso (y su botón "quítalo") — jamás cobrar un carrito
+          // distinto al que el usuario vio.
+          const notes: Record<string, PriceNote> = { ...priceNotes };
+          for (const pid of body.product_ids) {
+            for (const ci of items) if (ci.product_id === pid) notes[ci.key] = { status: "unavailable" };
+          }
+          setPriceNotes(notes);
+          toast("hay productos que ya no están disponibles — quítalos para continuar");
+          setPending(false);
+          return;
+        }
         if (body.code === "totals_changed") {
-          // El server recalculó peso/tarifa/tax distinto a lo que la UI mostró
-          // (p. ej. el peso del producto se actualizó tras un pesaje admin).
-          // Se pinta el total nuevo y se pide re-confirmar (REGLA DE ORO).
-          setServerTotals({ ship: body.ship_total_cents, tax: body.tax_cents });
-          toast("el envío o los impuestos cambiaron — revisa el total y confirma de nuevo");
+          // El server recalculó peso/tarifa/tax/cupón distinto a lo que la UI
+          // mostró. Se pinta el total nuevo y se pide re-confirmar (REGLA DE ORO).
+          setServerTotals({ ship: body.ship_total_cents, tax: body.tax_cents, discount: body.discount_cents ?? 0 });
+          setTotalsNote({ fromShip: shipCostCents, toShip: body.ship_total_cents, fromTax: taxCentsShown, toTax: body.tax_cents });
+          if (coupon && (body.discount_cents ?? 0) === 0) {
+            setCoupon(null);
+            toast("ese cupón ya no es válido — el total se actualizó");
+          } else {
+            toast("el envío o los impuestos cambiaron — revisa el total y confirma de nuevo");
+          }
           setPending(false);
           return;
         }
@@ -264,7 +339,9 @@ export function CheckoutFlow() {
       const body = (await res.json()) as { order_id: string };
       doneRef.current = true;
       clear();
-      router.push(`/checkout/success?order=${encodeURIComponent(body.order_id)}&m=${sel}`);
+      // d1/d2: la MISMA eta que el usuario acaba de ver — success no recalcula
+      // (antes mostraba una tercera fecha distinta).
+      router.push(`/checkout/success?order=${encodeURIComponent(body.order_id)}&m=${sel}&d1=${cur.d1}&d2=${cur.d2}`);
     } catch {
       toast("no pudimos confirmar el pedido — intenta de nuevo");
       setPending(false);
@@ -396,13 +473,22 @@ export function CheckoutFlow() {
                   )}
                   <div style={{ fontSize: 11.5, color: "#9A9B9F", marginTop: 5 }}>✦ lo pide la paquetería para entregarte — no lo usamos para nada más</div>
                 </div>
-                {field("Dirección de entrega", "dir", 1)}
+                {field("Dirección de entrega", "dir", 1, { ph: "calle, número, entre calles…" })}
                 <div style={{ display: "flex", gap: 13 }}>
-                  {field("Ciudad", "ciudad", 1.5)}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>C.P. <span style={{ fontWeight: 500, color: "#B0B1AE" }}>(opcional)</span></div>
-                    <input value={f.cp} onChange={setFK("cp")} style={{ ...inputBase, border: "1px solid #ECECE7" }} />
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>Provincia</div>
+                    <select
+                      value={f.provincia}
+                      onChange={(e) => setF((s) => ({ ...s, provincia: e.target.value }))}
+                      style={{ ...inputBase, border: `1px solid ${bd("provincia")}`, appearance: "none", cursor: "pointer" }}
+                    >
+                      <option value="" disabled>elige tu provincia…</option>
+                      {PROVINCIAS.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
                   </div>
+                  {field("Municipio", "ciudad", 1, { ph: "p. ej. Centro Habana" })}
                 </div>
                 {cta("Continuar →", ckNext)}
               </div>
@@ -481,24 +567,6 @@ export function CheckoutFlow() {
                     </div>
                   );
                 })}
-                {pago === "tarjeta" && (
-                  <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #ECECE7", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 11 }}>
-                    <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>Número de tarjeta</div>
-                      <input value={f.card} onChange={setFK("card")} style={{ ...inputBase, height: 48, borderRadius: 12, background: "#FAFAF8", border: "1px solid #ECECE7", fontFamily: "var(--font-mono)", fontSize: 14.5 }} />
-                    </div>
-                    <div style={{ display: "flex", gap: 11 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>Vence</div>
-                        <input value={f.exp} onChange={setFK("exp")} style={{ ...inputBase, height: 48, borderRadius: 12, background: "#FAFAF8", border: "1px solid #ECECE7", fontFamily: "var(--font-mono)", fontSize: 14.5 }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>CVV</div>
-                        <input value={f.cvv} onChange={setFK("cvv")} style={{ ...inputBase, height: 48, borderRadius: 12, background: "#FAFAF8", border: "1px solid #ECECE7", fontFamily: "var(--font-mono)", fontSize: 14.5 }} />
-                      </div>
-                    </div>
-                  </div>
-                )}
                 <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #ECECE7", padding: "16px 18px" }}>
                   <div onClick={() => setBillSame((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
                     <div style={{ flex: 1 }}>
@@ -531,7 +599,7 @@ export function CheckoutFlow() {
                         <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>Dirección fiscal</div>
                         <input value={fb.dirf} onChange={setFbK("dirf")} style={{ ...inputBase, height: 48, borderRadius: 12, background: "#FAFAF8", border: `1px solid ${bbd("dirf")}`, fontSize: 14.5 }} />
                       </div>
-                      <div style={{ fontSize: 11.5, color: "#9A9B9F" }}>✦ la factura llega sola a tu correo al confirmar — sin trámites</div>
+                      <div style={{ fontSize: 11.5, color: "#9A9B9F" }}>✦ este correo se usa solo para la factura</div>
                     </div>
                   )}
                 </div>
@@ -548,7 +616,7 @@ export function CheckoutFlow() {
                 {/* aviso de precio/disponibilidad: ver el bloque generalizado
                     arriba de la barra de progreso (visible desde el paso 1) */}
                 <ReviewCard title="ENVÍO" onEdit={() => setStep(1)}>
-                  <div style={{ fontSize: 14.5, marginTop: 6, lineHeight: 1.5 }}>{f.nombre} · {f.dir}, {f.ciudad}</div>
+                  <div style={{ fontSize: 14.5, marginTop: 6, lineHeight: 1.5 }}>{f.nombre} · {f.dir}, {f.ciudad}, {f.provincia}</div>
                   <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 2 }}>ID {f.ci} · tel. {f.tel}</div>
                 </ReviewCard>
                 <ReviewCard title="ENTREGA" onEdit={() => setStep(2)}>
@@ -559,10 +627,7 @@ export function CheckoutFlow() {
                   <div style={{ fontSize: 12.5, color: "#557A55", marginTop: 2 }}>{etaLine(cur.d1, cur.d2)}</div>
                 </ReviewCard>
                 <ReviewCard title="PAGO" onEdit={() => setStep(3)}>
-                  <div style={{ fontSize: 14.5, marginTop: 6 }}>
-                    {PAY_DEFS.find((p) => p.id === pago)!.label}
-                    {pago === "tarjeta" ? ` terminada en ${f.card.slice(-4)}` : ""}
-                  </div>
+                  <div style={{ fontSize: 14.5, marginTop: 6 }}>{PAY_DEFS.find((p) => p.id === pago)!.label}</div>
                 </ReviewCard>
                 <ReviewCard title="FACTURA" onEdit={() => setStep(3)}>
                   <div style={{ fontSize: 14.5, marginTop: 6 }}>{billSame ? `con los datos de envío — ${f.nombre}` : `${fb.razon} · ${fb.rfc}`}</div>
@@ -611,6 +676,32 @@ export function CheckoutFlow() {
           <Row label="Subtotal" value={fmt(effectiveSubtotal)} />
           <Row label={`Impuestos de compra (FL ${taxPct()}%)`} value={fmt(taxCentsShown)} />
           <Row label={`Envío · ${cur.name.toLowerCase()}`} value={fmt(shipCostCents)} />
+          {discountShown > 0 && coupon && (
+            <Row label={`Cupón ${coupon.code} (−${coupon.pct}%)`} value={`−${fmt(discountShown)}`} valueColor="#557A55" />
+          )}
+          {/* cupón de campaña */}
+          {!coupon ? (
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <input
+                value={couponInput}
+                onChange={(e) => {
+                  setCouponInput(e.target.value.toUpperCase());
+                  setCouponErr(false);
+                }}
+                placeholder="¿tienes un cupón?"
+                style={{ flex: 1, minWidth: 0, height: 38, borderRadius: 10, border: `1.5px dashed ${couponErr ? "#C96A55" : "#D8D8D3"}`, background: "#FAFAF8", padding: "0 12px", fontSize: 12.5, fontFamily: "var(--font-mono)", outline: "none" }}
+              />
+              <div onClick={applyCoupon} style={{ flex: "none", display: "flex", alignItems: "center", padding: "0 14px", borderRadius: 10, background: "#1C1D20", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                aplicar
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, fontSize: 12, color: "#557A55" }}>
+              <span>✓ cupón {coupon.code} aplicado</span>
+              <span onClick={() => setCoupon(null)} style={{ color: "#8E8F94", textDecoration: "underline", cursor: "pointer" }}>quitar</span>
+            </div>
+          )}
+          {couponErr && <div style={{ fontSize: 11.5, color: "#B4533F", marginTop: 5 }}>ese cupón no existe o ya expiró</div>}
           <details style={{ margin: "4px 0 0" }}>
             <summary style={{ fontSize: 11.5, color: "#8E8F94", cursor: "pointer" }}>ver desglose del envío</summary>
             <div style={{ fontSize: 11.5, color: "#8E8F94", marginTop: 4, lineHeight: 1.5 }}>
@@ -621,6 +712,14 @@ export function CheckoutFlow() {
             </div>
           </details>
           <div style={{ height: 1, background: "#F1F1EE", margin: "14px 0" }} />
+          {totalsNote && (
+            <div style={{ background: "#FBF3EF", border: "1px solid #E8CFC5", borderRadius: 12, padding: "10px 12px", fontSize: 12.5, color: "#B4533F", lineHeight: 1.5, marginBottom: 10 }}>
+              re-pesamos tu caja al confirmar:
+              {totalsNote.fromShip !== totalsNote.toShip && <> el envío cambió de <b>{fmt(totalsNote.fromShip)}</b> a <b>{fmt(totalsNote.toShip)}</b></>}
+              {totalsNote.fromTax !== totalsNote.toTax && <> · impuestos de <b>{fmt(totalsNote.fromTax)}</b> a <b>{fmt(totalsNote.toTax)}</b></>}
+              . el total de abajo ya es el definitivo — confirma de nuevo para cerrar el pedido.
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: 15, fontWeight: 700 }}>Total</span>
             <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.5px" }}>{fmt(totalCents)}</span>

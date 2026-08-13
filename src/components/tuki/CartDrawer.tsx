@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
 import { hasMultipleStores } from "@/lib/delivery";
-import { shipQuote } from "@/lib/shipping";
+import { shipQuote, taxCents, taxPct } from "@/lib/shipping";
 import { catOf, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 import type { TukiCartItem } from "./cart-core";
@@ -53,7 +53,11 @@ function UpsellMini({ p, onOpen, onAdd, wide }: { p: StorefrontCard; onOpen: () 
 export function CartDrawer() {
   const router = useRouter();
   const { items, count, subtotal, weightLb, open, setOpen, inc, dec, remove, add } = useTukiCart();
-  const [upsell, setUpsell] = useState<StorefrontCard[]>([]);
+  // TODAS las secciones del slate del carrito: [0] = cart_addons (seed), las
+  // siguientes son placements del agente merchandiser (slots 20-90) — antes se
+  // tiraban y el agente era invisible aquí.
+  const [slateSections, setSlateSections] = useState<StorefrontSection[]>([]);
+  const upsell = slateSections[0]?.items ?? [];
   // Pantalla previa al pago (cross-sell discreto): se muestra UNA vez al tocar
   // "Ir a pagar" si hay recomendados; saltable con un toque. Se resetea al
   // abrir/cerrar el drawer.
@@ -98,7 +102,7 @@ export function CartDrawer() {
         });
         if (!res.ok) return;
         const body = (await res.json()) as { sections: StorefrontSection[] };
-        setUpsell(body.sections[0]?.items ?? []);
+        setSlateSections(body.sections);
       } catch {
         /* abortado o de red: el upsell se queda invisible, el drawer sigue andando */
       }
@@ -116,9 +120,14 @@ export function CartDrawer() {
   // Estimado honesto por libra — misma aritmética que el checkout (lib/shipping)
   const quote = shipQuote(weightLb, "aereo");
   const ship = cartHas && quote ? quote.ship_cents : 0;
-  const totF = fmt(subtotal + ship);
+  // Tax incluido AQUÍ también: el total del drawer debe ser el MISMO que verá
+  // en el checkout (regla de oro: el precio jamás salta).
+  const tax = cartHas ? taxCents(subtotal) : 0;
+  const totF = fmt(subtotal + ship + tax);
   const shipF = fmt(ship);
-  const upsellLine = "y esto le encanta a gente como tú…";
+  // Copy honesto: el riel mezcla NPMI real con populares de la misma categoría
+  // (cold-start) — nada de afirmar "gente como tú" sin datos de gente como tú.
+  const upsellLine = "también te puede servir…";
   const cartIds = new Set(items.map((i) => i.product_id));
   const upsellShown = upsell.filter((p) => !cartIds.has(p.id));
 
@@ -274,6 +283,31 @@ export function CartDrawer() {
                   </div>
                 </div>
               )}
+
+              {/* Placements del agente en el carrito (slots 20-90): cada sección
+                  extra del slate se pinta como su propio riel con título. */}
+              {slateSections.slice(1).map((sec) => {
+                const secItems = sec.items.filter((p) => !cartIds.has(p.id));
+                if (secItems.length === 0) return null;
+                return (
+                  <div key={sec.placement_id} style={{ marginTop: 16 }}>
+                    <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, color: "#55565B" }}>{sec.title}</div>
+                    <div style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", marginTop: 10, paddingBottom: 4 }}>
+                      {secItems.map((p) => (
+                        <UpsellMini
+                          key={p.id}
+                          p={p}
+                          onOpen={() => {
+                            setOpen(false);
+                            router.push(`/products/${p.id}?src=direct`);
+                          }}
+                          onAdd={() => add({ id: p.id, title: p.title, price_cents: p.price_cents, category: p.category, image_url: p.image_url, source: p.source, weight_grams: p.weight_grams ?? null })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </>
           )}
         </div>
@@ -291,6 +325,10 @@ export function CartDrawer() {
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#55565B", marginTop: 6 }}>
               <span>Envío estimado (aéreo)</span>
               <span style={{ fontWeight: 600 }}>{shipF}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#55565B", marginTop: 6 }}>
+              <span>Impuestos ({taxPct()}%)</span>
+              <span style={{ fontWeight: 600 }}>{fmt(tax)}</span>
             </div>
             {hasMultipleStores(items.map((i) => i.source)) && (
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "#8E8F94", marginTop: 6 }}>

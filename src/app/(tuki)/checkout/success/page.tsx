@@ -10,13 +10,14 @@ function SuccessInner() {
   const params = useSearchParams();
   const orderId = params.get("order") ?? "";
   const metodo = params.get("m") ?? "aereo";
-  // El carrito ya se vació: sin tiendas conocidas, shipOptions usa el rango
-  // default conservador (el peso es irrelevante para los días).
   const opts = shipOptions(0);
   const m = opts.find((s) => s.id === metodo) ?? opts[0];
-  const okLine = orderId
-    ? `${etaLine(m.d1, m.d2)} en envío ${m.name.toLowerCase()} · pedido ${orderId}`
-    : `pedido ${orderId}`;
+  // d1/d2 en la URL = la MISMA eta que el checkout mostró al confirmar; solo
+  // si faltan (link viejo) se recalcula con el rango default conservador.
+  const d1 = parseInt(params.get("d1") ?? "", 10);
+  const d2 = parseInt(params.get("d2") ?? "", 10);
+  const eta = Number.isFinite(d1) && Number.isFinite(d2) ? etaLine(d1, d2) : etaLine(m.d1, m.d2);
+  const okLine = orderId ? `${eta} en envío ${m.name.toLowerCase()} · pedido ${orderId}` : `pedido ${orderId}`;
 
   return (
     <div style={{ animation: "screenIn .3s ease both", textAlign: "center", padding: "110px 30px" }}>

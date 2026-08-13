@@ -1,7 +1,7 @@
 // src/components/tuki/checkout-core.ts — lógica pura del checkout Tuki. Sin React, sin browser.
 // Envío por peso + validaciones. Calcado de dc.html shipCalc/shipErrs/billErrs (script 1112–1138)
 // con precios en centavos.
-import { estimateDeliveryForCart } from "@/lib/delivery";
+import { estimateDeliveryForCart, type CartDeliveryItem } from "@/lib/delivery";
 import { shipQuote, shipRateCentsPerLb, type ShipQuote, type ShipVia } from "@/lib/shipping";
 
 export type ShipId = ShipVia;
@@ -18,6 +18,7 @@ export interface ShipOption {
 }
 
 const VIA_META: Record<ShipVia, { icon: string; name: string; sub: string; reco?: boolean }> = {
+  express: { icon: "⚡", name: "Express", sub: "prioridad — llega primero" },
   aereo: { icon: "✈️", name: "Aéreo", sub: "en avión — se cobra por libra", reco: true },
   maritimo: { icon: "🚢", name: "Marítimo", sub: "en barco — más barato, ideal para lo pesado" },
 };
@@ -25,11 +26,11 @@ const VIA_META: Record<ShipVia, { icon: string; name: string; sub: string; reco?
 /** Vías de envío reales (spec B1): precio = libras cobrables × tarifa/lb
  * (ver src/lib/shipping.ts). Una vía sin tarifa configurada NO se ofrece.
  * Días honestos de src/lib/delivery.ts según las tiendas del carrito. */
-export function shipOptions(weightLb: number, sources: (string | null | undefined)[] = []): ShipOption[] {
-  return (["aereo", "maritimo"] as const)
+export function shipOptions(weightLb: number, cartItems: CartDeliveryItem[] = []): ShipOption[] {
+  return (["express", "aereo", "maritimo"] as const)
     .filter((via) => shipRateCentsPerLb(via) !== null)
     .map((via) => {
-      const days = estimateDeliveryForCart(sources, via);
+      const days = estimateDeliveryForCart(cartItems, via);
       return { id: via, ...VIA_META[via], quote: shipQuote(weightLb, via)!, d1: days.minDays, d2: days.maxDays };
     });
 }
@@ -40,6 +41,7 @@ export function validateShipping(f: {
   ci: string;
   tel: string;
   dir: string;
+  provincia: string;
   ciudad: string;
 }): Record<string, boolean> {
   return {
@@ -47,6 +49,7 @@ export function validateShipping(f: {
     ci: !/^\d{6,}$/.test(f.ci),
     tel: !f.tel.trim(),
     dir: !f.dir.trim(),
+    provincia: !f.provincia.trim(),
     ciudad: !f.ciudad.trim(),
   };
 }
