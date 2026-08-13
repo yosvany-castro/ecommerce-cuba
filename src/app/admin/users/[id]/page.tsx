@@ -12,7 +12,7 @@ export default async function UserDebugPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getAuthUser();
-  if (!session?.sub) redirect("/auth/login?returnTo=/admin/users" as Parameters<typeof redirect>[0]);
+  if (!session?.sub) redirect("/login?returnTo=/admin/users" as Parameters<typeof redirect>[0]);
   if (!(await requireAdmin())) redirect("/");
 
   const { id } = await params;
