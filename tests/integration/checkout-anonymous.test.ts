@@ -32,11 +32,15 @@ function makeReq(body: unknown, cookies: Record<string, string> = {}): NextReque
 }
 
 const shipping = {
-  nombre: "Dani Torres",
-  ci: "12345678",
-  tel: "55 1234 5678",
-  dir: "Av. Siempre Viva 742",
-  ciudad: "Ciudad de México",
+  nombre: "Dani",
+  apellidos: "Torres",
+  ci: "85010112345",
+  tel: "5 123 4567",
+  dir: "Calle 23 #456",
+  entre: "L y M",
+  reparto: "Vedado",
+  provincia: "La Habana",
+  ciudad: "Plaza de la Revolución",
   cp: "06100",
   via: "aereo" as const,
   // El server recalcula por libra + tax y compara contra esto (REGLA DE ORO).

@@ -18,9 +18,11 @@ describe("checkout core — envío por libra (spec B1)", () => {
   it("carrito vacío → quote en 0", () => {
     expect(shipOptions(0, [])[0].quote.ship_cents).toBe(0);
   });
-  it("valida carnet de 6+ dígitos y provincia requerida", () => {
-    expect(validateShipping({ nombre: "A", ci: "1234", tel: "5", dir: "d", provincia: "La Habana", ciudad: "c" }).ci).toBe(true);
-    expect(validateShipping({ nombre: "A", ci: "123456", tel: "5", dir: "d", provincia: "La Habana", ciudad: "c" }).ci).toBe(false);
-    expect(validateShipping({ nombre: "A", ci: "123456", tel: "5", dir: "d", provincia: "", ciudad: "c" }).provincia).toBe(true);
+  it("valida carnet de 11 dígitos, reparto y provincia requeridos", () => {
+    expect(validateShipping({ nombre: "A", apellidos: "B", tel: "5", dir: "d", entre: "e", reparto: "r", ci: "1234567890", provincia: "La Habana", ciudad: "c" }).ci).toBe(true);
+    expect(validateShipping({ nombre: "A", apellidos: "B", tel: "5", dir: "d", entre: "e", reparto: "r", ci: "12345678901", provincia: "La Habana", ciudad: "c" }).ci).toBe(false);
+    expect(validateShipping({ nombre: "A", apellidos: "B", tel: "5", dir: "d", entre: "e", reparto: "r", ci: "12345678901", provincia: "La Habana", ciudad: "c" }).reparto).toBe(false);
+    expect(validateShipping({ nombre: "A", apellidos: "B", tel: "5", dir: "d", entre: "e", reparto: "", ci: "12345678901", provincia: "La Habana", ciudad: "c" }).reparto).toBe(true);
+    expect(validateShipping({ nombre: "A", apellidos: "B", tel: "5", dir: "d", entre: "e", reparto: "r", ci: "12345678901", provincia: "", ciudad: "c" }).provincia).toBe(true);
   });
 });

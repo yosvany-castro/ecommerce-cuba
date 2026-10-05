@@ -2,21 +2,23 @@
 // src/components/tuki/CartDrawer.tsx — drawer de carrito Tuki (dc.html 738–820) + upsell
 // real (cart_addons de /api/slate/resolve). Downsell del diseño OMITIDO: no hay señal
 // backend equivalente (YAGNI, ver plan T9).
+import { imgSrcSet } from "@/lib/img";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
 import { hasMultipleStores } from "@/lib/delivery";
 import { shipQuote, taxCents, taxPct } from "@/lib/shipping";
-import { catOf, fmt, stripe } from "./lib";
+import { catOf, colorEs, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 import type { TukiCartItem } from "./cart-core";
 
 function itemVars(item: TukiCartItem) {
-  const varLine = [item.color, item.size].filter(Boolean).join(" · ");
+  const varLine = [item.color && colorEs(item.color), item.size].filter(Boolean).join(" · ");
   return {
     nameVar: item.title + (varLine ? ` (${varLine})` : ""),
     // T3: tienda al final, discreta — "$4.99 c/u · aliexpress".
-    meta: (varLine ? varLine + " · " : "") + fmt(item.price_cents) + " c/u" + (item.source ? " · " + item.source : ""),
+    // precio unitario solo con qty>1: con 1 repetía el total de la derecha
+    meta: [varLine, item.qty > 1 ? fmt(item.price_cents) + " c/u" : "", item.source].filter(Boolean).join(" · "),
   };
 }
 
@@ -27,7 +29,7 @@ function UpsellMini({ p, onOpen, onAdd, wide }: { p: StorefrontCard; onOpen: () 
       <div style={{ height: wide ? 110 : 66, borderRadius: 10, background: stripe(catOf(p.category)), display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {p.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.image_url} alt={p.title} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={p.image_url} srcSet={imgSrcSet(p.image_url)} sizes={wide ? "190px" : "110px"} alt={p.title} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 7.5, color: "#9a9b98" }}>foto</span>
         )}
@@ -236,7 +238,7 @@ export function CartDrawer() {
                       <div onClick={navToProduct} style={{ flex: "none", width: 60, height: 60, borderRadius: 12, background: stripe(catOf(item.category)), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
                         {item.image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.image_url} alt={item.title} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={item.image_url} srcSet={imgSrcSet(item.image_url)} sizes="60px" alt={item.title} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         ) : (
                           <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#9a9b98" }}>foto</span>
                         )}

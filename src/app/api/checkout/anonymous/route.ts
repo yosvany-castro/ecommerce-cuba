@@ -14,16 +14,25 @@ const bodySchema = z
     shipping: z
       .object({
         nombre: z.string().min(1),
-        ci: z.string().regex(/^\d{6,}$/),
+        apellidos: z.string().min(1),
+        // carnet de identidad cubano: 11 dígitos exactos
+        ci: z.string().regex(/^\d{11}$/),
         tel: z.string().min(1),
+        tel2: z.string().optional(),
         dir: z.string().min(1),
+        entre: z.string().min(1),
+        reparto: z.string().min(1),
         provincia: z.string().min(1),
         ciudad: z.string().min(1),
         cp: z.string().optional(),
         via: z.enum(["express", "aereo", "maritimo"]),
         ship_total_cents: z.number().int().min(0),
         tax_cents: z.number().int().min(0),
-        pago: z.enum(["tarjeta", "efectivo", "transfer"]),
+        pago: z.enum(["tarjeta", "efectivo", "transfer", "familiar"]),
+        // pago=familiar: token del link /pagar/<token> (lo genera el cliente
+        // para poder copiarlo ANTES de confirmar) + si ocultar los productos.
+        pay_token: z.string().uuid().optional(),
+        pay_hide_items: z.boolean().optional(),
         coupon_code: z.string().max(24).optional(),
         discount_cents: z.number().int().min(0).optional(),
         factura: z
@@ -90,8 +99,8 @@ export async function POST(req: NextRequest) {
     if (e instanceof Error && e.message === "empty_cart") {
       return NextResponse.json({ error: "empty_cart" }, { status: 400 });
     }
-    if (e instanceof Error && e.message === "bad_via") {
-      return NextResponse.json({ error: "bad_via" }, { status: 400 });
+    if (e instanceof Error && (e.message === "bad_via" || e.message === "missing_pay_token")) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
     }
     throw e;
   }

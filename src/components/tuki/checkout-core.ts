@@ -36,19 +36,27 @@ export function shipOptions(weightLb: number, cartItems: CartDeliveryItem[] = []
 }
 
 // Devuelve flags de ERROR por campo (true = inválido), como dc.html shipErrs.
+// Dirección cubana completa: la paquetería entrega por reparto/municipio y
+// pide el carnet de identidad (11 dígitos). tel2 es opcional.
 export function validateShipping(f: {
   nombre: string;
+  apellidos: string;
   ci: string;
   tel: string;
   dir: string;
+  entre: string;
+  reparto: string;
   provincia: string;
   ciudad: string;
 }): Record<string, boolean> {
   return {
     nombre: !f.nombre.trim(),
-    ci: !/^\d{6,}$/.test(f.ci),
+    apellidos: !f.apellidos.trim(),
+    ci: !/^\d{11}$/.test(f.ci),
     tel: !f.tel.trim(),
     dir: !f.dir.trim(),
+    entre: !f.entre.trim(),
+    reparto: !f.reparto.trim(),
     provincia: !f.provincia.trim(),
     ciudad: !f.ciudad.trim(),
   };

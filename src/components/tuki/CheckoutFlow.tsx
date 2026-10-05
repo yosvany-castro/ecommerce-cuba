@@ -3,9 +3,10 @@
 // Envío por peso real (useTukiCart().weightLb), validación por paso (ckTried),
 // pago + factura, revisar → POST /api/checkout/anonymous → success. Defaults
 // del formulario precargados (demo, dc.html script 990–991).
+import { imgSrcSet } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { catOf, fmt, stripe } from "./lib";
+import { catOf, colorEs, fmt, stripe } from "./lib";
 import { useTukiCart } from "./cart";
 import { cartKey } from "./cart-core";
 import { useToast } from "./Toast";
@@ -22,13 +23,26 @@ import { hasMultipleStores } from "@/lib/delivery";
 type PriceNote = { status: "changed"; from: number; to: number } | { status: "unavailable" } | { status: "unverifiable" };
 
 const STEP_LABELS = ["Envío", "Entrega", "Pago", "Revisar"];
+// Desde Cuba (por IP): sin facturación y sin paso "Revisar" — el pago cierra.
+const STEP_LABELS_CU = ["Envío", "Entrega", "Pago"];
 // Sin tarjeta: no hay procesador de pago — ofrecerla (con 4242 precargado)
 // era teatro. Métodos REALES hoy: efectivo al recibir y transferencia.
 const PAY_DEFS = [
   { id: "efectivo", label: "Efectivo al recibir", sub: "pagas en la puerta", mark: "💵" },
   { id: "transfer", label: "Transferencia", sub: "coordinamos el pago al confirmar", mark: "🏦" },
 ] as const;
-type PayId = (typeof PAY_DEFS)[number]["id"];
+// Desde Cuba: casillas desplegables. Tarjeta/cripto/balance aún sin procesador
+// (soon) — se muestran para que el cliente sepa que vienen, sin poder elegirlas
+// para confirmar. "familiar" crea la orden en esperando_pago con un link.
+const PAY_DEFS_CU = [
+  { id: "tarjeta", label: "Tarjeta", sub: "débito o crédito", mark: "💳", soon: true },
+  { id: "cripto", label: "Cripto", sub: "USDT y otras", mark: "🪙", soon: true },
+  { id: "balance", label: "Balance de la cuenta", sub: "tu saldo en Tuki", mark: "👛", soon: true },
+  { id: "efectivo", label: "Efectivo al recibir", sub: "pagas en la puerta", mark: "💵", soon: false },
+] as const;
+type PayId = (typeof PAY_DEFS)[number]["id"] | (typeof PAY_DEFS_CU)[number]["id"] | "familiar";
+const FAMILIAR_TIP =
+  "Te damos un enlace listo para que tu familiar pague desde donde esté. Tu orden queda completada y la preparamos en cuanto él pague.";
 
 // Provincias de Cuba — la paquetería entrega por provincia/municipio.
 const PROVINCIAS = [
@@ -51,7 +65,9 @@ const inputBase: React.CSSProperties = {
   outline: "none",
 };
 
-export function CheckoutFlow() {
+export function CheckoutFlow({ fromCuba = false }: { fromCuba?: boolean }) {
+  const stepLabels = fromCuba ? STEP_LABELS_CU : STEP_LABELS;
+  const lastStep = stepLabels.length;
   const router = useRouter();
   const toast = useToast();
   const { items, weightLb, clear, hydrated, remove, updatePrices } = useTukiCart();
@@ -154,9 +170,13 @@ export function CheckoutFlow() {
   // dirección inventada sin teclear nada).
   const [f, setF] = useState({
     nombre: "",
+    apellidos: "",
     ci: "",
     tel: "",
+    tel2: "",
     dir: "",
+    entre: "",
+    reparto: "",
     provincia: "",
     ciudad: "",
     cp: "",
@@ -165,6 +185,12 @@ export function CheckoutFlow() {
   const [pago, setPago] = useState<PayId>("efectivo");
   const [shipSel, setShipSel] = useState<ShipId>("aereo");
   const [billSame, setBillSame] = useState(true);
+  const [showTel2, setShowTel2] = useState(false);
+  // Link del familiar: el token se genera YA para poder copiarlo/enviarlo antes
+  // de completar la orden; el server lo guarda al confirmar (único, uuid v4).
+  const [payToken] = useState(() => crypto.randomUUID());
+  const [hideItems, setHideItems] = useState(false);
+  const payLink = typeof window === "undefined" ? "" : `${window.location.origin}/pagar/${payToken}`;
   // 409 totals_changed: el server recalculó envío/tax distinto a lo mostrado —
   // se pinta el suyo VISIBLEMENTE y se pide re-confirmar (REGLA DE ORO).
   // totalsNote guarda el de→a para que el cambio quede EXPLICADO en pantalla
@@ -222,7 +248,7 @@ export function CheckoutFlow() {
   const billErrs = validateBilling(billSame, fb);
   const errs = ckTried ? shipErrs : {};
   const berrs = ckTried ? billErrs : {};
-  const idOk = /^\d{6,}$/.test(f.ci);
+  const idOk = /^\d{11}$/.test(f.ci);
   const bd = (k: string) => (errs[k] ? "#C96A55" : "#ECECE7");
   const bbd = (k: string) => (berrs[k] ? "#C96A55" : "#ECECE7");
 
@@ -237,12 +263,12 @@ export function CheckoutFlow() {
       toast("revisa los campos marcados");
       return;
     }
-    if (step === 3 && Object.values(billErrs).some(Boolean)) {
+    if (step === 3 && !fromCuba && Object.values(billErrs).some(Boolean)) {
       setCkTried(true);
       toast("completa los datos de factura");
       return;
     }
-    setStep((s) => Math.min(4, s + 1));
+    setStep((s) => Math.min(lastStep, s + 1));
     setCkTried(false);
   };
 
@@ -264,9 +290,13 @@ export function CheckoutFlow() {
           items: items.map((i) => ({ product_id: i.product_id, quantity: i.qty, color: i.color, size: i.size, unit_price_cents: i.price_cents })),
           shipping: {
             nombre: f.nombre,
+            apellidos: f.apellidos,
             ci: f.ci,
             tel: f.tel,
+            ...(f.tel2.trim() ? { tel2: f.tel2 } : {}),
             dir: f.dir,
+            entre: f.entre,
+            reparto: f.reparto,
             provincia: f.provincia,
             ciudad: f.ciudad,
             ...(f.cp.trim() ? { cp: f.cp } : {}),
@@ -274,8 +304,9 @@ export function CheckoutFlow() {
             ship_total_cents: shipCostCents,
             tax_cents: taxCentsShown,
             pago,
+            ...(pago === "familiar" ? { pay_token: payToken, pay_hide_items: hideItems } : {}),
             ...(coupon ? { coupon_code: coupon.code, discount_cents: discountShown } : {}),
-            ...(billSame ? {} : { factura: { razon: fb.razon, rfc: fb.rfc, correo: fb.correo, dirf: fb.dirf } }),
+            ...(fromCuba || billSame ? {} : { factura: { razon: fb.razon, rfc: fb.rfc, correo: fb.correo, dirf: fb.dirf } }),
           },
         }),
       });
@@ -341,14 +372,15 @@ export function CheckoutFlow() {
       clear();
       // d1/d2: la MISMA eta que el usuario acaba de ver — success no recalcula
       // (antes mostraba una tercera fecha distinta).
-      router.push(`/checkout/success?order=${encodeURIComponent(body.order_id)}&m=${sel}&d1=${cur.d1}&d2=${cur.d2}`);
+      const pay = pago === "familiar" ? `&pay=${payToken}` : "";
+      router.push(`/checkout/success?order=${encodeURIComponent(body.order_id)}&m=${sel}&d1=${cur.d1}&d2=${cur.d2}${pay}`);
     } catch {
       toast("no pudimos confirmar el pedido — intenta de nuevo");
       setPending(false);
     }
   };
 
-  const ckSteps = STEP_LABELS.map((label, i) => ({
+  const ckSteps = stepLabels.map((label, i) => ({
     label,
     bar: step > i ? "#1C1D20" : "#E7E7E2",
     fg: step === i + 1 ? "#1C1D20" : "#8E8F94",
@@ -443,37 +475,18 @@ export function CheckoutFlow() {
             <>
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26 }}>¿a dónde lo llevamos?</div>
               <div style={{ fontSize: 13, color: "#8E8F94", margin: "6px 0 18px" }}>
-                estos datos viajan con el paquete — los de factura van aparte, en el paso de pago
+                {fromCuba ? "estos datos viajan con el paquete hasta la puerta" : "estos datos viajan con el paquete — los de factura van aparte, en el paso de pago"}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 13, maxWidth: 520 }}>
                 <div style={{ display: "flex", gap: 13 }}>
-                  {field("Nombre completo", "nombre", 1.5)}
-                  {field("Teléfono", "tel", 1)}
+                  {field("Nombre", "nombre", 1)}
+                  {field("Apellidos", "apellidos", 1)}
                 </div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94" }}>Nº de identificación</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "#B0B1AE" }}>solo números · 6–12 dígitos</span>
-                  </div>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      value={f.ci}
-                      onChange={(e) => setF((s) => ({ ...s, ci: e.target.value.replace(/\D/g, "").slice(0, 12) }))}
-                      placeholder="p. ej. 0034125987"
-                      style={{ ...inputBase, padding: "0 44px 0 16px", fontFamily: "var(--font-mono)", border: `1px solid ${errs.ci ? "#C96A55" : idOk ? "#8FB08F" : "#ECECE7"}` }}
-                    />
-                    {idOk && (
-                      <div style={{ position: "absolute", right: 14, top: 14, width: 24, height: 24, borderRadius: "50%", background: "#EAF2EA", color: "#557A55", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>
-                    )}
-                  </div>
-                  {errs.ci && (
-                    <div style={{ fontSize: 12, color: "#B4533F", fontWeight: 600, marginTop: 5 }}>
-                      {f.ci ? "muy corto — mínimo 6 dígitos" : "lo necesitamos para la guía de envío"}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 11.5, color: "#9A9B9F", marginTop: 5 }}>✦ lo pide la paquetería para entregarte — no lo usamos para nada más</div>
+                {field("Calle y número", "dir", 1, { ph: "p. ej. Calle 23 #456, apto 3" })}
+                <div style={{ display: "flex", gap: 13 }}>
+                  {field("Entre calles", "entre", 1, { ph: "p. ej. L y M" })}
+                  {field("Reparto", "reparto", 1, { ph: "p. ej. Vedado" })}
                 </div>
-                {field("Dirección de entrega", "dir", 1, { ph: "calle, número, entre calles…" })}
                 <div style={{ display: "flex", gap: 13 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94", marginBottom: 6 }}>Provincia</div>
@@ -482,13 +495,50 @@ export function CheckoutFlow() {
                       onChange={(e) => setF((s) => ({ ...s, provincia: e.target.value }))}
                       style={{ ...inputBase, border: `1px solid ${bd("provincia")}`, appearance: "none", cursor: "pointer" }}
                     >
-                      <option value="" disabled>elige tu provincia…</option>
+                      <option value="" disabled>elige la provincia…</option>
                       {PROVINCIAS.map((p) => (
                         <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
                   </div>
-                  {field("Municipio", "ciudad", 1, { ph: "p. ej. Centro Habana" })}
+                  {field("Municipio", "ciudad", 1, { ph: "p. ej. Plaza de la Revolución" })}
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: "#8E8F94" }}>Carnet de identidad</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "#B0B1AE" }}>11 dígitos</span>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      value={f.ci}
+                      inputMode="numeric"
+                      onChange={(e) => setF((s) => ({ ...s, ci: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
+                      placeholder="p. ej. 85010112345"
+                      style={{ ...inputBase, padding: "0 44px 0 16px", fontFamily: "var(--font-mono)", border: `1px solid ${errs.ci ? "#C96A55" : idOk ? "#8FB08F" : "#ECECE7"}` }}
+                    />
+                    {idOk && (
+                      <div style={{ position: "absolute", right: 14, top: 14, width: 24, height: 24, borderRadius: "50%", background: "#EAF2EA", color: "#557A55", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>
+                    )}
+                  </div>
+                  {errs.ci && (
+                    <div style={{ fontSize: 12, color: "#B4533F", fontWeight: 600, marginTop: 5 }}>
+                      {f.ci ? `${11 - f.ci.length === 1 ? "falta 1 dígito" : `faltan ${11 - f.ci.length} dígitos`} — el carnet tiene 11` : "lo necesitamos para la guía de envío"}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11.5, color: "#9A9B9F", marginTop: 5 }}>✦ lo pide la paquetería para entregar — no lo usamos para nada más</div>
+                </div>
+                <div style={{ display: "flex", gap: 13 }}>
+                  {field("Teléfono", "tel", 1, { ph: "p. ej. 5 123 4567" })}
+                  {showTel2 ? (
+                    field("Otro teléfono (opcional)", "tel2", 1)
+                  ) : (
+                    <div
+                      onClick={() => setShowTel2(true)}
+                      style={{ flex: 1, alignSelf: "flex-end", height: 52, display: "flex", alignItems: "center", fontSize: 13.5, fontWeight: 600, color: "#55565B", cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      + agregar otro número
+                    </div>
+                  )}
                 </div>
                 {cta("Continuar →", ckNext)}
               </div>
@@ -547,8 +597,59 @@ export function CheckoutFlow() {
             </>
           )}
 
+          {/* paso 3 (Cuba) · pago: casillas que se despliegan al elegirlas */}
+          {step === 3 && fromCuba && (
+            <>
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26, marginBottom: 18 }}>¿cómo quieres pagar?</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 11, maxWidth: 520 }}>
+                {PAY_DEFS_CU.map((po) => (
+                  <PayCard key={po.id} id={po.id} label={po.label} sub={po.sub} mark={po.mark}>
+                    {po.soon ? (
+                      <div style={{ fontSize: 13, color: "#8E8F94" }}>
+                        muy pronto — por ahora paga en efectivo al recibir o envíale el enlace a un familiar
+                      </div>
+                    ) : (
+                      cta(pending ? "Confirmando…" : `Confirmar pedido · ${fmt(totalCents)}`, ckConfirm)
+                    )}
+                  </PayCard>
+                ))}
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#8E8F94", letterSpacing: ".6px", marginTop: 8 }}>O QUE PAGUE UN FAMILIAR</div>
+                <PayCard
+                  id="familiar"
+                  label="Enviar link para familiar"
+                  sub="paga desde donde esté, con su tarjeta"
+                  mark="🔗"
+                  tip={FAMILIAR_TIP}
+                >
+                  <div style={{ display: "flex", gap: 9 }}>
+                    <a
+                      href={`mailto:?subject=${encodeURIComponent("¿Me ayudas a pagar mi pedido en Tuki?")}&body=${encodeURIComponent(`Hola, hice un pedido en Tuki por ${fmt(totalCents)}. Puedes pagarlo aquí: ${payLink}`)}`}
+                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 12, border: "1px solid #ECECE7", background: "#FAFAF8", color: "#1C1D20", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}
+                    >
+                      ✉️ Enviar por correo
+                    </a>
+                    <div
+                      onClick={() => navigator.clipboard.writeText(payLink).then(() => toast("enlace copiado"), () => toast("no se pudo copiar — cópialo a mano"))}
+                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 12, border: "1px solid #ECECE7", background: "#FAFAF8", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}
+                    >
+                      🔗 Copiar enlace
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#8E8F94", marginTop: 8, wordBreak: "break-all" }}>{payLink}</div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, fontSize: 13.5, cursor: "pointer" }}>
+                    <input type="checkbox" checked={hideItems} onChange={(e) => setHideItems(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#1C1D20" }} />
+                    Ocultar los productos de mi orden
+                    <span style={{ fontSize: 12, color: "#8E8F94" }}>(tu familiar solo verá el total)</span>
+                  </label>
+                  {cta(pending ? "Completando…" : "Completar orden y esperar a que mi familiar pague", ckConfirm)}
+                  <div style={{ fontSize: 11.5, color: "#9A9B9F", marginTop: 6 }}>✦ el enlace funciona en cuanto completes la orden</div>
+                </PayCard>
+              </div>
+            </>
+          )}
+
           {/* paso 3 · pago + factura */}
-          {step === 3 && (
+          {step === 3 && !fromCuba && (
             <>
               <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 26, marginBottom: 18 }}>¿cómo quieres pagar?</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11, maxWidth: 520 }}>
@@ -572,7 +673,7 @@ export function CheckoutFlow() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14.5, fontWeight: 700 }}>Facturar con los datos de envío</div>
                       <div style={{ fontSize: 12, color: "#8E8F94", marginTop: 2 }}>
-                        {billSame ? `la factura sale a nombre de ${f.nombre}` : "factura a otro nombre, empresa o RFC"}
+                        {billSame ? `la factura sale a nombre de ${f.nombre} ${f.apellidos}` : "factura a otro nombre, empresa o RFC"}
                       </div>
                     </div>
                     <div style={{ flex: "none", width: 42, height: 23, borderRadius: 999, background: billSame ? "#1C1D20" : "#E3E3DE", position: "relative", transition: "background .25s" }}>
@@ -616,8 +717,12 @@ export function CheckoutFlow() {
                 {/* aviso de precio/disponibilidad: ver el bloque generalizado
                     arriba de la barra de progreso (visible desde el paso 1) */}
                 <ReviewCard title="ENVÍO" onEdit={() => setStep(1)}>
-                  <div style={{ fontSize: 14.5, marginTop: 6, lineHeight: 1.5 }}>{f.nombre} · {f.dir}, {f.ciudad}, {f.provincia}</div>
-                  <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 2 }}>ID {f.ci} · tel. {f.tel}</div>
+                  <div style={{ fontSize: 14.5, marginTop: 6, lineHeight: 1.5 }}>
+                    {f.nombre} {f.apellidos} · {f.dir}, e/ {f.entre}, {f.reparto}, {f.ciudad}, {f.provincia}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 2 }}>
+                    CI {f.ci} · tel. {f.tel}{f.tel2.trim() ? ` / ${f.tel2}` : ""}
+                  </div>
                 </ReviewCard>
                 <ReviewCard title="ENTREGA" onEdit={() => setStep(2)}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
@@ -627,7 +732,7 @@ export function CheckoutFlow() {
                   <div style={{ fontSize: 12.5, color: "#557A55", marginTop: 2 }}>{etaLine(cur.d1, cur.d2)}</div>
                 </ReviewCard>
                 <ReviewCard title="PAGO" onEdit={() => setStep(3)}>
-                  <div style={{ fontSize: 14.5, marginTop: 6 }}>{PAY_DEFS.find((p) => p.id === pago)!.label}</div>
+                  <div style={{ fontSize: 14.5, marginTop: 6 }}>{PAY_DEFS.find((p) => p.id === pago)?.label}</div>
                 </ReviewCard>
                 <ReviewCard title="FACTURA" onEdit={() => setStep(3)}>
                   <div style={{ fontSize: 14.5, marginTop: 6 }}>{billSame ? `con los datos de envío — ${f.nombre}` : `${fb.razon} · ${fb.rfc}`}</div>
@@ -652,13 +757,13 @@ export function CheckoutFlow() {
             {items.map((ri) => {
               // miniatura + título recortado (spec B1-D5): los títulos de
               // proveedor son kilométricos — 1 línea con clamp, meta debajo.
-              const meta = [ri.color, ri.size, ri.source].filter(Boolean).join(" · ");
+              const meta = [ri.color && colorEs(ri.color), ri.size, ri.source].filter(Boolean).join(" · ");
               return (
                 <div key={ri.key} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13.5, color: "#55565B" }}>
                   <div style={{ flex: "none", width: 40, height: 40, borderRadius: 10, background: stripe(catOf(ri.category)), overflow: "hidden" }}>
                     {ri.image_url && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ri.image_url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={ri.image_url} srcSet={imgSrcSet(ri.image_url)} sizes="40px" alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     )}
                   </div>
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -733,6 +838,33 @@ export function CheckoutFlow() {
   );
 
   // helpers de render (mismo componente, evita props drilling)
+  // Casilla de pago que se despliega al elegirla (checkout Cuba).
+  function PayCard({ id, label, sub, mark, tip, children }: { id: PayId; label: string; sub: string; mark: string; tip?: string; children: React.ReactNode }) {
+    const on = pago === id;
+    return (
+      <div style={{ background: "#fff", borderRadius: 16, border: `1.5px solid ${on ? "#1C1D20" : "#EFEFEA"}`, transition: "border-color .2s" }}>
+        <div onClick={() => setPago(id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", cursor: "pointer" }}>
+          <div style={{ flex: "none", width: 20, height: 20, borderRadius: 6, border: `2px solid ${on ? "#1C1D20" : "#D8D8D3"}`, background: on ? "#1C1D20" : "#fff", color: "#fff", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {on && "✓"}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 15, fontWeight: 600 }}>
+              {label}
+              {tip && (
+                <span title={tip} aria-label={tip} style={{ width: 17, height: 17, borderRadius: "50%", border: "1.5px solid #B0B1AE", color: "#8E8F94", fontSize: 10.5, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "help" }}>
+                  i
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12.5, color: "#8E8F94", marginTop: 1 }}>{sub}</div>
+          </div>
+          <span style={{ fontSize: 17 }}>{mark}</span>
+        </div>
+        {on && <div style={{ padding: "0 18px 16px", animation: "secIn .25s ease both" }}>{children}</div>}
+      </div>
+    );
+  }
+
   function ReviewCard({ title, onEdit, children }: { title: string; onEdit: () => void; children: React.ReactNode }) {
     return (
       <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #EFEFEA", padding: "16px 18px" }}>

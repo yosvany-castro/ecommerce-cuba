@@ -17,12 +17,28 @@ function SuccessInner() {
   const d1 = parseInt(params.get("d1") ?? "", 10);
   const d2 = parseInt(params.get("d2") ?? "", 10);
   const eta = Number.isFinite(d1) && Number.isFinite(d2) ? etaLine(d1, d2) : etaLine(m.d1, m.d2);
+  const pay = params.get("pay");
+  const payLink = pay && typeof window !== "undefined" ? `${window.location.origin}/pagar/${pay}` : "";
   const okLine = orderId ? `${eta} en envío ${m.name.toLowerCase()} · pedido ${orderId}` : `pedido ${orderId}`;
 
   return (
     <div style={{ animation: "screenIn .3s ease both", textAlign: "center", padding: "110px 30px" }}>
       <div style={{ width: 100, height: 100, borderRadius: "50%", background: "#1C1D20", color: "#fff", fontSize: 42, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", animation: "checkPop .5s cubic-bezier(.2,.8,.2,1) both" }}>✓</div>
-      <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 800, letterSpacing: "-0.7px", marginTop: 26 }}>¡Pedido en camino!</div>
+      <div style={{ fontFamily: "var(--font-brico)", fontSize: 34, fontWeight: 800, letterSpacing: "-0.7px", marginTop: 26 }}>
+        {pay ? "¡Orden completada!" : "¡Pedido en camino!"}
+      </div>
+      {pay && (
+        <div style={{ maxWidth: 460, margin: "18px auto 0", background: "#fff", border: "1px solid #EFEFEA", borderRadius: 16, padding: "14px 18px", fontSize: 14, color: "#55565B" }}>
+          la preparamos en cuanto tu familiar pague. su enlace:
+          <div
+            onClick={() => navigator.clipboard.writeText(payLink)}
+            title="copiar"
+            style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#1C1D20", marginTop: 8, wordBreak: "break-all", cursor: "copy" }}
+          >
+            {payLink} 📋
+          </div>
+        </div>
+      )}
       <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 19, color: "#55565B", marginTop: 10 }}>{okLine}</div>
       <div style={{ display: "inline-block", background: "#EAF2EA", color: "#557A55", borderRadius: 16, padding: "14px 22px", fontSize: 14, marginTop: 24 }}>✦ tu feed ya aprendió de esta compra — verás mejores sugerencias</div>
       <div style={{ marginTop: 26 }}>

@@ -34,6 +34,9 @@ export interface AnonymousOrderInput {
      * el server lo recalcula y 409 si difiere). */
     coupon_code?: string;
     discount_cents?: number;
+    pago?: string;
+    pay_token?: string;
+    pay_hide_items?: boolean;
   };
 }
 
@@ -160,7 +163,12 @@ export async function createAnonymousOrder(
     if (couponCode && discount > 0) {
       await pg.query(`UPDATE coupons SET uses = uses + 1 WHERE code = $1`, [couponCode]);
     }
-    const shippingWithPrice = { ...input.shipping, ...quote, via, tax_cents: tax, discount_cents: discount };
+    // pago=familiar: la orden se crea "completada" para el comprador pero en
+    // 'esperando_pago' hasta que el familiar pague por /pagar/<pay_token>.
+    const familiar = input.shipping.pago === "familiar";
+    if (familiar && !input.shipping.pay_token) throw new Error("missing_pay_token");
+    const { pay_token, pay_hide_items, ...shippingRest } = input.shipping;
+    const shippingWithPrice = { ...shippingRest, ...quote, via, tax_cents: tax, discount_cents: discount };
 
     // Contabilidad honesta (0038): total_charged = el cobro COMPLETO al
     // cliente (productos + envío + tax). El costo real no se conoce aquí —
@@ -168,10 +176,17 @@ export async function createAnonymousOrder(
     // proveedor); margin_cents (generada) queda NULL: nada de 60% inventado.
     const totalCharged = productsSubtotal - discount + quote.ship_cents + tax;
     const order = await pg.query(
-      `INSERT INTO orders (user_id, status, total_charged_cents, total_cost_cents, shipping)
-       VALUES ($1, 'pendiente', $2, NULL, $3::jsonb)
+      `INSERT INTO orders (user_id, status, total_charged_cents, total_cost_cents, shipping, pay_token, pay_hide_items)
+       VALUES ($1, $4::order_status, $2, NULL, $3::jsonb, $5, $6)
        RETURNING id`,
-      [userId, totalCharged, JSON.stringify(shippingWithPrice)],
+      [
+        userId,
+        totalCharged,
+        JSON.stringify(shippingWithPrice),
+        familiar ? "esperando_pago" : "pendiente",
+        familiar ? pay_token : null,
+        familiar ? (pay_hide_items ?? false) : false,
+      ],
     );
     const orderId: string = order.rows[0].id;
 
