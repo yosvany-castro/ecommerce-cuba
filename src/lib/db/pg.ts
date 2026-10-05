@@ -67,6 +67,8 @@ function getPool(scope: Scope): Pool {
       max: 3,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 2_000,
+      // el pooler/NAT corta sockets ociosos sin avisar → "terminated unexpectedly"
+      keepAlive: true,
       allowExitOnIdle: true,
     });
     // A dead idle connection must never crash the process.
@@ -84,7 +86,9 @@ function getPool(scope: Scope): Pool {
  * error so a half-open transaction never leaks to the next acquirer).
  */
 export async function getPooledPg(scope: Scope): Promise<PoolClient> {
-  const client = await getPool(scope).connect();
+  // ponytail: 1 reintento — un socket muerto en el handshake es transitorio;
+  // si falla dos veces es caída real y debe propagarse.
+  const client = await getPool(scope).connect().catch(() => getPool(scope).connect());
   if (!configured.has(client)) {
     const statements = [`SET search_path TO ${SEARCH_PATH[scope]}`];
     if (scope === "public") {

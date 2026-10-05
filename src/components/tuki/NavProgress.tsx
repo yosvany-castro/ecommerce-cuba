@@ -63,7 +63,9 @@ function NavProgressInner() {
     const origPush = history.pushState.bind(history);
     const origReplace = history.replaceState.bind(history);
     history.pushState = (...args) => {
-      start();
+      // Next llama pushState dentro de useInsertionEffect, donde setState está
+      // prohibido — diferir al siguiente microtask.
+      queueMicrotask(start);
       return origPush(...args);
     };
     history.replaceState = (...args) => {

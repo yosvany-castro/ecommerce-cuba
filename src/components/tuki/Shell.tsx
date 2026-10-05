@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { track } from "@/lib/client/track";
-import { CATS, fmt } from "./lib";
+import { CATS } from "./lib";
 import { useTukiCart } from "./cart";
 import { useToast } from "./Toast";
 import { DEMO_PROFILES, AVATAR_COLORS, profileForAnonId, type DemoProfile } from "./profiles";
@@ -39,7 +39,7 @@ function setAnonymousIdCookie(id: string): void {
 export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { count, subtotal, setOpen } = useTukiCart();
+  const { count, setOpen } = useTukiCart();
   const showToast = useToast();
 
   const [avisoIdx, setAvisoIdx] = useState(0);
@@ -578,7 +578,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            {/* carro — pill v2: ícono + subtotal visible + badge de count */}
+            {/* carro — pill v2: ícono + badge de count */}
             <div
               data-testid="tuki-cart-btn"
               onClick={() => {
@@ -603,14 +603,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <rect x="3" y="6.5" width="14" height="10.5" rx="3" fill="none" stroke="#1C1D20" strokeWidth="1.8" />
                 <path d="M7 6.5 a3 3 0 0 1 6 0" fill="none" stroke="#1C1D20" strokeWidth="1.8" />
               </svg>
-              {count > 0 && (
-                <span key={count} style={{ fontSize: 12.5, fontWeight: 700, animation: "popIn .35s ease both" }}>
-                  {fmt(subtotal)}
-                </span>
-              )}
+              {/* sin precio aquí: era el subtotal y el carro muestra el total con
+                  envío+tax — dos números distintos para "lo mismo" */}
               {count > 0 && (
                 <div
-                  key={count}
+                  key={`badge-${count}`}
                   style={{
                     position: "absolute",
                     top: -4,

@@ -83,7 +83,9 @@ export function TukiCartProvider({ children }: { children: React.ReactNode }) {
       writeLocal(next);
       setItems(next);
       track("add_to_cart", { product_id: snap.id, quantity: qty }, { urgent: true });
-      showToast(`✓ agregado — ${snap.title}`);
+      // nombre corto: los títulos del marketplace son kilométricos
+      const short = snap.title.split(/\s+/).slice(0, 4).join(" ");
+      showToast(`✓ Agregado: ${short}${short.length < snap.title.length ? "…" : ""}`);
     },
     [showToast],
   );
