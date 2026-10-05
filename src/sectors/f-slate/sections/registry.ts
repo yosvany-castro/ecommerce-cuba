@@ -19,6 +19,23 @@ const limitSchema = (def: number, max: number) =>
 // sección similar). Fallback honesto mientras co_occurrence_top acumula
 // tráfico real — con pocas sesiones la tabla NPMI está vacía y los rieles
 // quedaban en blanco (bug reportado: "no aparece ninguna recomendación").
+/** promo: anuncio PROPIO (lo elige Yosvany en /admin/promos) — los productos
+ * tal cual los puso, en su orden; solo se caen los desactivados. */
+const promo: SectionResolver<{ product_ids: string[] }> = {
+  section_type: "promo",
+  paramsSchema: z.object({ product_ids: z.array(z.uuid()).max(30).catch([]).default([]) }).loose(),
+  async resolve(params, _ctx: ResolveCtx, pg: Client) {
+    if (params.product_ids.length === 0) return [];
+    const r = await pg.query(
+      `SELECT id::text AS id FROM products
+       WHERE id = ANY($1::uuid[]) AND is_active = true
+       ORDER BY array_position($1::uuid[], id)`,
+      [params.product_ids],
+    );
+    return (r.rows as { id: string }[]).map((x) => x.id);
+  },
+};
+
 /** cross_sell: "combina con esto" — NPMI co-occurrence from the PDP anchor;
  * con NPMI escaso cae a populares de la categoría complementaria. */
 const crossSell: SectionResolver<{ limit: number }> = {
@@ -199,5 +216,6 @@ export const SECTION_REGISTRY: Record<string, SectionResolver<never>> = {
   similar: similar as SectionResolver<never>,
   upsell: upsell as SectionResolver<never>,
   intent_complements: intentComplements as SectionResolver<never>,
+  promo: promo as SectionResolver<never>,
   // hero_grid: caso especial del runner (slate feed completo, ya hidratado).
 };

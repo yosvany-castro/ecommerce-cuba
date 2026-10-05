@@ -1,5 +1,6 @@
 "use client";
 // src/components/tuki/ProductCard.tsx — tarjeta de producto Tuki (dc.html 170–183 aisle / 261–274 grid).
+import { imgSrcSet, imgTiny } from "@/lib/img";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard } from "@/storefront/contract";
@@ -16,6 +17,7 @@ export function ProductCard({
   variant = "aisle",
   seenSlate,
   seenPos,
+  eager,
 }: {
   card: StorefrontCard;
   source: CardSource;
@@ -23,6 +25,9 @@ export function ProductCard({
   // Slate + posición del card en el hero_grid: reporta "visto" (E3). Ausentes → no reporta.
   seenSlate?: string | null;
   seenPos?: number;
+  /** Primera fila de un listado: sin lazy (la foto del arriba-del-pliegue no
+   * puede esperar a que el navegador termine de pintar). */
+  eager?: boolean;
 }) {
   const router = useRouter();
   const { add } = useTukiCart();
@@ -111,18 +116,31 @@ export function ProductCard({
           overflow: "hidden",
         }}
       >
+        {card.image_url && imgTiny(card.image_url) && (
+          // vista previa borrosa ~1 KB: lo primero que se ve en 3G (la nítida la tapa)
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imgTiny(card.image_url)}
+            alt=""
+            aria-hidden
+            loading={eager || (card.position ?? 99) <= 4 ? "eager" : "lazy"}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "blur(10px)", transform: "scale(1.08)" }}
+          />
+        )}
         {card.image_url ? (
           // 3G: lazy salvo las primeras posiciones del feed (LCP). Las 20 fotos
           // de la home ya no compiten con JS/fuentes por el ancho de banda.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={card.image_url}
+            srcSet={imgSrcSet(card.image_url)}
+            sizes={isGrid ? "(max-width: 700px) 46vw, 290px" : "198px"}
             alt={card.title}
-            loading={(card.position ?? 99) <= 4 ? "eager" : "lazy"}
+            loading={eager || (card.position ?? 99) <= 4 ? "eager" : "lazy"}
             fetchPriority={(card.position ?? 99) <= 2 ? "high" : undefined}
             decoding="async"
             onError={(e) => { e.currentTarget.style.display = "none"; }}
-            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+            style={{ position: "relative", width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
           />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9a9b98" }}>foto producto</span>

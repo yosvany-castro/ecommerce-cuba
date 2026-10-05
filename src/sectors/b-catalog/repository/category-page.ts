@@ -1,6 +1,5 @@
 import type { Client } from "pg";
 import { isPopularityTableReady } from "@/sectors/d-personalization/popularity/recompute";
-import { imgSrc } from "@/lib/img";
 
 /**
  * Category landing data (D6): DETERMINISTIC, cookie-free, popularity-ordered
@@ -17,6 +16,11 @@ export interface CategoryPageItem {
   currency: string;
   image_url: string | null;
   source: string; // amazon|aliexpress|shein|walmart (T3: badge discreto de tienda)
+  // metadata/peso/url: sin ellos la tarjeta de categoría salía sin oferta,
+  // valoración, colores ni tallas — y esos filtros no podían funcionar acá.
+  metadata: unknown;
+  weight_grams: number | null;
+  url: string | null;
 }
 
 export const CATEGORY_PAGE_SIZE = 24;
@@ -33,7 +37,7 @@ export async function fetchCategoryPage(
   // por fecha. Público cubano prefiere lo barato incluso en la landing de categoría.
   const r = usePop
     ? await pg.query(
-        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url, p.source
+        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url, p.source, p.metadata, p.weight_grams, p.url
          FROM products p
          LEFT JOIN product_popularity_7d pop ON pop.product_id = p.id
          WHERE p.is_active = true AND p.metadata->>'category' = $1
@@ -42,7 +46,7 @@ export async function fetchCategoryPage(
         [category, CATEGORY_PAGE_SIZE + 1, offset],
       )
     : await pg.query(
-        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url, p.source
+        `SELECT p.id::text, p.title, p.price_cents, p.currency, p.image_url, p.source, p.metadata, p.weight_grams, p.url
          FROM products p
          WHERE p.is_active = true AND p.metadata->>'category' = $1
          ORDER BY p.price_cents ASC, p.created_at DESC, p.id ASC
@@ -51,9 +55,8 @@ export async function fetchCategoryPage(
       );
   const rows = r.rows as CategoryPageItem[];
   return {
-    // 3G: la categoría no pasa por toCard (bug visto midiendo: aliexpress/shein
-    // salían a tamaño original acá) — mismo resize de card que el resto.
-    items: rows.slice(0, CATEGORY_PAGE_SIZE).map((it) => ({ ...it, image_url: imgSrc(it.image_url, it.source, 350) })),
+    // URL de imagen CRUDA: la page la pasa por toCard (resize 3G incluido).
+    items: rows.slice(0, CATEGORY_PAGE_SIZE),
     hasNext: rows.length > CATEGORY_PAGE_SIZE,
   };
 }

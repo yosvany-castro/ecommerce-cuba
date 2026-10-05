@@ -1,6 +1,7 @@
 "use client";
 // src/components/tuki/HomeFeed.tsx — home Tuki (dc.html 142–300): greeting + chips,
 // secciones (aisle/focus/grid) del feed real seccionado, scroll infinito y seen-reporting.
+import { imgSrcSet } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
@@ -80,7 +81,7 @@ function FocusCard({
       >
         {card.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={card.image_url} alt={card.title} loading="eager" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
+          <img src={card.image_url} srcSet={imgSrcSet(card.image_url, 640)} sizes="(max-width: 700px) 92vw, 560px" alt={card.title} loading="eager" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
         ) : (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9a9b98" }}>foto producto grande</span>
         )}
@@ -183,7 +184,7 @@ function BentoMini({ card, onOpen, extra }: { card: StorefrontCard; onOpen: () =
       <div style={{ flex: "none", width: 40, height: 40, borderRadius: 10, background: stripe(catOf(card.category)), overflow: "hidden" }}>
         {card.image_url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={card.image_url} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={card.image_url} srcSet={imgSrcSet(card.image_url)} sizes="48px" alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -390,7 +391,7 @@ export function HomeFeed({
                 <div style={{ flex: "none", width: 74, height: 74, borderRadius: 14, background: stripe(catOf(slotCard.category)), overflow: "hidden" }}>
                   {slotCard.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={slotCard.image_url} alt="" loading="eager" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={slotCard.image_url} srcSet={imgSrcSet(slotCard.image_url)} sizes="72px" alt="" loading="eager" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>

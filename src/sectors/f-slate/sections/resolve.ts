@@ -51,7 +51,8 @@ export async function resolveSections(
       placement_id: p.placement_id,
       section_type: p.section_type,
       slot: p.slot,
-      title: p.title_default,
+      // título propio por placement (anuncios de /admin/promos), si no el del catálogo
+      title: typeof p.params?.title === "string" && p.params.title.trim() ? p.params.title.trim() : p.title_default,
       display: p.display,
     };
 
@@ -118,14 +119,17 @@ export async function resolveSections(
       continue;
     }
     const params = fallback.data as never;
-    const limit = (params as { limit?: number }).limit ?? p.min_items;
+    // promo = anuncio propio: se muestra COMPLETO y tal cual (sin límite ni
+    // dedupe contra otras secciones — es decisión del dueño, no del ranking).
+    const isPromo = p.section_type === "promo";
+    const limit = isPromo ? 30 : ((params as { limit?: number }).limit ?? p.min_items);
 
     try {
       const candidateIds = await withBudget(
         resolver.resolve(params, { identity, rule_ctx: page.rule_ctx, surfaceArgs, claimed }, pg),
         p.budget_ms,
       );
-      const ids = candidateIds.filter((id) => !claimed.has(id)).slice(0, limit);
+      const ids = (isPromo ? candidateIds : candidateIds.filter((id) => !claimed.has(id))).slice(0, limit);
       if (ids.length < p.min_items) {
         results.push({ ...base, items: [], outcome: ids.length === 0 ? "empty" : "below_min", resolve_ms: Math.round(performance.now() - started) });
         continue;

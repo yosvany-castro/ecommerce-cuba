@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { withPg } from "@/lib/db/helpers";
+import { toCard } from "@/storefront/map";
 import {
   fetchCategoryPage,
   CATEGORY_PAGE_SIZE,
@@ -51,15 +52,9 @@ export default async function CategoryPage({
   const featured = page === 1 ? await getListingSections(category) : [];
   if (items.length === 0 && page === 1) return notFound();
 
-  const cards: StorefrontCard[] = items.map((it) => ({
-    id: it.id,
-    title: it.title,
-    price_cents: it.price_cents,
-    currency: it.currency,
-    image_url: it.image_url,
-    category,
-    source: it.source,
-  }));
+  // toCard: la MISMA tarjeta que home/búsqueda (oferta, valoración, colores,
+  // tallas, peso) y el mismo resize de imagen.
+  const cards: StorefrontCard[] = items.map((it) => ({ ...toCard(it), category }));
 
   // Slug conocido → label/tint reales del CatDef. Slug libre desconocido (el
   // page viejo aceptaba texto libre) → NO mentir con "Otros": título = el

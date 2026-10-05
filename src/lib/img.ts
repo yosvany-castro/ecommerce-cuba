@@ -26,6 +26,7 @@ const SHEIN_THUMB = /(_(?:square_)?thumbnail)_\d+x\d*/i;
 // Amazon: el token de tamaño/calidad de la URL es editable (verificado
 // ._AC_SX220_QL60_FMwebp_. → 200 OK image/webp, −15/18%).
 const AMAZON_TOKEN = /\._AC_[^.]*_\./;
+const WALMART_ODN = /walmartimages\.com.*odnWidth=\d+/i;
 
 export type ImgSize = 350 | 640; // 350 = cards/rieles, 640 = imagen grande de PDP
 
@@ -46,8 +47,48 @@ export function imgSrc(url: string | null | undefined, source: string | null | u
     if (m) return u.replace(RAW_IMAGE, `_thumbnail_${dims}${m[0]}`);
     return u;
   }
-  if (source === "amazon" && size === 350 && AMAZON_TOKEN.test(u)) {
-    return u.replace(AMAZON_TOKEN, "._AC_SX220_QL60_FMwebp_.");
+  if (source === "amazon" && AMAZON_TOKEN.test(u)) {
+    // la URL guardada trae SX300: sin reescribir, la foto "grande" de la PDP
+    // era de 300px (borrosa). SX640 verificado 200 OK 2026-10-05 (~7 KB webp).
+    return u.replace(AMAZON_TOKEN, size === 350 ? "._AC_SX220_QL60_FMwebp_." : "._AC_SX640_QL65_FMwebp_.");
+  }
+  if (source === "walmart" && WALMART_ODN.test(u)) {
+    // guardada con odnWidth=180: la PDP mostraba 180px. 640 verificado 200 OK.
+    const px = size === 350 ? 350 : 640;
+    return u.replace(/odnHeight=\d+/, `odnHeight=${px}`).replace(/odnWidth=\d+/, `odnWidth=${px}`);
   }
   return u;
+}
+
+/** srcset por ANCHO a partir de una URL ya servida por imgSrc: el navegador
+ * baja la que su pantalla necesita. `max` = techo del slot: tarjetas 350
+ * (punto medio 3G/calidad: ~12 KB, nítida en una tarjeta), hero/PDP 640.
+ * Devuelve undefined si el CDN no admite tamaños (la <img> usa solo src). */
+export function imgSrcSet(url: string | null | undefined, max: 350 | 640 = 350): string | undefined {
+  if (!url) return undefined;
+  const set = (sizes: number[], f: (n: number) => string) =>
+    sizes.filter((n) => n <= max).map((n) => `${f(n)} ${n}w`).join(", ");
+  const ae = url.match(/_(\d+)x\1q75\.jpg_\.webp$/);
+  if (ae) return set([220, 350, 640], (n) => url.replace(ae[0], `_${n}x${n}q75.jpg_.webp`));
+  if (AMAZON_TOKEN.test(url)) return set([220, 350, 640], (n) => url.replace(AMAZON_TOKEN, `._AC_SX${n}_QL${n > 350 ? 65 : 60}_FMwebp_.`));
+  if (SHEIN_THUMB.test(url)) {
+    return max === 640 ? `${url.replace(SHEIN_THUMB, "$1_220x293")} 220w, ${url.replace(SHEIN_THUMB, "$1_405x552")} 405w` : undefined;
+  }
+  if (WALMART_ODN.test(url)) {
+    return set([180, 350, 640], (n) => url.replace(/odnHeight=\d+/, `odnHeight=${n}`).replace(/odnWidth=\d+/, `odnWidth=${n}`));
+  }
+  return undefined;
+}
+
+/** Vista previa diminuta (0,3–4,5 KB, verificado 2026-10-05) que se pinta
+ * borrosa DETRÁS de la foto: en 3G aparece casi al instante y se ve el
+ * producto en vez de un hueco; la nítida la tapa al llegar. */
+export function imgTiny(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  const ae = url.match(/_(\d+)x\1q75\.jpg_\.webp$/);
+  if (ae) return url.replace(ae[0], "_50x50q75.jpg_.webp");
+  if (AMAZON_TOKEN.test(url)) return url.replace(AMAZON_TOKEN, "._AC_SX40_QL50_FMwebp_.");
+  if (SHEIN_THUMB.test(url)) return url.replace(SHEIN_THUMB, "$1_50x67");
+  if (WALMART_ODN.test(url)) return url.replace(/odnHeight=\d+/, "odnHeight=40").replace(/odnWidth=\d+/, "odnWidth=40");
+  return undefined;
 }
