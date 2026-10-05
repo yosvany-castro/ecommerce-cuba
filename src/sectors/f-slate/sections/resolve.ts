@@ -5,6 +5,7 @@ import { SECTION_REGISTRY } from "./registry";
 import { logSectionImpressions, type SectionImpressionRow } from "./impressions";
 import type { ResolvedSection, SectionCardDTO } from "./types";
 import { toCard } from "@/storefront/map";
+import { withPg } from "@/lib/db/helpers";
 
 /**
  * Section runner (D3): executes a composition's placements in PRIORITY order
@@ -57,18 +58,30 @@ export async function resolveSections(
     };
 
     if (p.section_type === "hero_grid") {
+      // El feed corre en SU PROPIA conexión del pool: withBudget no puede
+      // cancelar la promesa, y en el cliente compartido el trabajo abandonado
+      // dejaba en cola al fallback y a todas las secciones siguientes (pg
+      // ejecuta de a una query por cliente). `abandoned` le avisa que su
+      // página no se mostró → no registra impresiones fantasma.
+      const abandoned = { value: false };
       try {
         const feed = await withBudget(
-          serveFeedPage(
-            {
-              user_id: identity.user_id,
-              anonymous_id: identity.anonymous_id,
-              session_id: identity.session_id,
-            },
-            pg,
+          withPg((own) =>
+            serveFeedPage(
+              {
+                user_id: identity.user_id,
+                anonymous_id: identity.anonymous_id,
+                session_id: identity.session_id,
+                abandoned,
+              },
+              own,
+            ),
           ),
           p.budget_ms,
-        );
+        ).catch((e) => {
+          abandoned.value = true;
+          throw e;
+        });
         const items: SectionCardDTO[] = feed.items.map((it) => toCard(it.product, it.reason, it.position));
         for (const it of items) claimed.add(it.id);
         results.push({
@@ -93,7 +106,8 @@ export async function resolveSections(
              ORDER BY last_refreshed_at DESC NULLS LAST, created_at DESC LIMIT 24`,
           );
           const items: SectionCardDTO[] = (fb.rows as Parameters<typeof toCard>[0][]).map((row, i) =>
-            toCard(row, "para descubrir", i + 1),
+            // sin rótulo: son recientes, no exploración — "para descubrir" mentía
+            toCard(row, undefined, i + 1),
           );
           for (const it of items) claimed.add(it.id);
           results.push({ ...base, items, outcome: "served", resolve_ms: Math.round(performance.now() - started) });

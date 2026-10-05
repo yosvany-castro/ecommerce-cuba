@@ -451,7 +451,6 @@ export function ProductView({
               </>
             )}
           </div>
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 16, color: cat.deep, marginTop: 12 }}>✦ encaja con lo que has estado mirando</div>
 
           {da.colors.length > 0 && (
             <>

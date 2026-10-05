@@ -71,10 +71,10 @@ async function fetchProductInfo(
   return { product_id, metadata: r.rows[0].metadata ?? {} };
 }
 
-function pickProductIdFromPayload(
+function pickProductIdsFromPayload(
   event_type: TrackInput["event_type"],
   payload: Record<string, unknown>,
-): string | null {
+): string[] {
   switch (event_type) {
     case "product_view":
     case "add_to_cart":
@@ -82,16 +82,15 @@ function pickProductIdFromPayload(
     case "add_to_wishlist":
     case "product_dwell":
     case "dismiss":
-      return typeof payload.product_id === "string" ? payload.product_id : null;
+      return typeof payload.product_id === "string" ? [payload.product_id] : [];
     case "purchase": {
+      // TODOS los productos comprados (antes solo ids[0]: en una compra de
+      // varios, el resto no llegaba ni al perfil ni a la co-ocurrencia).
       const ids = payload.product_ids;
-      if (Array.isArray(ids) && ids.length > 0 && typeof ids[0] === "string") {
-        return ids[0];
-      }
-      return null;
+      return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
     }
     default:
-      return null;
+      return [];
   }
 }
 
@@ -99,16 +98,40 @@ export async function processEventForPersonalization(
   input: TrackInput,
   pg: Client,
 ): Promise<void> {
-  const product_id = pickProductIdFromPayload(input.event_type, input.payload);
-  if (!product_id) return;
-  const productInfo = await fetchProductInfo(product_id, pg);
-  if (!productInfo) return;
+  const product_ids = pickProductIdsFromPayload(input.event_type, input.payload);
+  if (product_ids.length === 0) return;
 
-  const signal = inferSignalFromProductMetadata(
-    productInfo.metadata as never,
-  ) as EventSignal;
+  // Lectura-modificación-escritura (estado de sesión, vector del modo):
+  // dos requests concurrentes de la MISMA sesión se pisaban (lost update).
+  // Candado transaccional por sesión → se serializan. ROLLBACK obligatorio
+  // ante error: el cliente vuelve al pool y no puede quedar en tx abortada.
+  await pg.query("BEGIN");
+  try {
+    await pg.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [input.session_id]);
+    for (const product_id of product_ids) {
+      const productInfo = await fetchProductInfo(product_id, pg);
+      if (!productInfo) continue;
+      const signal = inferSignalFromProductMetadata(productInfo.metadata as never) as EventSignal;
+      await runPipeline(input, signal, productInfo.product_id, pg);
+    }
+    await pg.query("COMMIT");
+  } catch (e) {
+    await pg.query("ROLLBACK").catch(() => {});
+    throw e;
+  }
+}
 
-  await runPipeline(input, signal, productInfo.product_id, pg);
+/** Paso opcional dentro de la transacción del pipeline: un SAVEPOINT lo aísla
+ * — su error se ignora como antes, sin abortar la transacción completa. */
+async function bestEffort(pg: Client, what: string, fn: () => Promise<unknown>): Promise<void> {
+  await pg.query("SAVEPOINT best_effort");
+  try {
+    await fn();
+    await pg.query("RELEASE SAVEPOINT best_effort");
+  } catch (e) {
+    await pg.query("ROLLBACK TO SAVEPOINT best_effort");
+    console.warn(`[track-hook] ${what} failed (ignored):`, e);
+  }
 }
 
 async function runPipeline(
@@ -134,11 +157,7 @@ async function runPipeline(
   // warmup) invalida el slate vivo: los cursors en vuelo regeneran su PRÓXIMA
   // página con la intención nueva; lo visible jamás se reordena.
   if (cohortChanged && prevState.current_cohort_id !== null) {
-    try {
-      await bumpSlateVersion(input.session_id, pg);
-    } catch (e) {
-      console.warn("[track-hook] slate bump on shift failed (ignored):", e);
-    }
+    await bestEffort(pg, "slate bump on shift", () => bumpSlateVersion(input.session_id, pg));
   }
 
   // Co-occurrence capture runs INDEPENDENT of warmup state — pairs accumulate
@@ -162,20 +181,12 @@ async function runPipeline(
   // even if a re-materialization would bury it (continuity anchor). Best
   // effort — never blocks the event pipeline.
   if (input.event_type === "product_view") {
-    try {
-      await pinProductInSlate(input.session_id, product_id, pg);
-    } catch (e) {
-      console.warn("[track-hook] slate pin failed (ignored):", e);
-    }
+    await bestEffort(pg, "slate pin", () => pinProductInSlate(input.session_id, product_id, pg));
     // Fix "vi 3 ventiladores y la home ni se entera": la vista expira el slate
     // vivo (después del pin, que escribe EN ese slate) — la próxima home
     // re-materializa con views-categories fresco. Antes NADA invalidaba el
     // snapshot durante sus 300s de TTL: la home era inmutable ante las vistas.
-    try {
-      await expireLiveSlate(input.session_id, pg);
-    } catch (e) {
-      console.warn("[track-hook] slate expire on view failed (ignored):", e);
-    }
+    await bestEffort(pg, "slate expire on view", () => expireLiveSlate(input.session_id, pg));
     // EL VENDEDOR: infiere la intención de la sesión (fire-and-forget, conexión
     // propia, freshness por sesión) — la próxima navegación pinta "Completa tu
     // idea" con complementos reales (o manda a ingerirlos).

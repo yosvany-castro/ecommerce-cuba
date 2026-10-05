@@ -36,13 +36,16 @@ export async function insertSlate(
     items: SlateItem[];
     spares: string[];
     policy?: string;
+    /** Pins heredados (injectPins): sin persistirlos el slate nuevo nacía con
+     * pins=[] → "Seguías mirando" nunca se rotulaba y solo sobrevivía el último. */
+    pins?: string[];
   },
   pg: Client,
 ): Promise<void> {
   await pg.query(
     `INSERT INTO feed_slates
-       (slate_id, user_profile_id, anonymous_id, session_id, surface, items, spares, policy, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, now() + make_interval(secs => $9))`,
+       (slate_id, user_profile_id, anonymous_id, session_id, surface, items, spares, policy, expires_at, pins)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, now() + make_interval(secs => $9), $10::jsonb)`,
     [
       row.slate_id,
       row.user_profile_id,
@@ -53,6 +56,7 @@ export async function insertSlate(
       JSON.stringify(row.spares),
       row.policy ?? "default",
       SLATE_SOFT_TTL_S,
+      JSON.stringify(row.pins ?? []),
     ],
   );
 }
@@ -93,10 +97,10 @@ export async function loadSlateById(slate_id: string, pg: Client): Promise<Slate
 export async function logSlatePageImpressions(
   slate: SlateRow,
   pageItems: SlateItem[],
-  ctx: { user_profile_id: string | null; page_request_id: string },
+  ctx: { user_profile_id: string | null; page_request_id: string; abandoned?: { value: boolean } },
   pg: Client,
 ): Promise<void> {
-  if (pageItems.length === 0) return;
+  if (pageItems.length === 0 || ctx.abandoned?.value) return;
   try {
     await pg.query(
       `INSERT INTO feed_impressions

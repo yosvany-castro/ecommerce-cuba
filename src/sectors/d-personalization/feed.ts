@@ -36,7 +36,7 @@ import {
   type SlateRow,
 } from "./slate/store";
 import { decodeCursor, encodeCursor } from "./slate/cursor";
-import { injectPins } from "./slate/pins";
+import { injectPins, PIN_CAP } from "./slate/pins";
 import { stabilizeSlate } from "./slate/stabilize";
 import { isHoldout } from "./holdout";
 import {
@@ -65,6 +65,9 @@ export interface GenerateFeedOpts {
   extraExcludedIds?: string[];
   /** Optional per-request phase timing (F5 instrumentation). */
   timing?: RequestTiming;
+  /** Lo pone el caller si abandonó la espera (budget): la página NO se mostró,
+   * así que no se registran impresiones (serían exposiciones fantasma). */
+  abandoned?: { value: boolean };
 }
 
 export interface FeedPageResult {
@@ -194,14 +197,14 @@ const FEED_POP_PRIOR_STRENGTH = (() => {
 async function serveWithExploration(
   items: CachedRerankItem[],
   explorePoolIds: string[],
-  ctx: { profile_id: string | null; session_id: string | null },
+  ctx: { profile_id: string | null; session_id: string | null; abandoned?: { value: boolean } },
   pg: Client,
 ): Promise<CachedRerankItem[]> {
   const explored = applyEpsilonExploration(items, explorePoolIds, {
     epsilon: EXPLORATION_EPSILON,
   });
   try {
-    if (explored.length > 0) {
+    if (explored.length > 0 && !ctx.abandoned?.value) {
       const requestId = randomUUID();
       await pg.query(
         `INSERT INTO feed_impressions
@@ -365,7 +368,7 @@ export async function generateFeedInternal(
         await logSlatePageImpressions(
           slate,
           page,
-          { user_profile_id: profile_id, page_request_id: randomUUID() },
+          { user_profile_id: profile_id, page_request_id: randomUUID(), abandoned: opts.abandoned },
           pg,
         );
         const items = await resolveWithReasons(
@@ -420,7 +423,7 @@ export async function generateFeedInternal(
       await logSlatePageImpressions(
         slate,
         page,
-        { user_profile_id: profile_id, page_request_id: randomUUID() },
+        { user_profile_id: profile_id, page_request_id: randomUUID(), abandoned: opts.abandoned },
         pg,
       );
       const items = await resolveWithReasons(
@@ -432,7 +435,75 @@ export async function generateFeedInternal(
   }
 
   const listsA: RankedList[] = [];
-  if (profile_id) {
+
+  // weight 2: keeps the cross-sell list ("combina con lo que viste") from
+  // being diluted now that the fusion has 2 more lists (views-categories +
+  // popular-global) — without it the co-occurrence hit drops out of the top-10.
+  const listB: RankedList = { source: "cooccurrence", items: [], weight: 2 };
+  let lastViewedTitle: string | null = null;
+  if (opts.session_id) {
+    const lastViewed = await timed("cooccurrence", () => fetchLastViewedProduct(opts.session_id!, pg));
+    if (lastViewed) {
+      const tR = await pg.query(`SELECT title FROM products WHERE id = $1`, [
+        lastViewed,
+      ]);
+      lastViewedTitle = tR.rows[0]?.title ?? null;
+      const r = await pg.query(
+        `SELECT related_product_id::text AS id, rank
+         FROM co_occurrence_top
+         WHERE product_id = $1
+           AND NOT (related_product_id = ANY($2::uuid[]))
+         ORDER BY rank ASC LIMIT 30`,
+        [lastViewed, excluded],
+      );
+      listB.items = (r.rows as Array<{ id: string; rank: number }>).map((x) => ({
+        id: x.id,
+        rank: Number(x.rank),
+      }));
+    }
+  }
+
+  // Cohort popularity when the demographic cohort is known; GLOBAL popularity
+  // as the ensemble's rescue half (and the unisex_indeterminado fallback —
+  // before this fix that cohort had NO popularity list at all).
+  const popularItems = await timed("popular_cohort", () => fetchPopularByCohort(cohortId, excluded, 20, pg));
+  const listC: RankedList = { source: "popular", items: popularItems };
+  const listE: RankedList = {
+    source: "popular-global",
+    items: await timed("popular_global", () => fetchPopularGlobal(excluded, 20, pg)),
+  };
+
+  // Views-categories source (exp-K champion family): categories predicted from
+  // the user's recent views (current session ×3) × popularity quotas inside.
+  const listD: RankedList = {
+    source: "views-categories",
+    items: await timed("views_categories", () => fetchViewsCategoriesList(
+      {
+        user_id: opts.user_id,
+        anonymous_id: opts.anonymous_id,
+        session_id: opts.session_id,
+        excludedIds: excluded,
+        limit: 20,
+      },
+      pg,
+    )),
+  };
+
+  // Home fusion (exp-K ablation, 3 seeds + seed-7 ablation): the winning shape
+  // is ensemble(views-categories ×2, popular-global ×2) + cross-sell(×2). The
+  // mode (vector) lists DILUTE the slate when category signal exists
+  // (feed-w2-noModes 0.0517 ≈ slim champion 0.0527 vs feed-w2 0.0482 on the
+  // failing seed) — so they only join as the cold fallback when the user has
+  // no categorized views. Caveat (documented): the simulator's vector space is
+  // synthetic prod2vec; real Voyage-text modes are unmeasured offline — the
+  // A/B pilot is where this call gets revisited with real data.
+  listD.weight = 2;
+  listE.weight = 2;
+  const hasCategorySignal = listD.items.length > 0;
+  // Las listas por vector SOLO entran sin señal de categorías (ver arriba):
+  // antes se calculaban siempre (~320 ms: retrieve_modes + pop_counts) y se
+  // tiraban — tiempo que empujaba el hero_grid fuera de su budget.
+  if (profile_id && !hasCategorySignal) {
     let modes = await fetchAllModesInBucket(
       {
         user_profile_id: profile_id,
@@ -499,70 +570,6 @@ export async function generateFeedInternal(
     }
   }
 
-  // weight 2: keeps the cross-sell list ("combina con lo que viste") from
-  // being diluted now that the fusion has 2 more lists (views-categories +
-  // popular-global) — without it the co-occurrence hit drops out of the top-10.
-  const listB: RankedList = { source: "cooccurrence", items: [], weight: 2 };
-  let lastViewedTitle: string | null = null;
-  if (opts.session_id) {
-    const lastViewed = await timed("cooccurrence", () => fetchLastViewedProduct(opts.session_id!, pg));
-    if (lastViewed) {
-      const tR = await pg.query(`SELECT title FROM products WHERE id = $1`, [
-        lastViewed,
-      ]);
-      lastViewedTitle = tR.rows[0]?.title ?? null;
-      const r = await pg.query(
-        `SELECT related_product_id::text AS id, rank
-         FROM co_occurrence_top
-         WHERE product_id = $1
-           AND NOT (related_product_id = ANY($2::uuid[]))
-         ORDER BY rank ASC LIMIT 30`,
-        [lastViewed, excluded],
-      );
-      listB.items = (r.rows as Array<{ id: string; rank: number }>).map((x) => ({
-        id: x.id,
-        rank: Number(x.rank),
-      }));
-    }
-  }
-
-  // Cohort popularity when the demographic cohort is known; GLOBAL popularity
-  // as the ensemble's rescue half (and the unisex_indeterminado fallback —
-  // before this fix that cohort had NO popularity list at all).
-  const popularItems = await timed("popular_cohort", () => fetchPopularByCohort(cohortId, excluded, 20, pg));
-  const listC: RankedList = { source: "popular", items: popularItems };
-  const listE: RankedList = {
-    source: "popular-global",
-    items: await timed("popular_global", () => fetchPopularGlobal(excluded, 20, pg)),
-  };
-
-  // Views-categories source (exp-K champion family): categories predicted from
-  // the user's recent views (current session ×3) × popularity quotas inside.
-  const listD: RankedList = {
-    source: "views-categories",
-    items: await timed("views_categories", () => fetchViewsCategoriesList(
-      {
-        user_id: opts.user_id,
-        anonymous_id: opts.anonymous_id,
-        session_id: opts.session_id,
-        excludedIds: excluded,
-        limit: 20,
-      },
-      pg,
-    )),
-  };
-
-  // Home fusion (exp-K ablation, 3 seeds + seed-7 ablation): the winning shape
-  // is ensemble(views-categories ×2, popular-global ×2) + cross-sell(×2). The
-  // mode (vector) lists DILUTE the slate when category signal exists
-  // (feed-w2-noModes 0.0517 ≈ slim champion 0.0527 vs feed-w2 0.0482 on the
-  // failing seed) — so they only join as the cold fallback when the user has
-  // no categorized views. Caveat (documented): the simulator's vector space is
-  // synthetic prod2vec; real Voyage-text modes are unmeasured offline — the
-  // A/B pilot is where this call gets revisited with real data.
-  listD.weight = 2;
-  listE.weight = 2;
-  const hasCategorySignal = listD.items.length > 0;
   const all: RankedList[] = [
     ...(hasCategorySignal ? [] : listsA),
     listB,
@@ -594,7 +601,7 @@ export async function generateFeedInternal(
     const served = await serveWithExploration(
       items,
       [],
-      { profile_id, session_id: opts.session_id ?? null },
+      { profile_id, session_id: opts.session_id ?? null, abandoned: opts.abandoned },
       pg,
     );
     return { items: await resolveWithReasons(served, pg), slate: null, servedTo: served.length };
@@ -693,6 +700,8 @@ export async function generateFeedInternal(
         { headSize: PAGE_SIZE_FIRST },
       );
       const slateItems: SlateItem[] = injectPins(stabilized, prevPins ?? []);
+      // los pins inyectados SIGUEN siendo pins del slate nuevo (rótulo + acumulación)
+      const keptPins = [...new Set(prevPins ?? [])].slice(0, PIN_CAP);
       const usedExplore = new Set(
         explored.filter((x) => x.source === "explore").map((x) => x.product_id),
       );
@@ -703,7 +712,7 @@ export async function generateFeedInternal(
         surface: "home",
         version: 1,
         items: slateItems,
-        pins: [],
+        pins: keptPins,
         spares,
         policy: "default",
       };
@@ -717,6 +726,7 @@ export async function generateFeedInternal(
             surface: slate.surface,
             items: slateItems,
             spares,
+            pins: keptPins,
           },
           pg,
         ),
@@ -725,7 +735,7 @@ export async function generateFeedInternal(
       await logSlatePageImpressions(
         slate,
         page,
-        { user_profile_id: profile_id, page_request_id: randomUUID() },
+        { user_profile_id: profile_id, page_request_id: randomUUID(), abandoned: opts.abandoned },
         pg,
       );
       const items = await resolveWithReasons(
@@ -746,7 +756,7 @@ export async function generateFeedInternal(
     const served = await serveWithExploration(
       items,
       explorePool,
-      { profile_id, session_id: opts.session_id ?? null },
+      { profile_id, session_id: opts.session_id ?? null, abandoned: opts.abandoned },
       pg,
     );
     return { items: await resolveWithReasons(served, pg), slate: null, servedTo: served.length };
@@ -792,7 +802,7 @@ export async function generateFeedInternal(
   const served = await serveWithExploration(
     finalItems,
     explorePool,
-    { profile_id, session_id: opts.session_id ?? null },
+    { profile_id, session_id: opts.session_id ?? null, abandoned: opts.abandoned },
     pg,
   );
   return { items: await resolveWithReasons(served, pg), slate: null, servedTo: served.length };
@@ -810,6 +820,7 @@ export interface ServeFeedPageOpts {
   cursor?: string | null;
   /** Optional per-request phase timing (F5). */
   timing?: RequestTiming;
+  abandoned?: { value: boolean };
 }
 
 export interface ServedFeedPage {
@@ -844,7 +855,7 @@ export async function serveFeedPage(
       await logSlatePageImpressions(
         slate,
         page,
-        { user_profile_id: profile_id, page_request_id: randomUUID() },
+        { user_profile_id: profile_id, page_request_id: randomUUID(), abandoned: opts.abandoned },
         pg,
       );
       const items = await resolveWithReasons(
@@ -875,6 +886,7 @@ export async function serveFeedPage(
       limit: isFirstPage ? PAGE_SIZE_FIRST : PAGE_SIZE_CURSOR,
       extraExcludedIds: servedBefore,
       timing: opts.timing,
+      abandoned: opts.abandoned,
     },
     pg,
   );

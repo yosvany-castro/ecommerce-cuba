@@ -80,6 +80,11 @@ export async function POST(req: NextRequest) {
         const inserted = await insertEvent(envelope, { pg, anonymous_id, session_id, user_id });
         results.push(inserted);
 
+        // Reintento del cliente (mismo client_event_id): el evento YA se
+        // procesó — volver a pasarlo por el hook lo contaba doble en el
+        // vector, la co-ocurrencia y la ventana de sesión.
+        if (inserted.deduped) continue;
+
         // Best-effort personalization hook — failures do not break tracking.
         try {
           await processEventForPersonalization(
