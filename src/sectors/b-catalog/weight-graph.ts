@@ -170,7 +170,7 @@ export function buildWeightGraph(pg: Client) {
     if (s.alreadyWeighted || s.finalGrams === null) return {};
     await pg.query(
       `UPDATE products SET weight_grams = $1, weight_source = 'llm'
-       WHERE id = $2 AND (weight_source IS NULL OR weight_source = 'llm')`,
+       WHERE id = $2 AND (weight_source IS NULL OR weight_source IN ('llm', 'heuristic'))`,
       [s.finalGrams, s.productId],
     );
     return {};

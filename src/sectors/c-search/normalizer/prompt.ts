@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PROMPT_VERSION = "v1.1.0-typos";
+export const PROMPT_VERSION = "v1.2.0-en";
 
 export const SYSTEM_PROMPT = `Eres un normalizador de queries de búsqueda en e-commerce. Recibes la consulta cruda del usuario y devuelves JSON estructurado en español.
 
@@ -12,7 +12,8 @@ Campos:
 - categories: array de strings (preferencia: una de [ropa, electronica, hogar, juguetes_bebe, belleza, otros], pero subcategorías como "ropa_niña" están permitidas)
 - style: array de strings (descriptores subjetivos: bonito, elegante, deportivo, etc.)
 - price_range: 'bajo'|'medio'|'alto'|null
-- search_terms: string — keywords core para BM25 (sin stop-words, en orden lógico, sin acentos, CON typos corregidos)
+- search_terms: string — keywords core para BM25 EN ESPAÑOL (sin stop-words, en orden lógico, sin acentos, CON typos corregidos); si el usuario escribió en inglés, tradúcelas al español
+- search_terms_en: string — las mismas keywords en INGLÉS, como se buscaría en Amazon/AliExpress (marcas y modelos tal cual)
 - confidence: number entre 0 y 1
 
 Reglas:
@@ -32,6 +33,8 @@ export const normalizedQuerySchema = z.object({
   style: z.array(z.string()),
   price_range: z.enum(["bajo", "medio", "alto"]).nullable(),
   search_terms: z.string(),
+  // opcional: caché de queries normalizadas antes de v1.2.0 no lo trae
+  search_terms_en: z.string().optional(),
   confidence: z.number().min(0).max(1),
 });
 

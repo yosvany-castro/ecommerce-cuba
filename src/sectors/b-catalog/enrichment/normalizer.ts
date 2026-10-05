@@ -35,7 +35,7 @@ export async function normalizeWithLLM(
       cacheSystem: true,
       jsonMode: true,
       messages: [{ role: "user", content: userMsg }],
-      maxTokens: 400,
+      maxTokens: 1100, // + title_es/description_es
       temperature: 0,
     });
     llmText = res.text;

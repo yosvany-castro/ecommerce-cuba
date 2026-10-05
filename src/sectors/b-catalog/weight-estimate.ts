@@ -41,6 +41,12 @@ export async function getOrEstimateWeight(id: string, pg: Client): Promise<Weigh
   const row = r.rows[0];
   if (!row) return null;
   if (row.weight_grams != null) {
+    // heuristic = congelado del título original al traducir (0046): mismo
+    // número que antes, y el LLM lo sigue refinando como si no hubiera peso.
+    if (row.weight_source === "heuristic" && llmEnabled()) {
+      const searchPath = (await pg.query(`SHOW search_path`)).rows[0].search_path as string;
+      queueWeightRefine(id, searchPath);
+    }
     const source = (row.weight_source ?? "provider") as WeightAnswer["source"];
     return { grams: row.weight_grams, source, estimated: source !== "measured" };
   }

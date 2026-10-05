@@ -357,7 +357,7 @@ export async function hybridSearch(
       const searchPath = (await pg.query(`SHOW search_path`)).rows[0].search_path as string;
       ingestion = queueExternalIngest({
         hash: freshnessHash,
-        query: normalized.search_terms,
+        query: normalized.search_terms_en || normalized.search_terms,
         category: normalized.categories?.[0] as MockCategory | undefined,
         limit: process.env.HYBRID_SEARCH_MOCK_LIMIT
           ? parseInt(process.env.HYBRID_SEARCH_MOCK_LIMIT, 10)
@@ -378,7 +378,7 @@ export async function hybridSearch(
         const mockResult = await singleFlight(`aggregator:${hash}`, () =>
           activeProvider.fetch({
             category: normalized.categories?.[0] as MockCategory | undefined,
-            query: normalized.search_terms,
+            query: normalized.search_terms_en || normalized.search_terms,
             limit: limitOverride,
           }),
         );
@@ -387,7 +387,7 @@ export async function hybridSearch(
           `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
            VALUES ($1::jsonb, $2, $3, $4, false)`,
           [
-            JSON.stringify({ source: "hybrid_search_fallback", query: normalized.search_terms }),
+            JSON.stringify({ source: "hybrid_search_fallback", query: normalized.search_terms_en || normalized.search_terms }),
             mockResult.products.length,
             mockResult.cost_cents,
             Math.round(Date.now() - t0),
@@ -419,7 +419,7 @@ export async function hybridSearch(
           await pg.query(
             `INSERT INTO mock_calls (params, response_size, simulated_cost_cents, latency_ms, was_error)
              VALUES ($1::jsonb, 0, 4, 0, true)`,
-            [JSON.stringify({ source: "hybrid_search_fallback", query: normalized.search_terms })],
+            [JSON.stringify({ source: "hybrid_search_fallback", query: normalized.search_terms_en || normalized.search_terms })],
           );
         } catch {
           // don't crash if logging also fails

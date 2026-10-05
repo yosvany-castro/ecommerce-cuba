@@ -34,7 +34,7 @@ export async function processProduct(
     enrichment_status: EnrichmentStatus | null;
     category: string | null;
   }>(
-    `SELECT id, title, image_url, metadata->>'enrichment_status' AS enrichment_status,
+    `SELECT id, COALESCE(title_original, title) AS title, image_url, metadata->>'enrichment_status' AS enrichment_status,
             metadata->>'category' AS category
      FROM products WHERE source = $1 AND source_product_id = $2`,
     [raw.source, raw.source_product_id],
@@ -62,20 +62,29 @@ export async function processProduct(
     };
   }
 
-  const normalized = await normalizeWithLLM(raw);
+  const { title_es, description_es, ...normalized } = await normalizeWithLLM(raw);
   const attrs = attrsForStorage(raw.attributes);
   const metadata = { ...normalized, ...(attrs !== undefined ? { attrs } : {}) };
+  // Sitio en español: title/description guardan la traducción del normalizador
+  // (misma llamada LLM, cero latencia extra); el texto del proveedor queda en
+  // *_original. Si el LLM no tradujo, se muestra el original (honesto).
+  const titleShown = title_es?.trim() || raw.title;
+  // muchos proveedores mandan el título como descripción: entonces va el título traducido
+  const descriptionShown = description_es?.trim() || (raw.description === raw.title ? titleShown : raw.description);
   const canonical = buildCanonicalText(raw, metadata);
   const [embedding] = await embed([canonical], { inputType: "document" });
 
   const r = await pg.query(
     `INSERT INTO products
-      (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, url, metadata, embedding, weight_grams, weight_source)
+      (source, source_product_id, title, description, price_cents, currency, image_url, raw_category, url, metadata, embedding, weight_grams, weight_source,
+       title_original, description_original)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::vector, $12,
-             CASE WHEN $12::int IS NOT NULL THEN 'provider' END)
+             CASE WHEN $12::int IS NOT NULL THEN 'provider' END, $13, $14)
      ON CONFLICT (source, source_product_id) DO UPDATE SET
        title = EXCLUDED.title,
        description = EXCLUDED.description,
+       title_original = EXCLUDED.title_original,
+       description_original = EXCLUDED.description_original,
        price_cents = EXCLUDED.price_cents,
        image_url = EXCLUDED.image_url,
        raw_category = EXCLUDED.raw_category,
@@ -104,8 +113,8 @@ export async function processProduct(
     [
       raw.source,
       raw.source_product_id,
-      raw.title,
-      raw.description,
+      titleShown,
+      descriptionShown,
       raw.price_cents,
       "USD",
       raw.image_url,
@@ -115,6 +124,8 @@ export async function processProduct(
       `[${embedding.join(",")}]`,
       // peso NETO del mapper → peso de PAQUETE (los marketplaces publican neto)
       raw.weight_grams != null ? packagedGrams(raw.weight_grams, normalized.category ?? raw.raw_category) : null,
+      raw.title,
+      raw.description,
     ],
   );
 

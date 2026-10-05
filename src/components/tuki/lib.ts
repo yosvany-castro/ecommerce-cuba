@@ -213,3 +213,29 @@ export function sectionize(cards: StorefrontCard[], startIndex = 0): TukiSection
   }
   return out;
 }
+
+// Nombres de color del proveedor (inglés) → español SOLO al mostrar: el valor
+// guardado es la clave de la variante y del precio al cobrar — no se toca.
+// ponytail: diccionario de palabras; un nombre raro ("Style 3") queda tal cual.
+const COLOR_WORDS_ES: Record<string, string> = {
+  black: "negro", white: "blanco", red: "rojo", blue: "azul", green: "verde", yellow: "amarillo",
+  pink: "rosa", purple: "morado", violet: "violeta", orange: "naranja", brown: "marrón", grey: "gris",
+  gray: "gris", silver: "plateado", gold: "dorado", golden: "dorado", beige: "beige", khaki: "caqui",
+  navy: "azul marino", apricot: "albaricoque", cream: "crema", ivory: "marfil", wine: "vino",
+  burgundy: "burdeos", coffee: "café", camel: "camel", rose: "rosa", sky: "celeste", mint: "menta",
+  army: "militar", olive: "oliva", teal: "verde azulado", turquoise: "turquesa", lavender: "lavanda",
+  multicolor: "multicolor", transparent: "transparente", clear: "transparente", denim: "mezclilla",
+  dark: "oscuro", light: "claro", deep: "intenso", pale: "pálido", bright: "brillante",
+};
+
+export function colorEs(name: string): string {
+  const words = name.trim().split(/\s+/);
+  const tr = words.map((w) => COLOR_WORDS_ES[w.toLowerCase()]);
+  // no lo entendemos entero (o ya viene en español) → original, capitalizado
+  if (tr.some((t) => t === undefined)) return name.trim().charAt(0).toUpperCase() + name.trim().slice(1);
+  // "Dark Blue" → "azul oscuro": en español el modificador va detrás
+  const mods = new Set(["oscuro", "claro", "intenso", "pálido", "brillante"]);
+  const base = tr.filter((t) => !mods.has(t!));
+  const out = [...base, ...tr.filter((t) => mods.has(t!))].join(" ");
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}

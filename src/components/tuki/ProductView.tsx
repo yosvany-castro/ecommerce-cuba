@@ -11,7 +11,7 @@ import type { StorefrontCard, StorefrontSection } from "@/storefront/contract";
 import { estimateDelivery, deliveryDates, deliveryPhrase, type ProviderShipDays } from "@/lib/delivery";
 import { gramsToLb } from "@/lib/weight";
 import { shipRateCentsPerLb } from "@/lib/shipping";
-import { attrsOf, catOf, fmt, hasPriceRange, imageForColor, matchVariant, minPriceCents, ratingLine, resolveColorHex, stripe } from "./lib";
+import { attrsOf, catOf, colorEs, fmt, hasPriceRange, imageForColor, matchVariant, minPriceCents, ratingLine, resolveColorHex, stripe } from "./lib";
 import { ProductCard, type CardSource } from "./ProductCard";
 import { useTukiCart } from "./cart";
 
@@ -458,7 +458,7 @@ export function ProductView({
               <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 20 }}>
                 Color{selColor && (
                   <>
-                    {" "}· <span style={{ color: "#8E8F94", fontWeight: 500 }}>{selColor}</span>
+                    {" "}· <span style={{ color: "#8E8F94", fontWeight: 500 }}>{colorEs(selColor)}</span>
                   </>
                 )}
               </div>
@@ -477,7 +477,7 @@ export function ProductView({
                         onClick={() => setSelColor(cv.name)}
                         style={{ height: 36, padding: "0 14px", boxSizing: "border-box", borderRadius: 12, display: "flex", alignItems: "center", fontSize: 13.5, fontWeight: 600, cursor: "pointer", background: on ? "#1C1D20" : "#fff", color: on ? "#fff" : "#55565B", border: `1.5px solid ${on ? "#1C1D20" : "#ECECE7"}` }}
                       >
-                        {cv.name}
+                        {colorEs(cv.name)}
                       </div>
                     );
                   }
@@ -485,7 +485,7 @@ export function ProductView({
                     <div
                       key={i}
                       onClick={() => setSelColor(cv.name)}
-                      title={cv.name}
+                      title={colorEs(cv.name)}
                       style={{
                         width: 36,
                         height: 36,
